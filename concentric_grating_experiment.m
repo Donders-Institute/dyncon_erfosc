@@ -1,4 +1,4 @@
-function concentric_grating_experiment(fileName, isLive, drawMask)
+function concentric_grating_experiment(fileName, isLive)
 % This function is copied from DriftDemo and modified to display a (masked)
 % animated concentric grating moving inward. At random time points, the
 % grating will make a 180 degree phase shift, which has to be reported by
@@ -29,6 +29,9 @@ function concentric_grating_experiment(fileName, isLive, drawMask)
 % 16/6/2016: add circular hanning mask
 % 17/6/2016: debugged circular hanning mask and response buttons
 % 20/6/2016: change location to lower visual field, left and right.
+% 21/6/2016: edit registereing of user input, record timing, edit locations
+%   of gratings (central, 2 peripheral) and introduce trial
+%   counterbalancing (semirandom instead of random locations)
 
 %% Function settings
 
@@ -49,15 +52,7 @@ if isempty(isLive)
     isLive = 0;
 end
 
-if nargin<3
-    drawMask = 1;
-end
-
-if isempty(drawMask)
-    drawMask = 1;
-end
 try
-%     Screen('Preference', 'SkipSyncTests', 1); % THIS REMOVES THE SYNCHRONIZATION CHECK! REMOVE BEFORE EXPERIMENT
     %% Standard PTB settings
     % This script calls Psychtoolbox commands available only in OpenGL-based
     % versions of the Psychtoolbox. (So far, the OS X Psychtoolbox is the
@@ -132,50 +127,54 @@ try
     escape = KbName('ESCAPE');
     space = KbName('space');
     
-    log=[]; %safe shift onset, response and response time
+    log=[]; %save trial latencies, response and response time
     
     %% Experimental settings
     % calculate the size of the stimulus according to the used setup
     if isLive
         screen.width = 49; %MEG screenwidth in cm
         screen.viewingDistance = 76; % in cm
-        screen.resolutionX = 1024; %MEG screen in pixels
     else
         screen.width = 52;%desktop screenwidth in cm
         screen.viewingDistance = 59; % in cm
-        screen.resolutionX = 1920; %desktop screen in pixels
     end
+    screen.resolutionX = 1920; %desktop and projector screen in pixels
+    screen.resolutionY = 1080;
     
     screen.totVisDeg = 2*atan(screen.width/(2*screen.viewingDistance))*(180/pi); % formula for calculating visual degrees
     screen.pixPerDeg = screen.resolutionX/screen.totVisDeg;
     
     visualAngleGrating = 12.5;
+    visualAngleLocation = 15;
     gratingSize = visualAngleGrating*screen.pixPerDeg; % calculate how big the grating should be (can not be rounded off, might result in odd integer)
     gratingRadius = round(gratingSize/2); % the grating can only exist of integers, so round
     gratingSize = 2*gratingRadius; % to prevent consistency errors, redifine gratingSize
+    rLocation = round(visualAngleLocation*screen.pixPerDeg/2);
     
     instructions = 'Instructions \n\n Fixate at the middle of the screen. \n\n Press the button if you see a shift in the animation';
-    ntrials=200;
-    chanceNoShift = 0.2; % in 20% of the trials, have no shift.
-    preStimTime=2; % fixation, baseline period
-    preShiftTime=1; % cue can come 1.5 seconds after start trial
-    shiftRange = 5; % present the shift at random in 5 seconds
-    postShiftTime = 2; % keep animation going 1.5 seconds after shift
+    ntrialsPerCondition = 150;
+    nConditions=3;
+    ntrials=nConditions*ntrialsPerCondition;
+    conditions = [-ones(ntrialsPerCondition,1); zeros(ntrialsPerCondition,1); ones(ntrialsPerCondition,1)];
+    conditions = conditions(randperm(size(conditions,1)),:); % shuffle conditions
+    
+    chanceNoShift = 0.1; % in 20% of the trials, have no shift.
+    preStimTime=1; % fixation, baseline period
+    preShiftTime=1; % cue can come 1 seconds after start trial
+    shiftRange = 2; % present the shift at random in 5 seconds
+    postShiftTime = 1; % keep animation going 1.5 seconds after shift
     driftFreq = 1; % in one second, every pixel of the grating completes one cylce (black-white-black)
+    maxRespTime = 0.9; % maximum response time after shift
     numFrames=round(driftFreq/ifi); % temporal period, in frames, of the drifting grating
     
     % settings grating
     [x,y]=meshgrid(-gratingRadius:gratingRadius,-gratingRadius:gratingRadius);
-    f=1.5*2*pi; % cycles/pixel
+    f=1.5*2*pi; % period of the grating.
     
     
     %% Generate stimulus
-    % generate a mask to cover the edges of the grating, making it a circle
-    %     R = gratingRadius ; % radius
-    %     M = zeros(2*gratingRadius+1, 2*gratingRadius+1, 1); %zero matrix same size as the grid
-    %     M(:,:,1) = sqrt(x.^2 + y.^2) < R ; %disk formula: all masked parts of the grid must be zero.
     
-    % make hanning mask
+    % make circular hanning mask
     L = 2*gratingRadius+1;
     w1D = hann(L); % 1D hann window
     xx = linspace(-gratingRadius,gratingRadius,L);
@@ -186,7 +185,6 @@ try
     w2D(r<=gratingRadius) = 0.5*interp1(xx,w1D,r(r<=gratingRadius)); % first go from 0.5 to 0
     w2D = w2D + 0.5; %add 0.5 to go from 1 to 0.5
     
-    %%
     % Generate grating texture
     % Compute each frame of the movie and convert those frames stored in
     % MATLAB matrices, into Psychtoolbox OpenGL textures using 'MakeTexture';
@@ -203,40 +201,25 @@ try
         % outside the circle the same color as the background (gray)
         tex(i)=Screen('MakeTexture', window, grating); % multiply mask with grating
     end
-    gratingDim = [0 0 2*gratingRadius 2*gratingRadius];
-    gratingYpos = yCenter+gratingRadius;
-    Xpos = rand(ntrials,1);
-    Xpos(Xpos<=0.5)=-1; % present left
-    Xpos(Xpos>0.5)=1; % present right
-    log.Xpos = Xpos;
-    gratingXpos = xCenter+Xpos*1.5*gratingRadius;
-    % _____________________________________________________________________
-    % Other masks
-    %{
-
-    % w2D(:, :, 2)=white * (1 - 0.5*exp(-((x/120).^2)-((y/120).^2))); % Gaussian going down to gray (for black remove 0.5*)
-%     for n=1:2*gratingRadius+1
-%     w2D(:,n,2) = hann(2* gratingRadius+1); % apply 1D hanning over the columns
-%     end
-%     w2D(:,:,2) = gray*mask(:,:,1).* ( 1 - (mask(:,:,2).*mask(:,:,2)')); % multiply with
-    % inverse to apply hanning window to rows as well. Invert (1-hanning)
-    % to get lowest value in centre. Multiply with white to get the right colorscale.
-    % NOTE: This Hanning window is rectangular, not circular! That is why
-    % the window is multiplied with a circular mask (mask(:,:,1))
-      masktex=Screen('MakeTexture', window, w2D);
-
-    %}
-    % _____________________________________________________________________
     
-    shiftPoint = ((preShiftTime+shiftRange)-preShiftTime).*rand(ntrials,1) + preShiftTime;
-%     shiftPoint = 6*ones(ntrials,1);
-
+    % set location gratings
+    gratingDim = [0 0 2*gratingRadius 2*gratingRadius];
+    gratingYpos = zeros(ntrials,1);
+    for trl=1:ntrials % gratings in periphery are presented in lower visual
+        % field, central stimuli are central.
+        if conditions(trl,1)==1 || conditions(trl,1)==-1
+            gratingYpos(trl,1) = yCenter+0.25*screen.resolutionY;
+        else
+            gratingYpos(trl,1) = yCenter;
+        end
+    end
+    gratingXpos = xCenter + conditions*rLocation;
+    log.Xpos = conditions;
+    
+    shiftLatency = ((preShiftTime+shiftRange)-preShiftTime).*rand(ntrials,1) + preShiftTime; % generate latencies at which a shift occurs for every trial
+    
     trlNoShift = sort(randperm(ntrials, ntrials*chanceNoShift)); % generate a number of random (w/o replacement) trials that won't have a phase shift
-    %   shiftPoint(trlNoShift)=0; % replace the noShift trials with 0.
-    %   instead, make sure that these trials won't have a shift (otherwise it
-    %   also means short trial)
-    shiftFrame = round(shiftPoint*frameRate);
-    log.shiftLatency=shiftPoint;
+    shiftFrame = round(shiftLatency*frameRate);
     log.trlNoShift = trlNoShift;
     
     KbName('UnifyKeyNames'); % convert operating specific keynames to general keynames
@@ -247,7 +230,7 @@ try
     
     % Run the movie animation for a variable period: end it 1.5 seconds
     % after phase shift.
-    movieDurationSecs=shiftPoint+postShiftTime;
+    movieDurationSecs=shiftLatency+postShiftTime;
     % Convert movieDuration in seconds to duration in frames to draw:
     movieDurationFrames=round(movieDurationSecs * frameRate);
     % assign the right texture indices to frames
@@ -261,31 +244,30 @@ try
             KbWait; % wait until key is pressed
             pause(0.5)
         end
-        movieFrameIndices=mod(0:(movieDurationFrames(trl)-1), numFrames) + 1; %assign the right image index to each frame
+        movieFrameIndices=mod(0:(movieDurationFrames(trl)-1), numFrames) + 1; %assign the right texture index to each frame
         
-        position = CenterRectOnPointd(gratingDim, gratingXpos(trl), gratingYpos); %move the object of size gratingDim to those coordinates
-
+        position = CenterRectOnPointd(gratingDim, gratingXpos(trl), gratingYpos(trl)); %move the object of size gratingDim to those coordinates
+        
         % Use realtime priority for better timing precision:
         priorityLevel=MaxPriority(window);
         Priority(priorityLevel);
         
-        % Baseline period, black screen with fixation dot
-        Screen('DrawDots', window, [xCenter yCenter], 20, [white white white], [], 2);
+        % Baseline period, gray screen with fixation dot
+        Screen('DrawDots', window, [xCenter yCenter], 20, [255 0 0], [], 2);
         Screen('Flip', window)
-        pause(preStimTime)
-%         tic; % measure time
-        
         btsi.sendTrigger(xp.TRIG_ONSET_TRIAL);
+        pause(preStimTime)
+        
+        [~, ~, keyCode] = KbCheck(-3); % all keyCodes should be zero at start of trial.
+        flag.prevResp=0; % reset flag
+        btsi.sendTrigger(xp.TRIG_ONSET_GRATING);
+        t0= GetSecs; % time onset grating
+        
         % Animation loop:
-        t00= GetSecs;
-        tic;
-        [~, ~, keyCode] = KbCheck(-3); % all keyCodes should be zero.
-        flag.prevResp=0;
         for i=1:movieDurationFrames(trl)
             
             if i==shiftFrame(trl)
-                t0=GetSecs; % get time stamp at the moment of phase shift in order to calculate reaction time
-%                 timeDiff = t0-t00-shiftPoint
+                t1=GetSecs; % get time stamp at the moment of phase shift in order to calculate reaction time
             end
             
             % at the moment the phase-shift should occur, jump to the texture
@@ -302,15 +284,9 @@ try
             
             % Draw the appropriate image
             Screen('DrawTexture', window, tex(movieFrameIndices(i) + shift), [], position);
-            Screen('DrawDots', window, [xCenter yCenter], 20, [white white white], [], 2);
-
-            % Draw the Gaussian mask if required
-            %{
-            if drawMask
-                %                 Screen('DrawTexture', win dow, masktex);
-            end
-            %}
-            
+            Screen('DrawDots', window, [xCenter yCenter], 20, [255 0 0], [], 2);
+                        
+            % NOTE
             % Show it at next display vertical retrace. Please check DriftDemo2
             % and later, as well as DriftWaitDemo for much better approaches to
             % guarantee a robust and constant animation display timing! This is
@@ -319,11 +295,8 @@ try
             if i==shiftFrame(trl);
                 btsi.sendTrigger(xp.TRIG_SHIFT);
             end
-%             tic
             Screen('Flip', window); %% Flipping the screen takes up to 30ms every frame.. 1.8s every cycle..
-%             toc
-%             toc
-
+                        
             % check whether there already was a response in a previous
             % frame. If so, flag it so new responses won't be recorded
             % again.
@@ -335,10 +308,10 @@ try
                 save(fileName, 'log');
                 sca;
                 Screen('CloseAll')
-            elseif keyCode(space) && ~flag.prevResp
+            elseif keyCode(space) && ~flag.prevResp && i/ifi<shiftLatency + maxRespTime;
                 if i>shiftFrame(trl) % response only correct after shift
                     log.response(trl) = 1;
-                    log.responseTime(trl) = secs-t0;
+                    log.responseTime(trl) = secs-t1;
                 else % response before shift: incorrect trial
                     log.response(trl) = 2;
                     log.responseTime(trl) = 0;
@@ -347,47 +320,26 @@ try
                 log.response(trl) = 0;
                 log.responseTime(trl)=0;
             end
+        end
         
-     %{   
-        [keyIsDown, secs, keyCode] = KbCheck(-3);
-        %% How to make sure only the first response is saved?
-        %             while keyCode(space)==0
-        %                 [keyIsDown, secs, keyCode] = KbCheck(-3); % check whether a button was pressed; only record first button press
-        %             end
-        if keyCode(escape) %if escape is pressed
-            save(fileName, 'keyPress', 'trlNoShift') % save the data
-            sca % close the screen
-            break % and end PTB
-        elseif keyCode(space) % if space is pressed
-            if i>=shiftFrame(trl)
-                keyPress(trl,2)=1; % report
-                keyPress(trl,3) = secs-t0; % report reaction time
-            else
-                keyPress(trl,2)=2; % if space is pressed before phase shift, report it.
-            end
-        end
-        %}
-        end
-    toc;
-    btsi.sendTrigger(xp.TRIG_OFFSET_TRIAL);
-%     log.realStimTime(trl)=toc-postShiftTime;% the amount of time it takes for the animation
-    % log.shiftLatency is the amount of time it should take to run the
-    % animation.
-    Priority(0);
-end
-save(fileName, 'log')
-
-
-% Close all textures. This is not strictly needed, as
-% Screen('CloseAll') would do it anyway. However, it avoids warnings by
-% Psychtoolbox about unclosed textures. The warnings trigger if more
-% than 10 textures are open at invocation of Screen('CloseAll') and we
-% have 12 textues here:
-Screen('Close');
-
-% Close window:
-Screen('CloseAll');
-
+        btsi.sendTrigger(xp.TRIG_OFFSET_TRIAL);
+        log.setDuration(trl) = shiftLatency(trl); % set duration till shift
+        log.realDuration(trl) = t1-t0; % real (measured) duration till shift
+        Priority(0);
+    end
+    save(fileName, 'log')
+    
+    
+    % Close all textures. This is not strictly needed, as
+    % Screen('CloseAll') would do it anyway. However, it avoids warnings by
+    % Psychtoolbox about unclosed textures. The warnings trigger if more
+    % than 10 textures are open at invocation of Screen('CloseAll') and we
+    % have 12 textues here:
+    Screen('Close');
+    
+    % Close window:
+    Screen('CloseAll');
+    
 catch
     %this "catch" section executes in case of an error in the "try" section
     %above.  Importantly, it closes the onscreen window if its open.
