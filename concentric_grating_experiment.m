@@ -1,4 +1,4 @@
-function concentric_grating_experiment(fileName, isLive)
+function concentric_grating_experiment(fileName, isLive, language)
 % This function is copied from DriftDemo and modified to display a (masked)
 % animated concentric grating moving inward. At random time points, the
 % grating will make a 180 degree phase shift, which has to be reported by
@@ -47,6 +47,8 @@ function concentric_grating_experiment(fileName, isLive)
 %   timingwise
 % 2/8/2016: changed Bitsi comport for Linux compatibility; rounded nFrames
 %   for blink and baseline period.
+% 10/8/2016: introduce blocks, introduce baseline jitter 1-1.5sec
+% 11/8/2016: introduce instructions in english/dutch
 
 %% Function settings
 
@@ -67,6 +69,14 @@ if isempty(isLive)
     isLive = 0;
 end
 
+if nargin<3
+    language = 'nl';
+end
+
+if isempty(language)
+    language = 'nl';
+end
+
 try
     %% Standard PTB settings
     % This script calls Psychtoolbox commands available only in OpenGL-
@@ -85,7 +95,7 @@ try
     if isLive
         screenNo=max(screens);
     else
-        screenNo=1;
+        screenNo=0;
     end
     
     % Find the color values which correspond to white and black: Usually
@@ -170,8 +180,12 @@ try
     gratingSize = 2*gratingRadius; % to prevent consistency errors, redifine gratingSize
     rLocation = round(visualAngleLocation*screen.pixPerDeg/2);
     
-    instructions = 'Instructions \n\n Fixate at the middle of the screen. \n\n Press the button if you see a flash in the animation';
-    nTrialsPerCondition = 150;
+    if strcmp(language, 'en')
+        instructions = 'INSTRUCTIONS \n\n Fixate at the dot in the middle of the screen. \n\n Press the button as quickly as possible when you see a flash in the animation. \n\n Please use the time when the fixation dot is green to blink your eyes.';
+    elseif strcmp(language, 'nl')
+        instructions = 'INSTRUCTIES \n\n Fixeer op de stip in het midden van het scherm. \n\n Druk zo snel mogelijk op de knop als je een flits in de animatie ziet. \n\n Gebruik alsjeblieft de tijd tijdens het groene fixatiepunt om met je ogen te knipperen.';
+    end
+    nTrialsPerCondition = 200;
     nConditions=3;
     nTrials=nConditions*nTrialsPerCondition;
     conditions = [-ones(nTrialsPerCondition,1); zeros(nTrialsPerCondition,1);...
@@ -179,7 +193,7 @@ try
     conditions = conditions(randperm(size(conditions,1)),:); % shuffle conditions
     chanceNoShift = 0.1; % in 20% of the trials, have no shift.
     blinkTime = 1;
-    baselineTime = 1;
+    baselineTime = 1+0.5*rand(nTrials,1);
     preStimTime = blinkTime + baselineTime; % fixation, baseline period
     preShiftTime=1; % cue can come 1 seconds after start trial
     shiftRange = 2; % present the shift at random in 2 seconds
@@ -247,7 +261,8 @@ try
     space = KbName('space');
     
     %% Start Experiment
-    
+    blockLength = 60;
+    firstOfBlock = blockLength+1:blockLength:nTrials;
     % Run the movie animation for a variable period: end it 0.75 seconds
     % after phase shift.
     movieDurationSecs=shiftLatency+postShiftTime;
@@ -267,6 +282,18 @@ try
             Screen('Flip', window);
             KbWait; % wait until key is pressed
             pause(0.5)
+        elseif ismember(iTrl, firstOfBlock)
+            iBlok = find(iTrl==firstOfBlock)+1;
+            pause(0.5)
+            Screen('FillRect', window, gray);
+            if strcmp(language, 'en')
+                DrawFormattedText(window, sprintf('Let the experimentor know that you are ready \n for the next block \n block %d of 10', iBlok), 'center', 'center', white, [], [], [], 1.3);
+            elseif strcmp(language, 'nl')
+                DrawFormattedText(window, sprintf('Geef bij de experimentator aan dat je \n klaar bent voor het volgende blok \n blok %d van 10', iBlok), 'center', 'center', white, [], [], [], 1.3);
+            end
+            Screen('Flip', window);
+            KbWait; % wait until key is pressed
+            pause(0.5);
         end
         frameTexId=mod(0:(nFramesTotal(iTrl)-1), nFramesInCycle) + 1; %assign the right texture index to each frame
         
@@ -291,7 +318,7 @@ try
             log.PTBtiming.blink.Beampos{iTrl}(jFrame) = Beampos;
         end
         
-        nBaselineFrames = round(baselineTime/ifi);
+        nBaselineFrames = round(baselineTime(iTrl)/ifi);
         t01 = GetSecs - t00;
         for jFrame = 1:nBaselineFrames
             Screen('DrawDots', window, [xCenter yCenter], 20, [255 0 0], [], 2);
@@ -418,9 +445,9 @@ try
         
         log.setBlinkDuration = blinkTime;
         log.realBlinkDuration = t01;
-        log.setBaselineDuration = baselineTime;
+        log.setBaselineDuration(iTrl) = baselineTime(iTrl);
         log.realBaselineDuration = t02-t01;
-        log.setPreStimDuration = preStimTime;
+        log.setPreStimDuration = preStimTime(iTrl);
         log.realPreStimDuration = t02;
         log.setShiftframe(iTrl) = shiftFrame(iTrl); % set frame that shifts after grating onset
         log.setDuration(iTrl) = shiftLatency(iTrl); % set duration till shift
