@@ -1,23 +1,17 @@
-function concentric_grating_experiment(fileName, isLive, language)
+function concentric_grating_experiment(fileName, isLive, language, includePeriStim)
 % This function is copied from DriftDemo and modified to display a (masked)
 % animated concentric grating moving inward. At random time points, the
 % grating will make a 180 degree phase shift, which has to be reported by
 % the subject by a button press. 10% of the trials have no phase shift.
-
-% NOTE: costs a lot of memory because all images are made individually
-
-% _________________________________________________________________________
 %
-% This is a very simple, bare bones demo on how to do frame animation. For
-% much more efficient ways to draw gratings and gabors, have a look at
-% DriftDemo2, DriftDemo3, DriftDemo4, ProceduralGaborDemo, GarboriumDemo,
-% ProceduralGarboriumDemo and DriftWaitDemo.
-
-% NOTE: DriftDemo2 is more efficient because only one texture is
-% generated, which is moved every frame to create the illusion of movement.
-% However, this is not possible for a concentric grating, so every frame a
-% new texture has to be generated.
-% _________________________________________________________________________
+% NOTE: costs a lot of memory because all images are made individually
+%
+%
+% usage: filename = '', default 'test'
+% isLive = 0 (work pc, default), 1 (stimulus pc)
+% language = 'en' (english), 'nl' (dutch, default)
+% includePeriStim = 0 (only central stimuli, default), 1 (include stimuli
+%   in periphery)
 
 % HISTORY
 % 7/6/2016: change grating to concentric grating
@@ -53,6 +47,12 @@ function concentric_grating_experiment(fileName, isLive, language)
 % 18/8/2016: disable logging of the response. Performance can be checked
 %   with triggers in MEG data. checking for response dysfunctional because it
 %    has to wait for responses.
+% 13/9/2016: create option for inclusion of peripheral stimuli or only
+%   central stimuli. Remove abundant/not used code (only record responses in
+%   work pc, in MEG recordings there will be triggers). bugfix
+%   driftfrequency (didn't cause problems in previous versions because it
+%   was equal to 1.
+
 %% Function settings
 
 
@@ -78,6 +78,14 @@ end
 
 if isempty(language)
     language = 'nl';
+end
+
+if nargin<4
+    includePeriStim = false;
+end
+
+if isempty(includePeriStim)
+    includePeriStim = false;
 end
 
 try
@@ -136,9 +144,7 @@ try
     % Set up alpha-blending for smooth (anti-aliased) lines
     Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     
-    
     HideCursor;
-    
     
     %% Trigger settings
     if isLive
@@ -158,7 +164,7 @@ try
     escape = KbName('ESCAPE');
     space = KbName('space');
     
-    log=[]; %save trial latencies, response and response time
+    log=[]; % save trial latencies and conditions
     
     %% Experimental settings
     % calculate the size of the stimulus according to the used setup
@@ -188,11 +194,18 @@ try
     elseif strcmp(language, 'nl')
         instructions = 'INSTRUCTIES \n\n Fixeer op de stip in het midden van het scherm. \n\n Druk zo snel mogelijk op de knop als je een flits in de animatie ziet. \n\n Gebruik alsjeblieft de tijd tijdens het groene fixatiepunt om met je ogen te knipperen.';
     end
-    nTrialsPerCondition = 200;
-    nConditions=3;
-    nTrials=nConditions*nTrialsPerCondition;
-    conditions = [-ones(nTrialsPerCondition,1); zeros(nTrialsPerCondition,1);...
-        ones(nTrialsPerCondition,1)];
+    if includePeriStim
+        nTrialsPerCondition = 200;
+        nConditions=3;
+        nTrials=nConditions*nTrialsPerCondition;
+        conditions = [-ones(nTrialsPerCondition,1); zeros(nTrialsPerCondition,1);...
+            ones(nTrialsPerCondition,1)];
+    else
+        nTrialsPerCondition = 480;
+        nConditions=1;
+        nTrials=nConditions*nTrialsPerCondition;
+        conditions = zeros(nTrialsPerCondition,1);
+    end
     conditions = conditions(randperm(size(conditions,1)),:); % shuffle conditions
     chanceNoShift = 0.1; % in 20% of the trials, have no shift.
     blinkTime = 1;
@@ -201,9 +214,9 @@ try
     preShiftTime=1; % cue can come 1 seconds after start trial
     shiftRange = 2; % present the shift at random in 2 seconds
     postShiftTime = 0.75; % keep animation going 1 seconds after shift
-    driftFreq = 1; % in one second, every pixel of the grating completes one cylce (black-white-black)
+    driftFreq = 2; % in one second, every pixel of the grating completes two cylces (black-white-black)
     maxRespTime = 0.7; % maximum response time after shift
-    nFramesInCycle=round(driftFreq/ifi); % temporal period, in frames, of the drifting grating
+    nFramesInCycle=round((1/driftFreq)/ifi); % temporal period, in frames, of the drifting grating
     
     % settings grating
     [x,y]=meshgrid(-gratingRadius:gratingRadius,-gratingRadius:gratingRadius);
@@ -229,13 +242,13 @@ try
     tex=zeros(nFramesInCycle,1);
     
     for jFrame=1:nFramesInCycle
-        phase=(jFrame/nFramesInCycle)*2*pi; %change the phase of the grating according to the framenumber
-        m=sin(sqrt(x.^2+y.^2) / f + phase);
+        phase=(jFrame/nFramesInCycle)*2*pi; % change the phase of the grating according to the framenumber
+        m=sin(sqrt(x.^2+y.^2) / f + phase); % formula sinusoidal
         grating = (w2D.*(inc*m)+gray);
         % inc*m fluctuates from [-gray, gray]. Multiply this with the
         % hanning mask to let the grating die off at 0. Now add gray to let
         % the grating fluctuate from [black, white], converging at gray.
-        tex(jFrame)=Screen('MakeTexture', window, grating); % multiply mask with grating
+        tex(jFrame)=Screen('MakeTexture', window, grating);
     end
     
     % set location gratings
@@ -371,11 +384,6 @@ try
                 [], position);
             Screen('DrawDots', window, [xCenter yCenter], 20, [255 0 0], [], 2);
             
-            % NOTE
-            % Show it at next display vertical retrace. Please check DriftDemo2
-            % and later, as well as DriftWaitDemo for much better approaches to
-            % guarantee a robust and constant animation display timing! This is
-            % very basic and not best practice!
             [VBLTimestamp StimulusOnsetTime FlipTimestamp Missed Beampos] = Screen('Flip', window, VBLTimestamp + (waitframes - 0.5) * ifi);
             if jFrame==1
                 btsi.sendTrigger(xp.TRIG_ONSET_GRATING);
@@ -408,31 +416,10 @@ try
                 sca;
                 Screen('CloseAll')
             end
-           %{
+            
             isWithinResponseTime = (jFrame/frameRate<(shiftLatency(iTrl)...
                 + maxRespTime));
-            
-            if isLive
-                
-                [resp, secs] = btsi.getResponse(0.0001, true);
-                % ...getResponse(x,[]), x should be as small as possible,
-                % because this step will wait maximal x seconds or until
-                % there is a response.
-                if resp == 'd' ...% right red button down event (left button down event is 'h')
-                        && ~flag.prevResp && isWithinResponseTime % no previous response and within response time
-                    if jFrame>shiftFrame(iTrl) % response only correct after shift
-                        log.response(iTrl) = 1;
-                        log.responseTime(iTrl) = secs-t1;
-                    else % response before shift: incorrect trial
-                        log.response(iTrl) = 2;
-                        log.responseTime(iTrl) = 0;
-                    end
-                elseif jFrame==nFramesTotal(iTrl) && ~flag.prevResp
-                    log.response(iTrl) = 0;
-                    log.responseTime(iTrl)=0;
-                end
-                
-            else
+            if ~isLive
                 [~, secs, keyCode] = KbCheck(-3);
                 if keyCode(space) && ~flag.prevResp &&  isWithinResponseTime % no previous response and within response time
                     if jFrame>shiftFrame(iTrl) % response only correct after shift
@@ -447,7 +434,7 @@ try
                     log.responseTime(iTrl)=0;
                 end
             end % stop looking for user input
-              %}  
+
         end % end frame presentation
         
         log.setBlinkDuration = blinkTime;
