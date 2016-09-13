@@ -45,6 +45,8 @@ function concentric_grating_experiment(fileName, isLive)
 % 25/7/2016: reversed screen flip and send trigger
 % 25/7/2016: added timing info, made prestimulus interval more accurate,
 %   timingwise
+% 2/8/2016: changed Bitsi comport for Linux compatibility; rounded nFrames
+%   for blink and baseline period.
 
 %% Function settings
 
@@ -127,7 +129,7 @@ try
     
     %% Trigger settings
     if isLive
-        btsi = Bitsi('com1');% when there is no com connected, use keyboard as input
+        btsi = Bitsi('/dev/ttyS0');% when there is no com connected, use keyboard as input
     else
         btsi = Bitsi('');
     end
@@ -273,26 +275,35 @@ try
         
         waitframes=1;
         % Baseline period, gray screen with fixation dot
-        nBlinkFrames = blinkTime/ifi;
+        nBlinkFrames = round(blinkTime/ifi);
         t00=GetSecs;
-        vbl = Screen('Flip', window);
+        VBLTimestamp = Screen('Flip', window);
         for jFrame = 1:nBlinkFrames
             Screen('DrawDots', window, [xCenter yCenter], 20, [127 255 0], [], 2);
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+            [VBLTimestamp, StimulusOnsetTime, FlipTimestamp, Missed, Beampos] = Screen('Flip', window, VBLTimestamp + (waitframes - 0.5) * ifi);
             if jFrame==1
                 btsi.sendTrigger(xp.TRIG_ONSET_BLINK);
             end
+            log.PTBtiming.blink.vblTimestamp{iTrl}(jFrame) = VBLTimestamp;
+            log.PTBtiming.blink.StimulusOnsetTime{iTrl}(jFrame) = StimulusOnsetTime;
+            log.PTBtiming.blink.FlipTimestamp{iTrl}(jFrame) = FlipTimestamp;
+            log.PTBtiming.blink.missedDeadline{iTrl}(jFrame) = Missed;
+            log.PTBtiming.blink.Beampos{iTrl}(jFrame) = Beampos;
         end
         
-        nBaselineFrames = baselineTime/ifi;
+        nBaselineFrames = round(baselineTime/ifi);
         t01 = GetSecs - t00;
-        vbl = Screen('Flip', window);
         for jFrame = 1:nBaselineFrames
             Screen('DrawDots', window, [xCenter yCenter], 20, [255 0 0], [], 2);
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+            [VBLTimestamp, StimulusOnsetTime, FlipTimestamp, Missed, Beampos] = Screen('Flip', window, VBLTimestamp + (waitframes - 0.5) * ifi);
             if jFrame==1
                 btsi.sendTrigger(xp.TRIG_ONSET_BASELINE);
             end
+            log.PTBtiming.baseline.vblTimestamp{iTrl}(jFrame) = VBLTimestamp;
+            log.PTBtiming.baseline.StimulusOnsetTime{iTrl}(jFrame) = StimulusOnsetTime;
+            log.PTBtiming.baseline.FlipTimestamp{iTrl}(jFrame) = FlipTimestamp;
+            log.PTBtiming.baseline.missedDeadline{iTrl}(jFrame) = Missed;
+            log.PTBtiming.baseline.Beampos{iTrl}(jFrame) = Beampos;
         end
         t02 = GetSecs-t00;
         
@@ -335,7 +346,7 @@ try
             % and later, as well as DriftWaitDemo for much better approaches to
             % guarantee a robust and constant animation display timing! This is
             % very basic and not best practice!
-            [VBLTimestamp StimulusOnsetTime FlipTimestamp Missed Beampos] = Screen('Flip', window);
+            [VBLTimestamp StimulusOnsetTime FlipTimestamp Missed Beampos] = Screen('Flip', window, VBLTimestamp + (waitframes - 0.5) * ifi);
             if jFrame==1
                 btsi.sendTrigger(xp.TRIG_ONSET_GRATING);
             end
@@ -343,13 +354,13 @@ try
                 btsi.sendTrigger(xp.TRIG_SHIFT);
             end
             
-            log.PTBtiming.vblTimestamp{iTrl}(jFrame) = VBLTimestamp;
-            log.PTBtiming.StimulusOnsetTime{iTrl}(jFrame) = StimulusOnsetTime;
-            log.PTBtiming.FlipTimestamp{iTrl}(jFrame) = FlipTimestamp;
-            log.PTBtiming.missedDeadline{iTrl}(jFrame) = Missed;
-            log.PTBtiming.Beampos{iTrl}(jFrame) = Beampos;
-            log.PTBtiming.flipExecution_duration{iTrl}(jFrame) = FlipTimestamp-VBLTimestamp; % estimate of how long Flip execution takes.
-            log.PTBtiming.flipFinishToStimOnset{iTrl}(jFrame) = FlipTimestamp-StimulusOnsetTime; % difference between finish of Flip and estimated stimulus-onset
+            log.PTBtiming.grating.vblTimestamp{iTrl}(jFrame) = VBLTimestamp;
+            log.PTBtiming.grating.StimulusOnsetTime{iTrl}(jFrame) = StimulusOnsetTime;
+            log.PTBtiming.grating.FlipTimestamp{iTrl}(jFrame) = FlipTimestamp;
+            log.PTBtiming.grating.missedDeadline{iTrl}(jFrame) = Missed;
+            log.PTBtiming.grating.Beampos{iTrl}(jFrame) = Beampos;
+            log.PTBtiming.grating.flipExecution_duration{iTrl}(jFrame) = FlipTimestamp-VBLTimestamp; % estimate of how long Flip execution takes.
+            log.PTBtiming.grating.flipFinishToStimOnset{iTrl}(jFrame) = FlipTimestamp-StimulusOnsetTime; % difference between finish of Flip and estimated stimulus-onset
             
             %% Save response
             
@@ -415,7 +426,7 @@ try
         log.setDuration(iTrl) = shiftLatency(iTrl); % set duration till shift
         log.realDuration(iTrl) = t1-t0; % real (measured) duration till shift
         log.completeDurationGrating(iTrl) = shiftLatency(iTrl) + postShiftTime;
-
+        
         
     end % end trial
     save(fileName, 'log')
