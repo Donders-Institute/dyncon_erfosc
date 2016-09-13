@@ -41,6 +41,10 @@ function concentric_grating_experiment(fileName, isLive)
 % 22/6/2016: introduce Bitsi responses, solve bugs in saving responses.
 % 23/6/2016: changed naming convention
 % 28/6/2016: deleted offset trigger, edited bitsi button response
+% 5/7/2016: introduce blink period
+% 25/7/2016: reversed screen flip and send trigger
+% 25/7/2016: added timing info, made prestimulus interval more accurate,
+%   timingwise
 
 %% Function settings
 
@@ -65,8 +69,8 @@ try
     %% Standard PTB settings
     % This script calls Psychtoolbox commands available only in OpenGL-
     % based versions of the Psychtoolbox. (So far, the OS X Psychtoolbox is
-    % the only OpenGL-base Psychtoolbox.)  The Psychtoolbox command 
-    % AssertPsychOpenGL will issue an error message if someone tries to 
+    % the only OpenGL-base Psychtoolbox.)  The Psychtoolbox command
+    % AssertPsychOpenGL will issue an error message if someone tries to
     % execute this script on a computer without an OpenGL Psychtoolbox
     AssertOpenGL;
     
@@ -128,6 +132,9 @@ try
         btsi = Bitsi('');
     end
     
+    btsi.sendTrigger(0);
+    btsi.sendTrigger(1);
+    btsi.sendTrigger(1);
     xp = expconstants();
     
     %% Input settings
@@ -141,7 +148,7 @@ try
     %% Experimental settings
     % calculate the size of the stimulus according to the used setup
     if isLive
-        screen.width = 52; %MEG screenwidth in cm
+        screen.width = 48; %MEG screenwidth in cm
         screen.viewingDistance = 76; % in cm
     else
         screen.width = 52;%desktop screenwidth in cm
@@ -153,9 +160,9 @@ try
     screen.totVisDeg = 2*atan(screen.width/(2*screen.viewingDistance))*(180/pi); % formula for calculating visual degrees
     screen.pixPerDeg = screen.resolutionX/screen.totVisDeg;
     
-    visualAngleGrating = 12.5;
+    visualAngleGrating = 10;
     visualAngleLocation = 15;
-    gratingSize = visualAngleGrating*screen.pixPerDeg; % calculate how big 
+    gratingSize = visualAngleGrating*screen.pixPerDeg; % calculate how big
     % the grating should be (can not be rounded off, might result in odd integer)
     gratingRadius = round(gratingSize/2); % the grating can only exist of integers, so round
     gratingSize = 2*gratingRadius; % to prevent consistency errors, redifine gratingSize
@@ -168,9 +175,10 @@ try
     conditions = [-ones(nTrialsPerCondition,1); zeros(nTrialsPerCondition,1);...
         ones(nTrialsPerCondition,1)];
     conditions = conditions(randperm(size(conditions,1)),:); % shuffle conditions
-    
     chanceNoShift = 0.1; % in 20% of the trials, have no shift.
-    preStimTime=1.5; % fixation, baseline period
+    blinkTime = 1;
+    baselineTime = 1;
+    preStimTime = blinkTime + baselineTime; % fixation, baseline period
     preShiftTime=1; % cue can come 1 seconds after start trial
     shiftRange = 2; % present the shift at random in 2 seconds
     postShiftTime = 0.75; % keep animation going 1 seconds after shift
@@ -238,12 +246,16 @@ try
     
     %% Start Experiment
     
-    % Run the movie animation for a variable period: end it 1.5 seconds
+    % Run the movie animation for a variable period: end it 0.75 seconds
     % after phase shift.
     movieDurationSecs=shiftLatency+postShiftTime;
     % Convert movieDuration in seconds to duration in frames to draw:
     nFramesTotal=round(movieDurationSecs * frameRate);
     % assign the right texture indices to frames
+    % Use realtime priority for better timing precision:
+    priorityLevel=MaxPriority(window);
+    Priority(priorityLevel);
+    
     for iTrl=1:nTrials
         if iTrl==1
             % Provide instructions at the beginning of the experiment
@@ -257,23 +269,36 @@ try
         frameTexId=mod(0:(nFramesTotal(iTrl)-1), nFramesInCycle) + 1; %assign the right texture index to each frame
         
         position = CenterRectOnPointd(gratingDim, gratingXpos(iTrl), ...
-                    gratingYpos(iTrl)); %move the object of size gratingDim to those coordinates
+            gratingYpos(iTrl)); %move the object of size gratingDim to those coordinates
         
-        
-        % Use realtime priority for better timing precision:
-        priorityLevel=MaxPriority(window);
-        Priority(priorityLevel);
-        
+        waitframes=1;
         % Baseline period, gray screen with fixation dot
-        Screen('DrawDots', window, [xCenter yCenter], 20, [255 0 0], [], 2);
-        btsi.sendTrigger(xp.TRIG_ONSET_TRIAL);
-        Screen('Flip', window)
-        pause(preStimTime)
+        nBlinkFrames = blinkTime/ifi;
+        t00=GetSecs;
+        vbl = Screen('Flip', window);
+        for jFrame = 1:nBlinkFrames
+            Screen('DrawDots', window, [xCenter yCenter], 20, [127 255 0], [], 2);
+            vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+            if jFrame==1
+                btsi.sendTrigger(xp.TRIG_ONSET_BLINK);
+            end
+        end
+        
+        nBaselineFrames = baselineTime/ifi;
+        t01 = GetSecs - t00;
+        vbl = Screen('Flip', window);
+        for jFrame = 1:nBaselineFrames
+            Screen('DrawDots', window, [xCenter yCenter], 20, [255 0 0], [], 2);
+            vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+            if jFrame==1
+                btsi.sendTrigger(xp.TRIG_ONSET_BASELINE);
+            end
+        end
+        t02 = GetSecs-t00;
         
         [~, ~, keyCode] = KbCheck(-3); % all keyCodes should be zero at start of trial.
         flag.prevResp=0; % reset flag
         btsi.clearResponses(); % reset Bitsi response
-        btsi.sendTrigger(xp.TRIG_ONSET_GRATING);
         t0= GetSecs; % time onset grating
         
         % Animation loop:
@@ -310,12 +335,21 @@ try
             % and later, as well as DriftWaitDemo for much better approaches to
             % guarantee a robust and constant animation display timing! This is
             % very basic and not best practice!
-            
+            [VBLTimestamp StimulusOnsetTime FlipTimestamp Missed Beampos] = Screen('Flip', window);
+            if jFrame==1
+                btsi.sendTrigger(xp.TRIG_ONSET_GRATING);
+            end
             if isShiftFrame;
                 btsi.sendTrigger(xp.TRIG_SHIFT);
             end
-            Screen('Flip', window); %% Flipping the screen takes up to 30ms every frame.. 1.8s every cycle..
             
+            log.PTBtiming.vblTimestamp{iTrl}(jFrame) = VBLTimestamp;
+            log.PTBtiming.StimulusOnsetTime{iTrl}(jFrame) = StimulusOnsetTime;
+            log.PTBtiming.FlipTimestamp{iTrl}(jFrame) = FlipTimestamp;
+            log.PTBtiming.missedDeadline{iTrl}(jFrame) = Missed;
+            log.PTBtiming.Beampos{iTrl}(jFrame) = Beampos;
+            log.PTBtiming.flipExecution_duration{iTrl}(jFrame) = FlipTimestamp-VBLTimestamp; % estimate of how long Flip execution takes.
+            log.PTBtiming.flipFinishToStimOnset{iTrl}(jFrame) = FlipTimestamp-StimulusOnsetTime; % difference between finish of Flip and estimated stimulus-onset
             
             %% Save response
             
@@ -335,7 +369,7 @@ try
             end
             
             isWithinResponseTime = (jFrame/frameRate<(shiftLatency(iTrl)...
-                                   + maxRespTime));
+                + maxRespTime));
             if isLive
                 [resp, secs] = btsi.getResponse(0.0001, true);
                 % ...getResponse(x,[]), x should be as small as possible,
@@ -370,14 +404,23 @@ try
                 end
             end % stop looking for user input
         end % end frame presentation
+        
+        log.setBlinkDuration = blinkTime;
+        log.realBlinkDuration = t01;
+        log.setBaselineDuration = baselineTime;
+        log.realBaselineDuration = t02-t01;
+        log.setPreStimDuration = preStimTime;
+        log.realPreStimDuration = t02;
+        log.setShiftframe(iTrl) = shiftFrame(iTrl); % set frame that shifts after grating onset
         log.setDuration(iTrl) = shiftLatency(iTrl); % set duration till shift
         log.realDuration(iTrl) = t1-t0; % real (measured) duration till shift
-        log.completeDuration(iTrl) = shiftLatency(iTrl) + postShiftTime;
-        Priority(0);
+        log.completeDurationGrating(iTrl) = shiftLatency(iTrl) + postShiftTime;
+
+        
     end % end trial
     save(fileName, 'log')
     
-    
+    Priority(0);
     % Close all textures. This is not strictly needed, as
     % Screen('CloseAll') would do it anyway. However, it avoids warnings by
     % Psychtoolbox about unclosed textures. The warnings trigger if more
@@ -387,6 +430,10 @@ try
     
     % Close window:
     Screen('CloseAll');
+    
+    btsi.sendTrigger(0);
+    btsi.sendTrigger(1);
+    btsi.sendTrigger(30);
     
 catch
     %this "catch" section executes in case of an error in the "try" section
