@@ -49,7 +49,10 @@ function concentric_grating_experiment(fileName, isLive, language)
 %   for blink and baseline period.
 % 10/8/2016: introduce blocks, introduce baseline jitter 1-1.5sec
 % 11/8/2016: introduce instructions in english/dutch
-
+% 18/8/2016: bugfixes
+% 18/8/2016: disable logging of the response. Performance can be checked
+%   with triggers in MEG data. checking for response dysfunctional because it
+%    has to wait for responses.
 %% Function settings
 
 
@@ -405,10 +408,12 @@ try
                 sca;
                 Screen('CloseAll')
             end
-            
+           %{
             isWithinResponseTime = (jFrame/frameRate<(shiftLatency(iTrl)...
                 + maxRespTime));
+            
             if isLive
+                
                 [resp, secs] = btsi.getResponse(0.0001, true);
                 % ...getResponse(x,[]), x should be as small as possible,
                 % because this step will wait maximal x seconds or until
@@ -426,6 +431,7 @@ try
                     log.response(iTrl) = 0;
                     log.responseTime(iTrl)=0;
                 end
+                
             else
                 [~, secs, keyCode] = KbCheck(-3);
                 if keyCode(space) && ~flag.prevResp &&  isWithinResponseTime % no previous response and within response time
@@ -441,14 +447,15 @@ try
                     log.responseTime(iTrl)=0;
                 end
             end % stop looking for user input
+              %}  
         end % end frame presentation
         
         log.setBlinkDuration = blinkTime;
-        log.realBlinkDuration = t01;
+        log.realBlinkDuration(iTrl) = t01;
         log.setBaselineDuration(iTrl) = baselineTime(iTrl);
-        log.realBaselineDuration = t02-t01;
-        log.setPreStimDuration = preStimTime(iTrl);
-        log.realPreStimDuration = t02;
+        log.realBaselineDuration(iTrl) = t02-t01;
+        log.setPreStimDuration(iTrl) = preStimTime(iTrl);
+        log.realPreStimDuration(iTrl) = t02;
         log.setShiftframe(iTrl) = shiftFrame(iTrl); % set frame that shifts after grating onset
         log.setDuration(iTrl) = shiftLatency(iTrl); % set duration till shift
         log.realDuration(iTrl) = t1-t0; % real (measured) duration till shift
