@@ -24,8 +24,12 @@ function concentric_grating_experiment(fileName, isLive, drawMask)
 % 8/6/2016: add circular and gaussian mask, introduce phase-shift
 % 9/6/2016: make trials, introduce baseline period
 % 10/6/2016: add no shift trials
+% 15/5/2016: change background color
+% 16/6/2016: edit Gaussian mask, add (rectangular) hanning mask
 
 %% Function settings
+
+
 if nargin<1
     fileName = 'test';
 end
@@ -50,7 +54,7 @@ if isempty(drawMask)
     drawMask = 1;
 end
 try
-    
+    Screen('Preference', 'SkipSyncTests', 1); % THIS REMOVES THE SYNCHRONIZATION CHECK! REMOVE BEFORE EXPERIMENT
     %% Standard PTB settings
     % This script calls Psychtoolbox commands available only in OpenGL-based
     % versions of the Psychtoolbox. (So far, the OS X Psychtoolbox is the
@@ -165,7 +169,8 @@ try
     R = gratingRadius ; % radius
     M = zeros(2*gratingRadius+1, 2*gratingRadius+1, 1); %zero matrix same size as the grid
     M(:,:,1) = sqrt(x.^2 + y.^2) < R ; %disk formula: all masked parts of the grid must be zero.
-    
+
+
     % Generate grating texture
     % Compute each frame of the movie and convert those frames stored in
     % MATLAB matrices, into Psychtoolbox OpenGL textures using 'MakeTexture';
@@ -175,13 +180,28 @@ try
     for i=1:numFrames
         phase=(i/numFrames)*2*pi; %change the phase of the grating according to the framenumber
         m=sin(sqrt(x.^2+y.^2) / f + phase);
-        tex(i)=Screen('MakeTexture', window, M.*(gray+inc*m)); % multiply mask with grating
-        tex(i)=Screen('MakeTexture', window, M.*(gray+inc*m));
+        grating = gray+inc*m;
+        blackMask = M.*grating; %multiply the mask (M) with the grating. this mask is black, we want a gray mask
+        grayMask = blackMask;
+        grayMask(grayMask==0)=gray; % replace all black values by gray
+        tex(i)=Screen('MakeTexture', window, grayMask); % multiply mask with grating
     end
     
-    % make hanning mask
-    mask=ones(2*gratingRadius+1, 2*gratingRadius+1, 2) * gray;
-    mask(:, :, 2)=white * (1 - exp(-((x/300).^2)-((y/300).^2)));
+    % make hanning/gaussian mask
+    mask=ones(2*gratingRadius+1, 2*gratingRadius+1, 2) * white;
+    mask(:,:,1) = sqrt(x.^2 + y.^2) < R ;
+%     mask(:, :, 2)=white * (1 - 0.5*exp(-((x/120).^2)-((y/120).^2))); % Gaussian going down to gray (for black remove 0.5*)
+    for n=1:2*gratingRadius+1
+    mask(:,n,2) = hann(2* gratingRadius+1); % apply 1D hanning over the columns
+    end
+    mask(:,:,2) = gray*mask(:,:,1).* ( 1 - (mask(:,:,2).*mask(:,:,2)')); % multiply with 
+    % inverse to apply hanning window to rows as well. Invert (1-hanning) 
+    % to get lowest value in centre. Multiply with white to get the right colorscale. 
+    %______________________________________________________________________
+    % NOTE: This Hanning window is rectangular, not circular! That is why
+    % the window is multiplied with a circular mask (mask(:,:,1))
+    %______________________________________________________________________
+    
     masktex=Screen('MakeTexture', window, mask);
     
     shiftPoint = ((preShiftTime+shiftRange)-preShiftTime).*rand(ntrials,1) + preShiftTime;
@@ -248,7 +268,7 @@ try
             
             % Draw the appropriate image
             Screen('DrawTexture', window, tex(movieFrameIndices(i) + shift));
-            
+ 
             % Draw the Gaussian mask if required
             if drawMask
                 Screen('DrawTexture', window, masktex);
