@@ -27,6 +27,8 @@ function concentric_grating_experiment(fileName, isLive, drawMask)
 % 15/5/2016: change background color
 % 16/6/2016: edit Gaussian mask, add (rectangular) hanning mask
 % 16/6/2016: add circular hanning mask
+% 17/6/2016: debugged circular hanning mask and response buttons
+% 20/6/2016: change location to lower visual field, left and right.
 
 %% Function settings
 
@@ -55,7 +57,7 @@ if isempty(drawMask)
     drawMask = 1;
 end
 try
-    Screen('Preference', 'SkipSyncTests', 1); % THIS REMOVES THE SYNCHRONIZATION CHECK! REMOVE BEFORE EXPERIMENT
+%     Screen('Preference', 'SkipSyncTests', 1); % THIS REMOVES THE SYNCHRONIZATION CHECK! REMOVE BEFORE EXPERIMENT
     %% Standard PTB settings
     % This script calls Psychtoolbox commands available only in OpenGL-based
     % versions of the Psychtoolbox. (So far, the OS X Psychtoolbox is the
@@ -73,7 +75,7 @@ try
     if isLive
         screenNumber=max(screens);
     else
-        screenNumber=2;
+        screenNumber=1;
     end
     
     % Find the color values which correspond to white and black: Usually
@@ -111,8 +113,9 @@ try
     % Set up alpha-blending for smooth (anti-aliased) lines
     Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     
-    %     HideCursor;
-    
+    if isLive
+        HideCursor;
+    end
     
     %% Trigger settings
     if isLive
@@ -128,6 +131,8 @@ try
     KbName('UnifyKeyNames'); % converts operating specific keynames to universal keyname
     escape = KbName('ESCAPE');
     space = KbName('space');
+    
+    log=[]; %safe shift onset, response and response time
     
     %% Experimental settings
     % calculate the size of the stimulus according to the used setup
@@ -153,9 +158,9 @@ try
     ntrials=200;
     chanceNoShift = 0.2; % in 20% of the trials, have no shift.
     preStimTime=2; % fixation, baseline period
-    preShiftTime=1.5; % cue can come 1.5 seconds after start trial
+    preShiftTime=1; % cue can come 1.5 seconds after start trial
     shiftRange = 5; % present the shift at random in 5 seconds
-    postShiftTime = 1.5; % keep animation going 1.5 seconds after shift
+    postShiftTime = 2; % keep animation going 1.5 seconds after shift
     driftFreq = 1; % in one second, every pixel of the grating completes one cylce (black-white-black)
     numFrames=round(driftFreq/ifi); % temporal period, in frames, of the drifting grating
     
@@ -163,7 +168,6 @@ try
     [x,y]=meshgrid(-gratingRadius:gratingRadius,-gratingRadius:gratingRadius);
     f=1.5*2*pi; % cycles/pixel
     
-    keyPress = zeros(ntrials,4); %safe shift onset, response and response time
     
     %% Generate stimulus
     % generate a mask to cover the edges of the grating, making it a circle
@@ -199,8 +203,13 @@ try
         % outside the circle the same color as the background (gray)
         tex(i)=Screen('MakeTexture', window, grating); % multiply mask with grating
     end
-       
-    
+    gratingDim = [0 0 2*gratingRadius 2*gratingRadius];
+    gratingYpos = yCenter+gratingRadius;
+    Xpos = rand(ntrials,1);
+    Xpos(Xpos<=0.5)=-1; % present left
+    Xpos(Xpos>0.5)=1; % present right
+    log.Xpos = Xpos;
+    gratingXpos = xCenter+Xpos*1.5*gratingRadius;
     % _____________________________________________________________________
     % Other masks
     %{
@@ -220,12 +229,15 @@ try
     % _____________________________________________________________________
     
     shiftPoint = ((preShiftTime+shiftRange)-preShiftTime).*rand(ntrials,1) + preShiftTime;
+%     shiftPoint = 6*ones(ntrials,1);
+
     trlNoShift = sort(randperm(ntrials, ntrials*chanceNoShift)); % generate a number of random (w/o replacement) trials that won't have a phase shift
     %   shiftPoint(trlNoShift)=0; % replace the noShift trials with 0.
     %   instead, make sure that these trials won't have a shift (otherwise it
     %   also means short trial)
     shiftFrame = round(shiftPoint*frameRate);
-    keyPress(:,1)=shiftPoint;
+    log.shiftLatency=shiftPoint;
+    log.trlNoShift = trlNoShift;
     
     KbName('UnifyKeyNames'); % convert operating specific keynames to general keynames
     escape = KbName('ESCAPE');
@@ -251,7 +263,8 @@ try
         end
         movieFrameIndices=mod(0:(movieDurationFrames(trl)-1), numFrames) + 1; %assign the right image index to each frame
         
-        
+        position = CenterRectOnPointd(gratingDim, gratingXpos(trl), gratingYpos); %move the object of size gratingDim to those coordinates
+
         % Use realtime priority for better timing precision:
         priorityLevel=MaxPriority(window);
         Priority(priorityLevel);
@@ -260,13 +273,19 @@ try
         Screen('DrawDots', window, [xCenter yCenter], 20, [white white white], [], 2);
         Screen('Flip', window)
         pause(preStimTime)
-        tic % measure time
+%         tic; % measure time
         
         btsi.sendTrigger(xp.TRIG_ONSET_TRIAL);
         % Animation loop:
+        t00= GetSecs;
+        tic;
+        [~, ~, keyCode] = KbCheck(-3); % all keyCodes should be zero.
+        flag.prevResp=0;
         for i=1:movieDurationFrames(trl)
+            
             if i==shiftFrame(trl)
                 t0=GetSecs; % get time stamp at the moment of phase shift in order to calculate reaction time
+%                 timeDiff = t0-t00-shiftPoint
             end
             
             % at the moment the phase-shift should occur, jump to the texture
@@ -282,59 +301,93 @@ try
             end
             
             % Draw the appropriate image
-            Screen('DrawTexture', window, tex(movieFrameIndices(i) + shift));
-            
+            Screen('DrawTexture', window, tex(movieFrameIndices(i) + shift), [], position);
+            Screen('DrawDots', window, [xCenter yCenter], 20, [white white white], [], 2);
+
             % Draw the Gaussian mask if required
+            %{
             if drawMask
                 %                 Screen('DrawTexture', win dow, masktex);
             end
+            %}
             
             % Show it at next display vertical retrace. Please check DriftDemo2
             % and later, as well as DriftWaitDemo for much better approaches to
             % guarantee a robust and constant animation display timing! This is
             % very basic and not best practice!
+            
             if i==shiftFrame(trl);
                 btsi.sendTrigger(xp.TRIG_SHIFT);
             end
-            Screen('Flip', window);
-            [keyIsDown, secs, keyCode] = KbCheck(-3);
-            %% How to make sure only the first response is saved?
-            %             while keyCode(space)==0
-            %                 [keyIsDown, secs, keyCode] = KbCheck(-3); % check whether a button was pressed; only record first button press
-            %             end
-            if keyCode(escape) %if escape is pressed
-                save(fileName, 'keyPress', 'trlNoShift') % save the data
-                sca % close the screen
-                break % and end PTB
-            elseif keyCode(space) % if space is pressed
-                if i>=shiftFrame(trl)
-                    keyPress(trl,2)=1; % report
-                    keyPress(trl,3) = secs-t0; % report reaction time
-                else
-                    keyPress(trl,2)=2; % if space is pressed before phase shift, report it.
-                end
+%             tic
+            Screen('Flip', window); %% Flipping the screen takes up to 30ms every frame.. 1.8s every cycle..
+%             toc
+%             toc
+
+            % check whether there already was a response in a previous
+            % frame. If so, flag it so new responses won't be recorded
+            % again.
+            if keyCode(space)
+                flag.prevResp=1;
             end
-            
+            [~, secs, keyCode] = KbCheck(-3);
+            if keyCode(escape) % end the experiment
+                save(fileName, 'log');
+                sca;
+                Screen('CloseAll')
+            elseif keyCode(space) && ~flag.prevResp
+                if i>shiftFrame(trl) % response only correct after shift
+                    log.response(trl) = 1;
+                    log.responseTime(trl) = secs-t0;
+                else % response before shift: incorrect trial
+                    log.response(trl) = 2;
+                    log.responseTime(trl) = 0;
+                end
+            elseif i==shiftFrame+postShiftTime
+                log.response(trl) = 0;
+                log.responseTime(trl)=0;
+            end
+        
+     %{   
+        [keyIsDown, secs, keyCode] = KbCheck(-3);
+        %% How to make sure only the first response is saved?
+        %             while keyCode(space)==0
+        %                 [keyIsDown, secs, keyCode] = KbCheck(-3); % check whether a button was pressed; only record first button press
+        %             end
+        if keyCode(escape) %if escape is pressed
+            save(fileName, 'keyPress', 'trlNoShift') % save the data
+            sca % close the screen
+            break % and end PTB
+        elseif keyCode(space) % if space is pressed
+            if i>=shiftFrame(trl)
+                keyPress(trl,2)=1; % report
+                keyPress(trl,3) = secs-t0; % report reaction time
+            else
+                keyPress(trl,2)=2; % if space is pressed before phase shift, report it.
+            end
         end
-        btsi.sendTrigger(xp.TRIG_OFFSET_TRIAL);
-        keyPress(trl,4)=toc-postShiftTime;% the amount of time it takes for the animation
-        % keyPress(:,1) is the amount of time it should take to run the
-        % animation.
-        Priority(0);
-    end
-    save(fileName, 'keyPress', 'trlNoShift')
-    
-    
-    % Close all textures. This is not strictly needed, as
-    % Screen('CloseAll') would do it anyway. However, it avoids warnings by
-    % Psychtoolbox about unclosed textures. The warnings trigger if more
-    % than 10 textures are open at invocation of Screen('CloseAll') and we
-    % have 12 textues here:
-    Screen('Close');
-    
-    % Close window:
-    Screen('CloseAll');
-    
+        %}
+        end
+    toc;
+    btsi.sendTrigger(xp.TRIG_OFFSET_TRIAL);
+%     log.realStimTime(trl)=toc-postShiftTime;% the amount of time it takes for the animation
+    % log.shiftLatency is the amount of time it should take to run the
+    % animation.
+    Priority(0);
+end
+save(fileName, 'log')
+
+
+% Close all textures. This is not strictly needed, as
+% Screen('CloseAll') would do it anyway. However, it avoids warnings by
+% Psychtoolbox about unclosed textures. The warnings trigger if more
+% than 10 textures are open at invocation of Screen('CloseAll') and we
+% have 12 textues here:
+Screen('Close');
+
+% Close window:
+Screen('CloseAll');
+
 catch
     %this "catch" section executes in case of an error in the "try" section
     %above.  Importantly, it closes the onscreen window if its open.
