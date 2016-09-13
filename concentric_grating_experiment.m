@@ -32,7 +32,11 @@ function concentric_grating_experiment(fileName, isLive)
 % 21/6/2016: edit registereing of user input, record timing, edit locations
 %   of gratings (central, 2 peripheral) and introduce trial
 %   counterbalancing (semirandom instead of random locations)
-
+% 22/6/2016: solve bug in hanning mask. Before, only [gray, white] values
+%   were dampened, not [black, gray] values. Because the grating
+%   fluctuated around gray when the mask was applied. Now it fluctuates
+%   around 0 (it is symmetric, [-gray,gray]), and afterwards the grating is
+%   moved to the [black, white] interval.
 %% Function settings
 
 
@@ -159,7 +163,7 @@ try
     conditions = conditions(randperm(size(conditions,1)),:); % shuffle conditions
     
     chanceNoShift = 0.1; % in 20% of the trials, have no shift.
-    preStimTime=1; % fixation, baseline period
+    preStimTime=1.5; % fixation, baseline period
     preShiftTime=1; % cue can come 1 seconds after start trial
     shiftRange = 2; % present the shift at random in 5 seconds
     postShiftTime = 1; % keep animation going 1.5 seconds after shift
@@ -181,9 +185,8 @@ try
     [X,Y] = meshgrid(xx);
     r = sqrt( X.^2 + Y.^2 );
     w2D = zeros(L);
-    % the hanning window has to go from 1 to 0.5
-    w2D(r<=gratingRadius) = 0.5*interp1(xx,w1D,r(r<=gratingRadius)); % first go from 0.5 to 0
-    w2D = w2D + 0.5; %add 0.5 to go from 1 to 0.5
+    w2D(r<=gratingRadius) = interp1(xx,w1D,r(r<=gratingRadius)); % create
+    % 2D hanning window.
     
     % Generate grating texture
     % Compute each frame of the movie and convert those frames stored in
@@ -194,11 +197,10 @@ try
     for i=1:numFrames
         phase=(i/numFrames)*2*pi; %change the phase of the grating according to the framenumber
         m=sin(sqrt(x.^2+y.^2) / f + phase);
-        grating = w2D.*(gray+inc*m); %multiply the hanning mask with the
-        % grating. gray takes care of coloring. inc*m is the grating
-        % itself.
-        grating(sqrt(x.^2+y.^2)>gratingRadius) = gray; % make everything
-        % outside the circle the same color as the background (gray)
+        grating = (w2D.*(inc*m)+gray); 
+        % inc*m fluctuates from [-gray, gray]. Multiply this with the
+        % hanning mask to let the grating die off at 0. Now add gray to let
+        % the grating fluctuate from [black, white], converging at gray.
         tex(i)=Screen('MakeTexture', window, grating); % multiply mask with grating
     end
     
