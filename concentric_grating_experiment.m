@@ -2,7 +2,7 @@ function concentric_grating_experiment(fileName, isLive)
 % This function is copied from DriftDemo and modified to display a (masked)
 % animated concentric grating moving inward. At random time points, the
 % grating will make a 180 degree phase shift, which has to be reported by
-% the subject by a button press. 20% of the trials have no phase shift.
+% the subject by a button press. 10% of the trials have no phase shift.
 
 % NOTE: costs a lot of memory because all images are made individually
 
@@ -37,6 +37,9 @@ function concentric_grating_experiment(fileName, isLive)
 %   fluctuated around gray when the mask was applied. Now it fluctuates
 %   around 0 (it is symmetric, [-gray,gray]), and afterwards the grating is
 %   moved to the [black, white] interval.
+%   solved bug in saving response
+% 22/6/2016: introduce Bitsi responses, solve bugs in saving responses.
+
 %% Function settings
 
 
@@ -112,9 +115,9 @@ try
     % Set up alpha-blending for smooth (anti-aliased) lines
     Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     
-    if isLive
-        HideCursor;
-    end
+    
+    HideCursor;
+    
     
     %% Trigger settings
     if isLive
@@ -197,7 +200,7 @@ try
     for i=1:numFrames
         phase=(i/numFrames)*2*pi; %change the phase of the grating according to the framenumber
         m=sin(sqrt(x.^2+y.^2) / f + phase);
-        grating = (w2D.*(inc*m)+gray); 
+        grating = (w2D.*(inc*m)+gray);
         % inc*m fluctuates from [-gray, gray]. Multiply this with the
         % hanning mask to let the grating die off at 0. Now add gray to let
         % the grating fluctuate from [black, white], converging at gray.
@@ -250,6 +253,7 @@ try
         
         position = CenterRectOnPointd(gratingDim, gratingXpos(trl), gratingYpos(trl)); %move the object of size gratingDim to those coordinates
         
+        
         % Use realtime priority for better timing precision:
         priorityLevel=MaxPriority(window);
         Priority(priorityLevel);
@@ -262,6 +266,7 @@ try
         
         [~, ~, keyCode] = KbCheck(-3); % all keyCodes should be zero at start of trial.
         flag.prevResp=0; % reset flag
+        btsi.clearResponses(); % reset Bitsi response
         btsi.sendTrigger(xp.TRIG_ONSET_GRATING);
         t0= GetSecs; % time onset grating
         
@@ -287,7 +292,7 @@ try
             % Draw the appropriate image
             Screen('DrawTexture', window, tex(movieFrameIndices(i) + shift), [], position);
             Screen('DrawDots', window, [xCenter yCenter], 20, [255 0 0], [], 2);
-                        
+            
             % NOTE
             % Show it at next display vertical retrace. Please check DriftDemo2
             % and later, as well as DriftWaitDemo for much better approaches to
@@ -298,32 +303,56 @@ try
                 btsi.sendTrigger(xp.TRIG_SHIFT);
             end
             Screen('Flip', window); %% Flipping the screen takes up to 30ms every frame.. 1.8s every cycle..
-                        
+            
+            
+            %% Save response
+            
             % check whether there already was a response in a previous
             % frame. If so, flag it so new responses won't be recorded
             % again.
             if keyCode(space)
                 flag.prevResp=1;
             end
-            [~, secs, keyCode] = KbCheck(-3);
+            [~, ~, keyCode] = KbCheck(-3);
+            
+            % check whether experiment has to be aborted
             if keyCode(escape) % end the experiment
                 save(fileName, 'log');
                 sca;
                 Screen('CloseAll')
-            elseif keyCode(space) && ~flag.prevResp && i/ifi<shiftLatency + maxRespTime;
-                if i>shiftFrame(trl) % response only correct after shift
-                    log.response(trl) = 1;
-                    log.responseTime(trl) = secs-t1;
-                else % response before shift: incorrect trial
-                    log.response(trl) = 2;
-                    log.responseTime(trl) = 0;
+            end
+            
+            if isLive
+                [resp, secs] = btsi.getResponse(respondTime, true);
+                if resp == 'd' ...% right red button down event (left button down event is 'h')
+                        && ~flag.prevResp &&  i/frameRate<(shiftLatency(trl) + maxRespTime) % no previous response and within response time
+                    if i>shiftFrame(trl) % response only correct after shift
+                        log.response(trl) = 1;
+                        log.responseTime(trl) = secs-t1;
+                    else % response before shift: incorrect trial
+                        log.response(trl) = 2;
+                        log.responseTime(trl) = 0;
+                    end
+                elseif i==movieDurationFrames(trl) && ~flag.prevResp
+                    log.response(trl) = 0;
+                    log.responseTime(trl)=0;
                 end
-            elseif i==shiftFrame+postShiftTime
-                log.response(trl) = 0;
-                log.responseTime(trl)=0;
+            else
+                [~, secs, keyCode] = KbCheck(-3);
+                if keyCode(space) && ~flag.prevResp &&  i/frameRate<(shiftLatency(trl) + maxRespTime); % no previous response and within response time
+                    if i>shiftFrame(trl) % response only correct after shift
+                        log.response(trl) = 1;
+                        log.responseTime(trl) = secs-t1;
+                    else % response before shift: incorrect trial
+                        log.response(trl) = 2;
+                        log.responseTime(trl) = 0;
+                    end
+                elseif i==movieDurationFrames(trl) && ~flag.prevResp
+                    log.response(trl) = 0;
+                    log.responseTime(trl)=0;
+                end
             end
         end
-        
         btsi.sendTrigger(xp.TRIG_OFFSET_TRIAL);
         log.setDuration(trl) = shiftLatency(trl); % set duration till shift
         log.realDuration(trl) = t1-t0; % real (measured) duration till shift
