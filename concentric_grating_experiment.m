@@ -196,7 +196,7 @@ try
     conditions = conditions(randperm(size(conditions,1)),:); % shuffle conditions
     chanceNoShift = 0.1; % in 20% of the trials, have no shift.
     blinkTime = 1;
-    baselineTime = 1+0.5*rand(nTrials,1);
+    baselineTime = 1.5+0.5*rand(nTrials,1);
     preStimTime = blinkTime + baselineTime; % fixation, baseline period
     preShiftTime=1; % cue can come 1 seconds after start trial
     shiftRange = 2; % present the shift at random in 2 seconds
