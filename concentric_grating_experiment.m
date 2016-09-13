@@ -26,6 +26,7 @@ function concentric_grating_experiment(fileName, isLive, drawMask)
 % 10/6/2016: add no shift trials
 % 15/5/2016: change background color
 % 16/6/2016: edit Gaussian mask, add (rectangular) hanning mask
+% 16/6/2016: add circular hanning mask
 
 %% Function settings
 
@@ -110,7 +111,7 @@ try
     % Set up alpha-blending for smooth (anti-aliased) lines
     Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     
-%     HideCursor;
+    %     HideCursor;
     
     
     %% Trigger settings
@@ -166,43 +167,57 @@ try
     
     %% Generate stimulus
     % generate a mask to cover the edges of the grating, making it a circle
-    R = gratingRadius ; % radius
-    M = zeros(2*gratingRadius+1, 2*gratingRadius+1, 1); %zero matrix same size as the grid
-    M(:,:,1) = sqrt(x.^2 + y.^2) < R ; %disk formula: all masked parts of the grid must be zero.
-
-
+    %     R = gratingRadius ; % radius
+    %     M = zeros(2*gratingRadius+1, 2*gratingRadius+1, 1); %zero matrix same size as the grid
+    %     M(:,:,1) = sqrt(x.^2 + y.^2) < R ; %disk formula: all masked parts of the grid must be zero.
+    
+    % make hanning mask
+    L = 2*gratingRadius+1;
+    w1D = hann(L); % 1D hann window
+    xx = linspace(-gratingRadius,gratingRadius,L);
+    [X,Y] = meshgrid(xx);
+    r = sqrt( X.^2 + Y.^2 );
+    w2D = zeros(L);
+    % the hanning window has to go from 1 to 0.5
+    w2D(r<=gratingRadius) = 0.5*interp1(xx,w1D,r(r<=gratingRadius)); % first go from 0.5 to 0
+    w2D = w2D + 0.5; %add 0.5 to go from 1 to 0.5
+    
+    %%
     % Generate grating texture
     % Compute each frame of the movie and convert those frames stored in
     % MATLAB matrices, into Psychtoolbox OpenGL textures using 'MakeTexture';
     % NOTE: very inefficient, costs a lot of memory.. alternative?
     tex=zeros(numFrames,1);
-
+    
     for i=1:numFrames
         phase=(i/numFrames)*2*pi; %change the phase of the grating according to the framenumber
         m=sin(sqrt(x.^2+y.^2) / f + phase);
-        grating = gray+inc*m;
-        blackMask = M.*grating; %multiply the mask (M) with the grating. this mask is black, we want a gray mask
-        grayMask = blackMask;
-        grayMask(grayMask==0)=gray; % replace all black values by gray
-        tex(i)=Screen('MakeTexture', window, grayMask); % multiply mask with grating
+        grating = w2D.*(gray+inc*m); %multiply the hanning mask with the
+        % grating. gray takes care of coloring. inc*m is the grating
+        % itself.
+        grating(sqrt(x.^2+y.^2)>gratingRadius) = gray; % make everything
+        % outside the circle the same color as the background (gray)
+        tex(i)=Screen('MakeTexture', window, grating); % multiply mask with grating
     end
+       
     
-    % make hanning/gaussian mask
-    mask=ones(2*gratingRadius+1, 2*gratingRadius+1, 2) * white;
-    mask(:,:,1) = sqrt(x.^2 + y.^2) < R ;
-%     mask(:, :, 2)=white * (1 - 0.5*exp(-((x/120).^2)-((y/120).^2))); % Gaussian going down to gray (for black remove 0.5*)
-    for n=1:2*gratingRadius+1
-    mask(:,n,2) = hann(2* gratingRadius+1); % apply 1D hanning over the columns
-    end
-    mask(:,:,2) = gray*mask(:,:,1).* ( 1 - (mask(:,:,2).*mask(:,:,2)')); % multiply with 
-    % inverse to apply hanning window to rows as well. Invert (1-hanning) 
-    % to get lowest value in centre. Multiply with white to get the right colorscale. 
-    %______________________________________________________________________
+    % _____________________________________________________________________
+    % Other masks
+    %{
+
+    % w2D(:, :, 2)=white * (1 - 0.5*exp(-((x/120).^2)-((y/120).^2))); % Gaussian going down to gray (for black remove 0.5*)
+%     for n=1:2*gratingRadius+1
+%     w2D(:,n,2) = hann(2* gratingRadius+1); % apply 1D hanning over the columns
+%     end
+%     w2D(:,:,2) = gray*mask(:,:,1).* ( 1 - (mask(:,:,2).*mask(:,:,2)')); % multiply with
+    % inverse to apply hanning window to rows as well. Invert (1-hanning)
+    % to get lowest value in centre. Multiply with white to get the right colorscale.
     % NOTE: This Hanning window is rectangular, not circular! That is why
     % the window is multiplied with a circular mask (mask(:,:,1))
-    %______________________________________________________________________
-    
-    masktex=Screen('MakeTexture', window, mask);
+      masktex=Screen('MakeTexture', window, w2D);
+
+    %}
+    % _____________________________________________________________________
     
     shiftPoint = ((preShiftTime+shiftRange)-preShiftTime).*rand(ntrials,1) + preShiftTime;
     trlNoShift = sort(randperm(ntrials, ntrials*chanceNoShift)); % generate a number of random (w/o replacement) trials that won't have a phase shift
@@ -268,10 +283,10 @@ try
             
             % Draw the appropriate image
             Screen('DrawTexture', window, tex(movieFrameIndices(i) + shift));
- 
+            
             % Draw the Gaussian mask if required
             if drawMask
-                Screen('DrawTexture', window, masktex);
+                %                 Screen('DrawTexture', win dow, masktex);
             end
             
             % Show it at next display vertical retrace. Please check DriftDemo2
