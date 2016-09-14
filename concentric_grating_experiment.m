@@ -221,7 +221,7 @@ try
     
     % settings grating
     [x,y]=meshgrid(-gratingRadius:gratingRadius,-gratingRadius:gratingRadius);
-    f=0.175*2*pi; % period of the grating.
+    f=0.35*2*pi; % period of the grating.
     
     
     %% Generate stimulus
