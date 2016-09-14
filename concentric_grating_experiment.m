@@ -52,7 +52,8 @@ function concentric_grating_experiment(fileName, isLive, language, includePeriSt
 %   work pc, in MEG recordings there will be triggers). bugfix
 %   driftfrequency (didn't cause problems in previous versions because it
 %   was equal to 1.
-
+% 14/9/2016: spatial frequency ~3 cycles/degree; stimulus speed 0.66
+%   degree/sec; diameter 7.1 degree;
 %% Function settings
 
 
@@ -181,7 +182,7 @@ try
     screen.totVisDeg = 2*atan(screen.width/(2*screen.viewingDistance))*(180/pi); % formula for calculating visual degrees
     screen.pixPerDeg = screen.resolutionX/screen.totVisDeg;
     
-    visualAngleGrating = 10;
+    visualAngleGrating = 7.1;
     visualAngleLocation = 15;
     gratingSize = visualAngleGrating*screen.pixPerDeg; % calculate how big
     % the grating should be (can not be rounded off, might result in odd integer)
@@ -220,7 +221,7 @@ try
     
     % settings grating
     [x,y]=meshgrid(-gratingRadius:gratingRadius,-gratingRadius:gratingRadius);
-    f=1.5*2*pi; % period of the grating.
+    f=0.175*2*pi; % period of the grating.
     
     
     %% Generate stimulus
@@ -391,7 +392,7 @@ try
             if isShiftFrame;
                 btsi.sendTrigger(xp.TRIG_SHIFT);
             end
-            
+%             imwrite(Screen('GetImage', window), 'test.jpg');
             log.PTBtiming.grating.vblTimestamp{iTrl}(jFrame) = VBLTimestamp;
             log.PTBtiming.grating.StimulusOnsetTime{iTrl}(jFrame) = StimulusOnsetTime;
             log.PTBtiming.grating.FlipTimestamp{iTrl}(jFrame) = FlipTimestamp;
