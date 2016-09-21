@@ -13,47 +13,6 @@ function concentric_grating_experiment(fileName, isLive, language, includePeriSt
 % includePeriStim = 0 (only central stimuli, default), 1 (include stimuli
 %   in periphery)
 
-% HISTORY
-% 7/6/2016: change grating to concentric grating
-% 8/6/2016: add circular and gaussian mask, introduce phase-shift
-% 9/6/2016: make trials, introduce baseline period
-% 10/6/2016: add no shift trials
-% 15/5/2016: change background color
-% 16/6/2016: edit Gaussian mask, add (rectangular) hanning mask
-% 16/6/2016: add circular hanning mask
-% 17/6/2016: debugged circular hanning mask and response buttons
-% 20/6/2016: change location to lower visual field, lef t and right.
-% 21/6/2016: edit registereing of user input, record timing, edit locations
-%   of gratings (central, 2 peripheral) and introduce trial
-%   counterbalancing (semirandom instead of random locations)
-% 22/6/2016: solve bug in hanning mask. Before, only [gray, white] values
-%   were dampened, not [black, gray] values. Because the grating
-%   fluctuated around gray when the mask was applied. Now it fluctuates
-%   around 0 (it is symmetric, [-gray,gray]), and afterwards the grating is
-%   moved to the [black, white] interval.
-%   solved bug in saving response
-% 22/6/2016: introduce Bitsi responses, solve bugs in saving responses.
-% 23/6/2016: changed naming convention
-% 28/6/2016: deleted offset trigger, edited bitsi button response
-% 5/7/2016: introduce blink period
-% 25/7/2016: reversed screen flip and send trigger
-% 25/7/2016: added timing info, made prestimulus interval more accurate,
-%   timingwise
-% 2/8/2016: changed Bitsi comport for Linux compatibility; rounded nFrames
-%   for blink and baseline period.
-% 10/8/2016: introduce blocks, introduce baseline jitter 1-1.5sec
-% 11/8/2016: introduce instructions in english/dutch
-% 18/8/2016: bugfixes
-% 18/8/2016: disable logging of the response. Performance can be checked
-%   with triggers in MEG data. checking for response dysfunctional because it
-%    has to wait for responses.
-% 13/9/2016: create option for inclusion of peripheral stimuli or only
-%   central stimuli. Remove abundant/not used code (only record responses in
-%   work pc, in MEG recordings there will be triggers). bugfix
-%   driftfrequency (didn't cause problems in previous versions because it
-%   was equal to 1.
-% 14/9/2016: spatial frequency ~3 cycles/degree; stimulus speed 0.66
-%   degree/sec; diameter 7.1 degree;
 %% Function settings
 
 
@@ -107,7 +66,7 @@ try
     if isLive
         screenNo=max(screens);
     else
-        screenNo=0;
+        screenNo=1;
     end
     
     % Find the color values which correspond to white and black: Usually
@@ -154,6 +113,12 @@ try
         btsi = Bitsi('');
     end
     
+    % reset all trigger such that none are in level mode
+    btsi.sendTrigger(0);
+    btsi.sendTrigger(2);
+    btsi.sendTrigger(0);
+    
+    % explicitly put trigger in pulse mode of 1 ms.
     btsi.sendTrigger(0);
     btsi.sendTrigger(1);
     btsi.sendTrigger(1);
