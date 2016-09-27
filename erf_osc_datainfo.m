@@ -18,6 +18,20 @@ pilotsubjects(2).headshape = '/home/electromag/matves/Data/ERF_oscillation/behav
 pilotsubjects(2).mri = '/home/electromag/matves/Data/ERF_oscillation/sMRI/pilot/02/105520/LIEVLIE_20150616_S92.MR.LIEVLIE_FEATURE_EXP.0002.0001.2015.06.16.16.13.03.531642.240004270.IMA';
 pilotsubjects(2).icacomp = [4, 7, 33];
 
+pilotsubjects(3).channels = [];
+pilotsubjects(3).dataset = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot/03/pilot3_1200hz_20160920_02.ds';
+pilotsubjects(3).logfile = '/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot/pilot_03.mat';
+pilotsubjects(3).headshape = '/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot/pilot_03_polhemus.mat';
+pilotsubjects(3).mri = '';
+pilotsubjects(3).icacomp = [3, 13];
+
+%gamma experiment Stan van Pelt
+pilotsubjects(103).channels = [];
+pilotsubjects(103).dataset = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot/03/pilot3_1200hz_20160920_01.ds';
+pilotsubjects(103).logfile = '/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot/pilot_03.mat';
+pilotsubjects(103).headshape = '/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot/pilot_03_polhemus.mat';
+pilotsubjects(103).mri = '';
+pilotsubjects(103).icacomp = [3, 26];
 
 %% Experiment
 

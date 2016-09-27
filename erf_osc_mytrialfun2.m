@@ -32,58 +32,56 @@ log = cfg.logfile.log;
 
 trl=[];
 iTrial=1;
-for ii = 1:length(event)
+for i = 1:length(event)
     
-    isBitsiEvent = ismember(event(ii).type, cfg.trialdef.eventtype);
+    isBitsiEvent = ismember(event(i).type, cfg.trialdef.eventtype);
     if isBitsiEvent
-        isStartGrating = (event(ii).value==3);
+        isStartGrating = (event(i).value==3);
         if  isStartGrating
-            begsample = (event(ii).sample + lag) - cfg.trialdef.prestim(iTrial)*hdr.Fs;
-            endsample = (event(ii).sample + lag) + cfg.trialdef.poststim(iTrial)*hdr.Fs;
+            begsample = (event(i).sample + lag) - cfg.trialdef.prestim(iTrial)*hdr.Fs;
+            endsample = (event(i).sample + lag) + cfg.trialdef.poststim(iTrial)*hdr.Fs;
             offset = -cfg.trialdef.prestim(iTrial)*hdr.Fs;
             
             % get sample of baseline onset
-            if ismember(event(ii-1).type, cfg.trialdef.eventtype) && event(ii-1).value==2 % see whether the previous event was the baseline
-                sampleBaselineOnset = event(ii-1).sample + lag;
+            if ismember(event(i-1).type, cfg.trialdef.eventtype) && event(i-1).value==2 % see whether the previous event was the baseline
+                sampleBaselineOnset = event(i-1).sample + lag;
             else
-                idxBaselineEvent = find((trigSample<event(ii).sample) & (trigValue==2), 1); % find the trigger sample with value 2 preceding grating onset
+                idxBaselineEvent = find((trigSample<event(i).sample) & (trigValue==2), 1); % find the trigger sample with value 2 preceding grating onset
                 sampleBaselineOnset = event(idxBaselineEvent).sample + lag;
             end
             
-            sampleGratingOnset = event(ii).sample + lag;
+            sampleGratingOnset = event(i).sample + lag;
             % get sample of shift 
-            if ismember(event(ii+1).type, cfg.trialdef.eventtype) && event(ii+1).value==4 % see whether the next event is the grating shift
-                sampleShiftOnset = event(ii+1).sample + lag;
+            if ismember(event(i+1).type, cfg.trialdef.eventtype) && event(i+1).value==4 % see whether the next event is the grating shift
+                sampleShiftOnset = event(i+1).sample + lag;
             elseif any(iTrial==log.trlNoShift)
                 sampleShiftOnset = 0;
             else
-                idxShiftEvent = find((trigSample>event(ii).sample) & (trigValue==4), 1); % find the next sample with value 4
+                idxShiftEvent = find((trigSample>event(i).sample) & (trigValue==4), 1); % find the next sample with value 4
                 sampleShiftOnset = event(idxShiftEvent).sample + lag;
             end
-            
-            if ii+2<=length(event)
-                isResponse = ismember(event(ii+2).type, cfg.trialdef.eventtyperesp) && event(ii+2).value==8;
-                isRespWithinTime = event(ii+2).sample<endsample;
+            if event(i+1).sample<trigSample(end)
+            isResponse = ismember(event(i+2).type, cfg.trialdef.eventtyperesp) && event(i+2).value==8;
             else
                 isResponse = 0;
-                isRespWithinTime = 0;
             end
-            
             % find out whether there is a button response between grating onset and grating shift. 
             if find(trigSample>(sampleGratingOnset) & trigSample<(sampleShiftOnset)) % if there is a trigger in between grating onset and shift
-                tmpIdx = find(trigSample>(sampleGratingOnset) & trigSample<(sampleShiftOnset));
-                for jj=1:length(tmpIdx)
-                    isPreviousResponse = strcmp(event(tmpIdx(jj)).type, 'UPPT002'); % if that trigger is a button press
-                    if isPreviousResponse
-                        break
-                    end
-                end
+%                 isPreviousResponse = strcmp(event(find(trigSample>(sampleGratingOnset) & trigSample<(sampleShiftOnset))).type, 'UPPT002'); % if that trigger is a button press
+                    isPreviousResponse=false;
             else
                 isPreviousResponse = false;
             end
             
+            if event(i+1).sample<trigSample(end)
+            isRespWithinTime = event(i+2).sample<endsample;
+            else
+                isRespWithinTime = 0;
+            end
+            
+            
             if  isResponse && isRespWithinTime && ~isPreviousResponse
-                sampleResponseOnset = event(ii+2).sample + lag;
+                sampleResponseOnset = event(i+2).sample + lag;
             else
                 sampleResponseOnset = 0;
             end

@@ -1,5 +1,4 @@
 function erf_osc_analysis_gamma_phase(subj, isPilot)
-
 % trialinfo columns:
 % 1: trialnumber
 % 2: position (-1=left, 0=middle, 1=right)
@@ -29,6 +28,13 @@ if nargin<2
 end
 if isempty(isPilot);
     isPilot = true;
+end
+
+%% initiate diary
+workSpace = whos;
+diary('tmpDiary') % save command window output
+for i = 1:numel(workSpace) % list all workspace variables
+    eval(workSpace(i).name)
 end
 
 %% load data
@@ -83,3 +89,6 @@ cfg.keeptrials = 'yes';
 cfg.channel = 'MEG'; %MZO01
 fcomp = ft_freqanalysis(cfg,dataShiftLBl);
 gammaAngle = angle(fcomp.fourierspctrm(:,1,:)); % in radians
+
+
+diary off

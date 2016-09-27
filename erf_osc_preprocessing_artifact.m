@@ -1,20 +1,18 @@
-function erf_osc_preprocessing_artifact(subj, existArtifact, isPilot)
+function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact)
 % This function is interactive and can not be automated and/or
-% paralellized. Before calling this function, make sure you performed ICA
-% decomposition on the data in order to select and reject ECG artifacts
-% (erf_osc_preprocessing_ica).
-% This function loads data from the ERF-oscillation experiment and segments
-% it into trials. Next, by visual inspection bad channels/trials are
+% paralellized.
+% This function loads data from the ERF-oscillation experiment, segments
+% it into trials and preprocesses (e.g. highpass filter, bandstop filter
+% linenoise etc). Next, by visual inspection bad channels/trials are
 % rejected and jump, muscle and EOG artifacts are selected. ICA components
-% belonging to cardiac activity and artifacts are rejected from the data.
-% The data is then downsampled and saved.
+% decomposition is aplied and components belonging to cardiac activity or
+% eye artifacts are rejected from the data. The data is then saved on disk.
 %
 % use:
 % subj, specify subject number (default = 1)
-% existArtifact, true if artficats were already selected and saved (default
-% = true)
 % isPilot, true if datasets belong to pilot subjects (default = true)
-
+% existArtifact, true if artficats were already selected and saved (default
+% = false)
 
 if nargin<1
     subj = 1;
@@ -23,19 +21,24 @@ if isempty(subj)
     subj = 1;
 end
 if nargin<2
-    existArtifact = false;
-end
-if isempty(existArtifact)
-    existArtifact = false;
-end
-if nargin<3
     isPilot = true;
 end
 if isempty(isPilot);
     isPilot = true;
 end
+if nargin<3
+    existArtifact = false;
+end
+if isempty(existArtifact)
+    existArtifact = false;
+end
 
-sprintf('Make sure you performed ICA decomposition with erf_osc_preprocessing_ica')
+%% initiate diary
+workSpace = whos;
+diary('tmpDiary') % save command window output
+for i = 1:numel(workSpace) % list all workspace variables
+    eval(workSpace(i).name)
+end
 
 %% Load data and define trials
 erf_osc_datainfo; % load subject specific info.
@@ -96,6 +99,7 @@ if ~existArtifact
         data.badtrials = [];
     end
     %% Find jump artifacts
+    sprintf('find jump artifacts')
     cfg = [];
     % channel selection, cutoff and padding
     cfg.artfctdef.zvalue.channel    = 'MEG';
@@ -111,6 +115,7 @@ if ~existArtifact
     % make the process interactive
     cfg.artfctdef.zvalue.interactive = 'yes';
     
+    sprintf('find jump artifacts')
     [~, artifact_jump] = ft_artifact_zvalue(cfg, data);
     
     %% Find muscle artifacts
@@ -131,6 +136,7 @@ if ~existArtifact
     % make the process interactive
     cfg.artfctdef.zvalue.interactive = 'yes';
     
+    sprintf('find muscle artifacts')
     [~, artifact_muscle] = ft_artifact_zvalue(cfg, data);
     
     %% Find EOG saccade artifacts
@@ -197,18 +203,18 @@ if ~existArtifact
     % fixation point).
     
     % if you want to know the visual angle per pixel, calculate this
-    %{
-% X
-screenResX=screenRight+1;
-visAngX_rad = 2 * atan(screenWidth_x/2/totDist);
-visAngX_deg = visAngX_rad * (180/pi);
-visAngPerPixX = visAngX_deg / screenResX;
-
-% Y
-screenResY=screenBottom+1;
-visAngY_rad = 2 * atan(screenWidth_y/2/totDist);
-visAngY_deg = visAngY_rad * (180/pi);
-visAngPerPixY = visAngY_deg / screenResY;
+    %
+    % X
+    screenResX=screenRight+1;
+    visAngX_rad = 2 * atan(screenWidth_x/2/totDist);
+    visAngX_deg = visAngX_rad * (180/pi);
+    visAngPerPixX = visAngX_deg / screenResX;
+    
+    % Y
+    screenResY=screenBottom+1;
+    visAngY_rad = 2 * atan(screenWidth_y/2/totDist);
+    visAngY_deg = visAngY_rad * (180/pi);
+    visAngPerPixY = visAngY_deg / screenResY;
     %}
     
     % visual angle in reference to middle of the screen
@@ -236,7 +242,7 @@ visAngPerPixY = visAngY_deg / screenResY;
     
     for iSaccade = 1:size(movement, 1)
         % find the trial where the saccade belongs to
-        trlIdx(iSaccade) = find(dataEye.sampleinfo(:,1)<=movement(iSaccade,1) & dataEye.sampleinfo(:,2)>=movement(iSaccade,2));
+        trlIdx(iSaccade) = find(dataEye.sampleinfo(:,1)<=movement(iSaccade,1) & dataEye.sampleinfo(:,2)>=movement(iSaccade,2),1);
         % how many samples after the start of the trial does the saccade take
         % place and when does it end?
         saccadeStart = movement(iSaccade,1) - dataEye.sampleinfo(trlIdx(iSaccade),1) + 1;
@@ -249,6 +255,9 @@ visAngPerPixY = visAngY_deg / screenResY;
         if saccadeAngle(:, iSaccade)>1 % otherwise it is a microsaccade.
             artifact_EOG_saccade(end+1,:) = movement(iSaccade, 1:2);
         end
+    end
+    if ~exist('artifact_EOG_saccade')
+        artifact_EOG_saccade = [];
     end
     
     %% find EOG blink artifacts
@@ -267,6 +276,7 @@ visAngPerPixY = visAngY_deg / screenResY;
     % feedback
     cfg2.artfctdef.zvalue.interactive = 'yes';
     
+    sprintf('find blink artifacts')
     [~, artifact_EOG_blink] = ft_artifact_zvalue(cfg2);
     
     %% Save artifacts
@@ -292,16 +302,39 @@ else
     end
 end
 
-%% Inspect ICA components
-%
-% load the ica components computed with erf_osc_preprocessing_ica
-if isPilot
-    load(sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/pilot/%02d/icaComp.mat', subj), 'comp');
-else
-    load(sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/experiment/%02d/icaComp.mat', subj), 'comp');
-end
+%% Reject artifacts from complete data
+cfg = [];
+cfg.artfctdef = artfctdef;
+cfg.artfctdef.reject = 'complete'; % remove complete trials
+cfg.artfctdef.crittoilim = [-1 3.75];
+dataNoArtfct = ft_rejectartifact(cfg, data);
 
+%% Compute ICA
 if ~existArtifact
+    % resample
+    cfg=[];
+    cfg.resamplefs = 150;
+    cfg.detrend = 'no';
+    dataResample = ft_resampledata(cfg, dataNoArtfct);
+    
+    % ICA
+    cfg=[];
+    cfg.method          = 'fastica';
+    cfg.channel         = 'MEG';
+    cfg.fastica.numOfIC = 50;
+    comp = ft_componentanalysis(cfg, dataResample);
+    
+    % save
+    if isPilot
+        filename = sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/pilot/%02d/icaComp.mat', subj);
+    else
+        filename = sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/experiment/%02d/icaComp.mat', subj);
+    end
+    save(filename, 'comp')
+    
+    %% Inspect ICA components
+    % load the ica components computed with erf_osc_preprocessing_ica
+    
     cfg = [];
     cfg.channel = {comp.label{1:10}}; % components to be plotted
     cfg.layout = 'CTF275.lay'; % specify the layout file that should be used for plotting
@@ -309,9 +342,24 @@ if ~existArtifact
     ft_databrowser(cfg, comp);
     
     input('Please enter the ICA components in datainfo_erf_osc. press any key to continue');
+
+else
+    if isPilot
+        filename = sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/pilot/%02d/icaComp.mat', subj);
+    else
+        filename = sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/experiment/%02d/icaComp.mat', subj);
+    end
+    load(filename, 'comp')
 end
 
 %% Reject ICA components and artifacts
+% decompose the original data as it was prior to downsampling to 150Hz
+cfg           = [];
+cfg.unmixing  = comp.unmixing;
+cfg.topolabel = comp.topolabel;
+comp_orig     = ft_componentanalysis(cfg, dataNoArtfct);
+
+
 erf_osc_datainfo; % load subject specific data for the latest version.
 if isPilot
     subs_comp = pilotsubjects(subj).icacomp;
@@ -320,22 +368,18 @@ else
 end
 cfg=[];
 cfg.component = subs_comp;
-dataNoEcg = ft_rejectcomponent(cfg, comp, data);
-% end
-%}
-%% Reject artifacts from complete data
-cfg = [];
-cfg.artfctdef = artfctdef;
-cfg.artfctdef.reject = 'complete'; % remove complete trials
-cfg.artfctdef.crittoilim = [-0.5 3.75];
-dataClean = ft_rejectartifact(cfg, dataNoEcg);
+dataClean = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
 
-% save
+
+%% save
 if isPilot
-    save(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean', '-v7.3');
+    filename = sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata', subj);
 else
-    save(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean', '-v7.3');
+    filename = sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata', subj);
 end
+save(fullfile([filename '.mat']), 'dataClean', '-v7.3');
+diary off
+movefile('tmpDiary', fullfile([filename, '.txt']));
 
 end
 

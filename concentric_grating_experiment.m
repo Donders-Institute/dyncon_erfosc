@@ -13,6 +13,13 @@ function concentric_grating_experiment(fileName, isLive, language, includePeriSt
 % includePeriStim = 0 (only central stimuli, default), 1 (include stimuli
 %   in periphery)
 
+%% initiate diary
+workSpace = whos;
+diary('tmpDiary') % save command window output
+for i = 1:numel(workSpace) % list all workspace variables
+    eval(workSpace(i).name)
+end
+
 %% Function settings
 
 
@@ -66,7 +73,7 @@ try
     if isLive
         screenNo=max(screens);
     else
-        screenNo=1;
+        screenNo=0;
     end
     
     % Find the color values which correspond to white and black: Usually
@@ -129,6 +136,7 @@ try
     KbName('UnifyKeyNames'); % converts operating specific keynames to universal keyname
     escape = KbName('ESCAPE');
     space = KbName('space');
+    keyP = KbName('p');
     
     log=[]; % save trial latencies and conditions
     
@@ -250,6 +258,7 @@ try
     movieDurationSecs=shiftLatency+postShiftTime;
     % Convert movieDuration in seconds to duration in frames to draw:
     nFramesTotal=round(movieDurationSecs * frameRate);
+    flagPause=false;
     % assign the right texture indices to frames
     % Use realtime priority for better timing precision:
     priorityLevel=MaxPriority(window);
@@ -378,9 +387,14 @@ try
             
             % check whether experiment has to be aborted
             if keyCode(escape) % end the experiment
-                save(fileName, 'log');
+                save(fullfile([fileName '.mat']), 'log');
+                diary off
+                movefile('tmpDiary', fullfile([fileName '.txt']));
                 sca;
                 Screen('CloseAll')
+            elseif keyCode(keyP)
+                flagPause = true; % if p is pressed, pause the experiment
+                % but initiate pause at end of trial
             end
             
             isWithinResponseTime = (jFrame/frameRate<(shiftLatency(iTrl)...
@@ -414,9 +428,15 @@ try
         log.realDuration(iTrl) = t1-t0; % real (measured) duration till shift
         log.completeDurationGrating(iTrl) = shiftLatency(iTrl) + postShiftTime;
         
+        if flagPause
+            KbWait([], 3); % wait until key is pressed and released again
+            flagPause = false; % put flag back to zero 
+        end
         
     end % end trial
-    save(fileName, 'log')
+    save(fullfile([fileName '.mat']), 'log')
+    diary off
+    movefile('tmpDiary', fullfile([fileName '.txt']));
     
     Priority(0);
     % Close all textures. This is not strictly needed, as
