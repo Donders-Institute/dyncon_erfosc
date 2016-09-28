@@ -1,5 +1,6 @@
 %% datainfo ERF Oscillation
 % subject specific information for analysis
+pilotsubjects = [];
 subjects=[];
 
 %% pilot
