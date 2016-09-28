@@ -23,8 +23,11 @@ end
 %% initiate diary
 workSpace = whos;
 diary('tmpDiary') % save command window output
+mfilename('fullpath')
+datetime
 for i = 1:numel(workSpace) % list all workspace variables
-    eval(workSpace(i).name)
+    workSpace(i).name % list the variable name
+    printstruct(eval(workSpace(i).name)) % show its value(s)
 end
 
 %% load data
