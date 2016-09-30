@@ -8,10 +8,10 @@ function erf_osc_analysis_tfa(subj, isPilot)
 % 5: sample of grating shift (=0 if no shift)
 % 6: sample of response (=0 if no response or if response too early)
 if nargin<1
-    subj = 1;
+    subj = 3;
 end
 if isempty(subj)
-    subj = 1;
+    subj = 3;
 end
 if nargin<2
     isPilot = true;
@@ -119,7 +119,7 @@ tfaHigh = ft_freqanalysis(cfg,dataM);
 
 
 %% save
-filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/tfa_subj%d', subj);
+filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/tfa_%d', subj, subj);
 save(fullfile([filename '.mat']), 'powActive', 'powBaseline', 'tfaLow', 'tfaHigh');
 diary off
 movefile('tmpDiary', fullfile([filename '.txt']));

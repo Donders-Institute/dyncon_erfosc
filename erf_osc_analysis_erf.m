@@ -8,10 +8,10 @@ function erf_osc_analysis_erf(subj, isPilot)
 % 6: sample of response (=0 if no response or if response too early)
 
 if nargin<1
-    subj = 1;
+    subj = 3;
 end
 if isempty(subj)
-    subj = 1;
+    subj = 3;
 end
 if nargin<2
     isPilot = true;
@@ -96,7 +96,7 @@ tlShiftPreM_rs = ft_resampledata(cfg, tlShiftPreM);
 
 
 %% save
-filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/timelock_subj%d', subj);
+filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/timelock_%d', subj, subj);
 save(fullfile([filename '.mat']), 'tlOnsetM_rs', 'tlShiftM_rs', 'tlShiftPreM_rs')
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']));
