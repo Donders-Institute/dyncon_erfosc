@@ -154,7 +154,7 @@ for k = 1:cfg.numcomponent;
 end
 
 %% save
-filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d', subj);
+filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d', subj, subj);
 save(fullfile([filename '.mat']),'comp', 'r1', 'r2', 'avgorig')
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']));

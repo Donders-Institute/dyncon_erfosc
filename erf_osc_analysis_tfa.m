@@ -57,23 +57,19 @@ nTrials = length(idxM);
 
 cfg=[];
 cfg.trials = idxM(1:nTrials);
-dataM = ft_selectdata(cfg, data);
+data = ft_selectdata(cfg, data);
 
 % data timelocked to grating shift
 % cfg=[];
-% cfg.offset = -(dataL.trialinfo(:,5)-dataL.trialinfo(:,4));
-% dataShiftL = ft_redefinetrial(cfg, dataL);
 % cfg.offset = -(dataM.trialinfo(:,5)-dataM.trialinfo(:,4));
 % dataShiftM = ft_redefinetrial(cfg, dataM);
-% cfg.offset = -(dataR.trialinfo(:,5)-dataR.trialinfo(:,4));
-% dataShiftR = ft_redefinetrial(cfg, dataR);
 
 %% FFT, powerspectrum
 cfg=[];
 cfg.latency = [-0.5+1/fs 0];
-dataBaseline = ft_selectdata(cfg, dataM);
+dataBaseline = ft_selectdata(cfg, data);
 cfg.latency = [0.3+1/fs 0.8]; % take active time window after first erfs
-dataActive  = ft_selectdata(cfg, dataM);
+dataActive  = ft_selectdata(cfg, data);
 
 cfg=[];
 cfg.foilim = [2 100];
@@ -99,7 +95,7 @@ cfg.foi          = 2:2:30;% analysis 2 to 30 Hz in steps of 2 Hz
 cfg.t_ftimwin    = ones(length(cfg.foi),1).*0.5;   % length of time window = 0.5 sec
 cfg.toi          = -1:0.05:3.75;                  % time window "slides" from -0.5 to 1.5 sec in steps of 0.05 sec (50 ms)
 cfg.keeptrials   = 'yes';
-tfaLow = ft_freqanalysis(cfg, dataM);
+tfaLow = ft_freqanalysis(cfg, data);
 
 
 %% TFA, high frequencies
@@ -115,7 +111,7 @@ cfg.pad          = 6;
 cfg.t_ftimwin    = ones(length(cfg.foi),1).*(1/4);
 cfg.toi          = -1.5:0.05:3.75;
 cfg.keeptrials   = 'yes';
-tfaHigh = ft_freqanalysis(cfg,dataM);
+tfaHigh = ft_freqanalysis(cfg,data);
 
 
 %% save

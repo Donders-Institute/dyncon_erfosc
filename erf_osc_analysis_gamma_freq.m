@@ -1,12 +1,6 @@
 function erf_osc_analysis_gamma_freq(subj, isPilot)
-% 
-% trialinfo columns:
-% 1: trialnumber
-% 2: position (-1=left, 0=middle, 1=right)
-% 3: sample of baseline onset
-% 4: sample of grating onset
-% 5: sample of grating shift (=0 if no shift)
-% 6: sample of response (=0 if no response or if response too early)
+% This function estimates the gamma peak frequency
+
 if nargin<1
     subj = 3;
 end
@@ -49,7 +43,8 @@ else
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
-fs = data.fsample;
+
+
 
 % select only shift trials, with valid response
 idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,2)==0);
@@ -59,6 +54,10 @@ cfg=[];
 cfg.trials = idxM(1:nTrials);
 data = ft_selectdata(cfg, data);
 
+cfg=[];
+cfg.resamplefs = 200;
+data = ft_resampledata(cfg, data);
+fs = data.fsample;
 
 %% FFT, powerspectrum
 cfg=[];
@@ -69,7 +68,7 @@ cfg.latency = [0.4+1/fs 3.75]; % take active time window after first erfs
 dataActive  = ft_selectdata(cfg, data);
 
 cfg=[];
-cfg.foilim = [30 100];
+cfg.foi = 30:1:99;
 cfg.method = 'mtmfft';
 cfg.output = 'pow';
 cfg.tapsmofrq = 1;

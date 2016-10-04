@@ -1,12 +1,6 @@
 function erf_osc_analysis_gamma_pow(subj, isPilot)
-% 
-% trialinfo columns:
-% 1: trialnumber
-% 2: position (-1=left, 0=middle, 1=right)
-% 3: sample of baseline onset
-% 4: sample of grating onset
-% 5: sample of grating shift (=0 if no shift)
-% 6: sample of response (=0 if no response or if response too early)
+% This function estimates gamma power at the estimated gamma peak frequency 
+
 if nargin<1
     subj = 3;
 end
@@ -50,7 +44,7 @@ else
 end
 load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_peak_%d', subj, subj), 'peakFreq');
 data = data.dataClean;
-fs = data.fsample;
+
 
 % select only shift trials, with valid response
 idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,2)==0);
@@ -63,6 +57,14 @@ data = ft_selectdata(cfg, data);
 cfg=[];
 cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
 dataShift = ft_redefinetrial(cfg, data);
+
+cfg=[];
+cfg.resamplefs = 200;
+data = ft_resampledata(cfg, data);
+dataShift = ft_resampledata(cfg, dataShift);
+fs = data.fsample;
+
+
 
 
 %% FFT, powerspectrum
@@ -78,15 +80,18 @@ cfg=[];
 cfg.foi = peakFreq;
 cfg.method = 'mtmfft';
 cfg.output = 'pow';
-% cfg.tapsmofrq = 1;
-cfg.taper = 'hanning';
+cfg.tapsmofrq = 5;
+%cfg.taper = 'hanning';
 cfg.keeptrials = 'yes';
 cfg.pad = 1;
 powActive = ft_freqanalysis(cfg, dataActive);
+cfg.keeptrials='no';
 powBaseline = ft_freqanalysis(cfg, dataBaseline);
 
+powBaseline.powspctrm = repmat(powBaseline.powspctrm, [1,nTrials])';
+
 cfg=[];
-cfg.operation = '(x1-x2)./x2';
+cfg.operation = '(x1-x2)/x2';
 cfg.parameter = 'powspctrm';
 gammaPow = ft_math(cfg, powActive, powBaseline);
 
