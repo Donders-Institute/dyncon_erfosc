@@ -23,7 +23,8 @@ pilotsubjects(3).channels = [];
 pilotsubjects(3).dataset = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot/03/pilot3_1200hz_20160920_02.ds';
 pilotsubjects(3).logfile = '/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot/pilot_03.mat';
 pilotsubjects(3).headshape = '/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot/pilot_03_polhemus.mat';
-pilotsubjects(3).mri = '';
+pilotsubjects(3).mri = '/home/electromag/matves/Data/ERF_oscillation/sMRI/pilot/03/101497/SARFAB_07042016_KD_SUB5.MR.SARFAB_SKYRA.0011.0001.2016.04.07.18.27.54.54019.1168606464.IMA';
+
 pilotsubjects(3).icacomp = [3, 13];
 
 %gamma experiment Stan van Pelt
