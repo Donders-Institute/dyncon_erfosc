@@ -34,49 +34,26 @@ end
 
 %% load data
 erf_osc_datainfo;
-if isPilot
-    data = load(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
-    load(pilotsubjects(subj).logfile);% load log file
-else
-    data = load(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
-    load(subjects(subj).logfile);% load log file
-end
+load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
 load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_peak_%d', subj, subj), 'peakFreq');
-data = data.dataClean;
-fs = data.fsample;
 
+cfg                = [];
+cfg.offset         = -(gam_pow_data.trialinfo(:,5)-gam_pow_data.trialinfo(:,4));
+gamPowDataShift    = ft_redefinetrial(cfg, gamPowData);
 
-
-% select only shift trials, with valid response
-idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,2)==0);
-nTrials = length(idxM);
-
-cfg=[];
-cfg.trials = idxM(1:nTrials);
-data = ft_selectdata(cfg, data);
-
-cfg=[];
-cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-dataShift = ft_redefinetrial(cfg, data);
-
-cfg=[];
-cfg.latency = [-0.5/peakFreq 0-1/fs];
-dataPreShift = ft_selectdata(cfg, dataShift);
-
-cfg=[];
-cfg.resamplefs = 200;
-data = ft_resampledata(cfg, data);
+cfg          = [];
+cfg.latency  = [-0.5/peakFreq 0-1/fs];
+dataPreShift = ft_selectdata(cfg, gamPowDataShift);
 
 %% estimate gamma angle
-cfg=[];
-cfg.foi = peakFreq;
-cfg.taper = 'hanning';
-cfg.output = 'fourier';
-cfg.method = 'mtmfft';
+cfg            = [];
+cfg.foi        = peakFreq;
+cfg.taper      = 'hanning';
+cfg.output     = 'fourier';
+cfg.method     = 'mtmfft';
 cfg.keeptrials = 'yes';
-cfg.channel = {'MZO', 'MZP', 'MLO', 'MLP', 'MRO', 'MRP'};
-fcomp = ft_freqanalysis(cfg, dataPreShift);
-gammaAngle = angle(fcomp.fourierspctrm(:,1,:)); % in radians
+fcomp          = ft_freqanalysis(cfg, dataPreShift);
+gammaAngle     = angle(fcomp.fourierspctrm(:,1,:)); % in radians
 
 %% save
 filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_angle_%d', subj, subj);

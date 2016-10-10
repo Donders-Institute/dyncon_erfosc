@@ -44,20 +44,20 @@ end
 data = data.dataClean;
 
 % select only shift trials, with valid response
-idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
-cfg=[];
-cfg.trials = idxM;
+idxM        = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
+cfg         = [];
+cfg.trials  = idxM;
 cfg.channel = 'MEG';
-data = ft_selectdata(cfg, data);
+data        = ft_selectdata(cfg, data);
 
 % redifine zero point to shift onset
-cfg=[];
-cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-dataShift = ft_redefinetrial(cfg, data);
+cfg         = [];
+cfg.offset  = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+dataShift   = ft_redefinetrial(cfg, data);
 
-cfg=[];
+cfg         = [];
 cfg.latency = [-0.05 0.75];
-dataShift = ft_selectdata(cfg, dataShift);
+dataShift   = ft_selectdata(cfg, dataShift);
 
 %% DSS (denoising source seperation)
 % use DSS component analysis to select a handful of components that should
@@ -67,28 +67,27 @@ s.X = 1; % 1 source signal estimate?
 nComponent = 10;
 
 % run a dss decomposition
-params      = [];
-params.time = dataShift.time;
-params.demean = 'prezero';
-params.pre = 60; % 50 ms pre shift as baseline
-params.pst = 900; % 750 ms after shift
+params          = [];
+params.time     = dataShift.time;
+params.demean   = 'prezero';
+params.pre      = 60; % 50 ms pre shift as baseline
+params.pst      = 900; % 750 ms after shift
 
 [~,~,avgorig] = denoise_avg2(params,dataShift.trial,s);
 
-cfg          = [];
-cfg.method   = 'dss';
-cfg.dss.denf.function = 'denoise_avg2';
-cfg.dss.denf.params = params;
-cfg.dss.wdim = 100;
-cfg.numcomponent = nComponent;
-cfg.cellmode = 'yes';
+cfg                     = [];
+cfg.method              = 'dss';
+cfg.dss.denf.function   = 'denoise_avg2';
+cfg.dss.denf.params     = params;
+cfg.dss.wdim            = 100;
+cfg.numcomponent        = nComponent;
+cfg.cellmode            = 'yes';
 
 % cfg for plotting
-cfgp = [];
-cfgp.layout = 'CTF275_helmet.mat';
-cfgp.component = 1:nComponent;
-
-comp = ft_componentanalysis(cfg, dataShift);
+cfgp            = [];
+cfgp.layout     = 'CTF275_helmet.mat';
+cfgp.component  = 1:nComponent;
+comp            = ft_componentanalysis(cfg, dataShift);
 figure;ft_topoplotIC(cfgp, comp);drawnow;
 
 % get the 'average'
@@ -97,9 +96,9 @@ figure;ft_topoplotIC(cfgp, comp);drawnow;
 npos = sum(avgcomp>0,2);
 if npos<100,
     fprintf('converting polarity\n');
-    avgcomp = -avgcomp;
-    comp.topo = -comp.topo;
-    comp.trial = -comp.trial;
+    avgcomp     = -avgcomp;
+    comp.topo   = -comp.topo;
+    comp.trial  = -comp.trial;
 end
 N = size(avgcomp,2);
 
@@ -109,9 +108,9 @@ N = size(avgcomp,2);
 % estimate how many peaks (max 5) have to be used to approach real signal
 
 % get the parameters for the peaks
-taper  = tukeywin(N,0.2)';
-center = params.pre+round(params.pst/2)+1;
-window = N-1-params.pre;
+taper       = tukeywin(N,0.2)';
+center      = params.pre+round(params.pst/2)+1;
+window      = N-1-params.pre;
 maxnumpeaks = 5;
 
 f1 = cell(1,maxnumpeaks);
@@ -126,9 +125,9 @@ for k = 1:cfg.numcomponent;
     [~,bestfit] = max(qc(:,2));
     
     initcomp = m{bestfit};
-    width = f1{bestfit}(:,4);
-    area  = f1{bestfit}(:,end);
-    sel   = width>20 & abs(area)>0.0001.*median(abs(area));
+    width    = f1{bestfit}(:,4);
+    area     = f1{bestfit}(:,end);
+    sel      = width>20 & abs(area)>0.0001.*median(abs(area));
     
     initcomp    = initcomp(sel,:);
     width       = width(sel);
@@ -144,18 +143,24 @@ for k = 1:cfg.numcomponent;
     
     figure;plot(initcomp','b');hold on;plot(avgcomp(k,:),'r');drawnow;
     
-    cfgb = [];
+    cfgb         = [];
     cfgb.channel = comp.label(k);
-    comp_sel = ft_selectdata(cfgb, comp);
+    comp_sel     = ft_selectdata(cfgb, comp);
     
     % estimate the single-trial variables for the peaks estimated with the
     % peak fitting algorithm
     [r1(k),r2(k)] = doASEO(comp_sel,'initcomp',repmat(taper',[1 size(initcomp,1)]).*initcomp','jitter',jitter);
+    
+    % use the ASEO algorithm with visually selected latencies for the (2)
+    % peaks.
+    waveformInitSet = [54 79; 81 126]';
+    jitter2 = [-20 20; -20 20];
+    [q1(k), q2(k)] = doASEO(comp_sel, 'waveformInitSet', waveformInitSet, 'jitter', jitter2);
 end
 
 %% save
 filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d', subj, subj);
-save(fullfile([filename '.mat']),'comp', 'r1', 'r2', 'avgorig')
+save(fullfile([filename '.mat']),'comp', 'r1', 'r2', 'q1', 'q2', 'avgorig', 'avgcomp')
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']));
 

@@ -38,25 +38,26 @@ end
 erf_osc_datainfo;
 load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
 
-%% gamma power
-cfg=[];
-cfg.offset = -(gam_pow_data.trialinfo(:,5)-gam_pow_data.trialinfo(:,4));
-gam_pow_data_shift = ft_redefinetrial(cfg, gam_pow_data);
-cfg=[];
-cfg.latency = [-1+1/fs 0];
-tmpPre = ft_selectdata(cfg, gam_pow_data);
-tmpPost = ft_selectdata(cfg, gam_pow_data_shift);
+cfg                = [];
+cfg.offset         = -(gam_pow_data.trialinfo(:,5)-gam_pow_data.trialinfo(:,4));
+gamPowDataShift    = ft_redefinetrial(cfg, gamPowData);
 
-cfg = [];
+cfg          = [];
+cfg.latency  = [-1+1/fs 0];
+dataPre      = ft_selectdata(cfg, gamPowData);
+dataPost     = ft_selectdata(cfg, gamPowDataShift);
+
+%% gamma power
+cfg             = [];
 cfg.method      = 'mtmfft';
 cfg.output      = 'pow';
 cfg.tapsmofrq   = 5;
 cfg.foilim      = [peakFreq peakFreq];
 cfg.keeptrials  = 'yes';
-gamPowPre      = ft_freqanalysis(cfg, tmpPre);
-gamPowPost     = ft_freqanalysis(cfg, tmpPost);
+gamPowPre       = ft_freqanalysis(cfg, dataPre);
+gamPowPost      = ft_freqanalysis(cfg, dataPost);
 
-gamPowDif = gamPowPre;
+gamPowDif           = gamPowPre;
 gamPowDif.powspctrm = (gamPowPost.powspctrm-gamPowPre.powspctrm)./gamPowPre.powspctrm;
 
 

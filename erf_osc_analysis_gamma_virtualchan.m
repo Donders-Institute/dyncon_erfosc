@@ -194,19 +194,19 @@ cfg.projectmom      = 'yes';
 cfg.fixedori        = 'yes';
 source_idx          = ft_sourceanalysis(cfg, tlock);
 
-beamformer_gam_pow = source_idx.avg.filter;
+beamformerGamPow = source_idx.avg.filter;
 
-gam_pow_data              = [];
-gam_pow_data.label        = {'gam_pow'};
-gam_pow_data.time         = data.time;
-gam_pow_data.datainfo     = data.trialinfo;
+gamPowData              = [];
+gamPowData.label        = {'gam_pow'};
+gamPowData.time         = data.time;
+gamPowData.datainfo     = data.trialinfo;
 for i=1:length(dataShift.trial)
-    gam_pow_data.trial{i} = beamformer_gam_pow{1} * data.trial{i};
+    gamPowData.trial{i} = beamformerGamPow{1} * data.trial{i};
 end
 
 %% save
 filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_virtual_channel_%d', subj, subj);
-save(fullfile([filename '.mat']), 'gam_pow_data', 'beamformer_gam_pow');
+save(fullfile([filename '.mat']), 'gamPowData', 'beamformerGamPow');
 diary off
 movefile('tmpDiary', fullfile([filename '.txt']));
 
