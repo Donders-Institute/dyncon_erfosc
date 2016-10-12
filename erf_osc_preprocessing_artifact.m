@@ -374,9 +374,9 @@ comp_orig     = ft_componentanalysis(cfg, dataNoArtfct);
 
 erf_osc_datainfo; % load subject specific data for the latest version.
 if isPilot
-    subs_comp = pilotsubjects(subj).icacomp;
+    subs_comp = [pilotsubjects(subj).ecgcomp, pilotsubjects(subj).eyecomp];
 else
-    subs_comp = subjects(subj).icacomp;
+    subs_comp = [subjects(subj).ecgcomp, subjects(subj).eyecomp];
 end
 cfg=[];
 cfg.component = subs_comp;
