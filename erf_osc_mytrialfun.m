@@ -52,10 +52,10 @@ for ii = 1:length(event)
             
             sampleGratingOnset = event(ii).sample + lag;
             % get sample of shift 
-            if ismember(event(ii+1).type, cfg.trialdef.eventtype) && event(ii+1).value==4 % see whether the next event is the grating shift
-                sampleShiftOnset = event(ii+1).sample + lag;
-            elseif any(iTrial==log.trlNoShift)
+            if any(iTrial==log.trlNoShift)
                 sampleShiftOnset = 0;
+            elseif ismember(event(ii+1).type, cfg.trialdef.eventtype) && event(ii+1).value==4 % see whether the next event is the grating shift
+                sampleShiftOnset = event(ii+1).sample + lag;
             else
                 idxShiftEvent = find((trigSample>event(ii).sample) & (trigValue==4), 1); % find the next sample with value 4
                 sampleShiftOnset = event(idxShiftEvent).sample + lag;
