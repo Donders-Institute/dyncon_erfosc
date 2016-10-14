@@ -36,16 +36,20 @@ end
 
 %% load data
 erf_osc_datainfo;
+load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
 load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
+fs = gamPowData.fsample;
 
 cfg                = [];
-cfg.offset         = -(gam_pow_data.trialinfo(:,5)-gam_pow_data.trialinfo(:,4));
+cfg.offset         = -(gamPowData.trialinfo(:,5)-gamPowData.trialinfo(:,4));
 gamPowDataShift    = ft_redefinetrial(cfg, gamPowData);
 
 cfg          = [];
-cfg.latency  = [-1+1/fs 0];
+cfg.latency  = [-0.5+1/fs 0];
 dataPre      = ft_selectdata(cfg, gamPowData);
 dataPost     = ft_selectdata(cfg, gamPowDataShift);
+
+peakFreq = 2*round(peakFreq/2);
 
 %% gamma power
 cfg             = [];
@@ -53,17 +57,18 @@ cfg.method      = 'mtmfft';
 cfg.output      = 'pow';
 cfg.tapsmofrq   = 5;
 cfg.foilim      = [peakFreq peakFreq];
-cfg.keeptrials  = 'yes';
+cfg.keeptrials  = 'no'; % average baseline over trials
 gamPowPre       = ft_freqanalysis(cfg, dataPre);
+cfg.keeptrials  = 'yes';
 gamPowPost      = ft_freqanalysis(cfg, dataPost);
 
-gamPowDif           = gamPowPre;
-gamPowDif.powspctrm = (gamPowPost.powspctrm-gamPowPre.powspctrm)./gamPowPre.powspctrm;
+gamPow = gamPowPost;
+gamPow.powspctrm = (gamPow.powspctrm - gamPowPre.powspctrm)/gamPowPre.powspctrm;
 
 
 %% save
 filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_pow_%d', subj, subj);
-save(fullfile([filename '.mat']), 'gamPowDif');
+save(fullfile([filename '.mat']), 'gamPow');
 diary off
 movefile('tmpDiary', fullfile([filename '.txt']));
 

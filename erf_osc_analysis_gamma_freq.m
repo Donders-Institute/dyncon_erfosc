@@ -43,50 +43,45 @@ else
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
-
-
+fs   = data.fsample;
 
 % select only shift trials, with valid response
-idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,2)==0);
+idxM    = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,2)==0);
 nTrials = length(idxM);
 
-cfg=[];
-cfg.trials = idxM(1:nTrials);
-data = ft_selectdata(cfg, data);
+cfg        = [];
+cfg.trials = idxM;
+data       = ft_selectdata(cfg, data);
 
-cfg=[];
-cfg.resamplefs = 200;
-data = ft_resampledata(cfg, data);
-fs = data.fsample;
 
 %% FFT, powerspectrum
-cfg=[];
-cfg.channel = {'MZO', 'MZP', 'MLO', 'MLP', 'MRO', 'MRP'};
-cfg.latency = [-1+1/fs 0];
+cfg          = [];
+cfg.channel  = {'MZO', 'MZP', 'MLO', 'MLP', 'MRO', 'MRP'};
+cfg.latency  = [-1+1/fs 0];
 dataBaseline = ft_selectdata(cfg, data);
-cfg.latency = [0.4+1/fs 3.75]; % take active time window after first erfs
-dataActive  = ft_selectdata(cfg, data);
+cfg.latency  = [0.4+1/fs 1.75]; % take active time window after first erfs
+dataActive   = ft_selectdata(cfg, data);
 
-cfg=[];
-cfg.foi = 30:1:99;
-cfg.method = 'mtmfft';
-cfg.output = 'pow';
-cfg.tapsmofrq = 1;
-cfg.taper = 'dpss';
+cfg            = [];
+cfg.foi        = 30:1:100;
+cfg.method     = 'mtmfft';
+cfg.output     = 'pow';
+cfg.tapsmofrq  = 1;
+cfg.taper      = 'dpss';
 cfg.keeptrials = 'no';
-cfg.pad = 2;
-powActive = ft_freqanalysis(cfg, dataActive);
-powBaseline = ft_freqanalysis(cfg, dataBaseline);
+cfg.pad        = 2;
+powActive      = ft_freqanalysis(cfg, dataActive);
+powBaseline    = ft_freqanalysis(cfg, dataBaseline);
 
-cfg=[];
+cfg           = [];
 cfg.operation = '(x1-x2)./x2';
 cfg.parameter = 'powspctrm';
-powDiff = ft_math(cfg, powActive, powBaseline);
+powDiff       = ft_math(cfg, powActive, powBaseline);
 
 % average over channels, take the freq with max gamma pow diff
-gammaAvg = mean(powDiff.powspctrm,1);
+gammaAvg      = mean(powDiff.powspctrm,1);
 [maxP maxIdx] = max(gammaAvg);
-peakFreq = powDiff.freq(maxIdx);
+peakFreq      = powDiff.freq(maxIdx);
 
 
 %% save

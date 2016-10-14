@@ -59,17 +59,13 @@ idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,2)=
 nTrials = length(idxM);
 
 cfg        = [];
-cfg.trials = idxM(1:nTrials);
+cfg.trials = idxM;
 data       = ft_selectdata(cfg, data);
 
 cfg        = [];
 cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
 dataShift  = ft_redefinetrial(cfg, data);
 
-% cfg            = [];
-% cfg.resamplefs = 200;
-% data           = ft_resampledata(cfg, data);
-% dataShift      = ft_resampledata(cfg, dataShift);
 fs = data.fsample;
 
 
@@ -196,10 +192,9 @@ source_idx          = ft_sourceanalysis(cfg, tlock);
 
 beamformerGamPow = source_idx.avg.filter;
 
-gamPowData              = [];
+gamPowData              = data;
 gamPowData.label        = {'gam_pow'};
-gamPowData.time         = data.time;
-gamPowData.datainfo     = data.trialinfo;
+gamPowData.trial        = [];
 for i=1:length(dataShift.trial)
     gamPowData.trial{i} = beamformerGamPow{1} * data.trial{i};
 end
