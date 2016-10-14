@@ -175,7 +175,7 @@ try
         conditions = [-ones(nTrialsPerCondition,1); zeros(nTrialsPerCondition,1);...
             ones(nTrialsPerCondition,1)];
     else
-        nTrialsPerCondition = 480;
+        nTrialsPerCondition = 520;
         nConditions=1;
         nTrials=nConditions*nTrialsPerCondition;
         conditions = zeros(nTrialsPerCondition,1);
@@ -251,7 +251,7 @@ try
     space = KbName('space');
     
     %% Start Experiment
-    blockLength = 60;
+    blockLength = 40;
     firstOfBlock = blockLength+1:blockLength:nTrials;
     % Run the movie animation for a variable period: end it 0.75 seconds
     % after phase shift.
