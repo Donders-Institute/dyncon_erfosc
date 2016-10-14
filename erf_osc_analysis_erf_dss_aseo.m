@@ -42,6 +42,7 @@ else
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
+fs = data.fsample;
 
 % select only shift trials, with valid response
 idxM        = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
@@ -64,14 +65,14 @@ dataShift   = ft_selectdata(cfg, dataShift);
 % represent the ERF (data is timelocked to stimilus reversal)
 
 s.X = 1; % 1 source signal estimate?
-nComponent = 10;
+nComponent = 1;
 
 % run a dss decomposition
 params          = [];
 params.time     = dataShift.time;
 params.demean   = 'prezero';
-params.pre      = 60; % 50 ms pre shift as baseline
-params.pst      = 900; % 750 ms after shift
+params.pre      = 0.05*fs; % 50 ms pre shift as baseline
+params.pst      = 0.25*fs; % 750 ms after shift
 
 [~,~,avgorig] = denoise_avg2(params,dataShift.trial,s);
 
@@ -111,13 +112,12 @@ N = size(avgcomp,2);
 taper       = tukeywin(N,0.2)';
 center      = params.pre+round(params.pst/2)+1;
 window      = N-1-params.pre;
-maxnumpeaks = 5;
+maxnumpeaks = 3;
 
 f1 = cell(1,maxnumpeaks);
 f2 = cell(1,maxnumpeaks);
 % for each component, fit 1-5 peaks and
-for k = 1:cfg.numcomponent;
-    figure;
+for k = 1:nComponent;
     for numpeaks = 1:maxnumpeaks
         [f1{numpeaks},f2{numpeaks},tmp1,tmp2,tmp3,xi,m{numpeaks}]=peakfit_jm(avgcomp(k,:).*taper,center,window,numpeaks,1,[],15,0,0,[],1,1);
     end
@@ -149,13 +149,13 @@ for k = 1:cfg.numcomponent;
     
     % estimate the single-trial variables for the peaks estimated with the
     % peak fitting algorithm
-    [r1(k),r2(k)] = doASEO(comp_sel,'initcomp',repmat(taper',[1 size(initcomp,1)]).*initcomp','jitter',jitter);
+    [r1e(k),r2e(k)] = doASEO(comp_sel,'initcomp',repmat(taper',[1 size(initcomp,1)]).*initcomp','jitter',jitter, 'numiteration', 2);
     
     % use the ASEO algorithm with visually selected latencies for the (2)
     % peaks.
     waveformInitSet = [54 79; 81 126]';
     jitter2 = [-20 20; -20 20];
-    [q1(k), q2(k)] = doASEO(comp_sel, 'waveformInitSet', waveformInitSet, 'jitter', jitter2);
+    [q1c(k), q2c(k)] = doASEO(comp_sel, 'waveformInitSet', waveformInitSet, 'jitter', jitter2, 'numiteration', 100);
 end
 
 %% save
