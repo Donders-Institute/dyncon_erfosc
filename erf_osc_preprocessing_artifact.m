@@ -15,10 +15,10 @@ function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact)
 % = false)
 
 if nargin<1
-    subj = 1;
+    subj = 4;
 end
 if isempty(subj)
-    subj = 1;
+    subj = 4;
 end
 if nargin<2
     isPilot = true;
@@ -298,8 +298,14 @@ if ~existArtifact
     artfctdef.muscle.artifact = artifact_muscle;
     artfctdef.badtrial = trlind;
     if isPilot
+        if ~exist(sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/pilot/%02d', subj), 'dir');
+            mkdir(sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/pilot/%02d', subj));
+        end
         save(sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/pilot/%02d/artifact.mat', subj), 'artfctdef');
     else
+        if ~exist(sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/experiment/%02d', subj), 'dir');
+            mkdir(sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/experiment/%02d', subj));
+        end
         save(sprintf('/home/electromag/matves/Data/ERF_oscillation/artifacts/experiment/%02d/artifact.mat', subj), 'artfctdef');
     end
     

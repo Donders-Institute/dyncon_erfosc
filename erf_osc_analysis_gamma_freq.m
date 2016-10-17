@@ -85,6 +85,9 @@ peakFreq      = powDiff.freq(maxIdx);
 
 
 %% save
+if ~exist(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d', subj), 'dir');
+    mkdir(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d', subj));
+end
 filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_peak_%d', subj, subj);
 save(fullfile([filename '.mat']), 'peakFreq', 'gammaAvg');
 diary off

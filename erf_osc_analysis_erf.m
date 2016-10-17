@@ -81,21 +81,24 @@ cfg.vartrllength = 2;
 cfg.channel = 'MEG';
 % cfg.keeptrials='yes';
 % based on grating onset (baseline window corrected)
-tlOnsetM = ft_timelockanalysis(cfg, dataOnsetMBl);
+tlOnset = ft_timelockanalysis(cfg, dataOnsetMBl);
 % based on grating shift (baseline window corrected)
-tlShiftM = ft_timelockanalysis(cfg, dataShiftMBl);
+tlShift = ft_timelockanalysis(cfg, dataShiftMBl);
 % based on grating shift (100ms preShift corrected)
-tlShiftPreM = ft_timelockanalysis(cfg, dataShiftMBlPre);
+tlShiftPre = ft_timelockanalysis(cfg, dataShiftMBlPre);
 
 % downsample for clarity in plots
 cfg=[];
 cfg.resamplefs = 200;
-tlOnsetM_rs = ft_resampledata(cfg, tlOnsetM);
-tlShiftM_rs = ft_resampledata(cfg, tlShiftM);
-tlShiftPreM_rs = ft_resampledata(cfg, tlShiftPreM);
+tlOnsetM_rs = ft_resampledata(cfg, tlOnset);
+tlShiftM_rs = ft_resampledata(cfg, tlShift);
+tlShiftPreM_rs = ft_resampledata(cfg, tlShiftPre);
 
 
 %% save
+if ~exist(sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d', subj), 'dir');
+    mkdir(sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d', subj));
+end
 filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/timelock_%d', subj, subj);
 save(fullfile([filename '.mat']), 'tlOnsetM_rs', 'tlShiftM_rs', 'tlShiftPreM_rs')
 diary off
