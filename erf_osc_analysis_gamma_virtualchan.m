@@ -13,12 +13,6 @@ end
 if isempty(isPilot);
     isPilot = true;
 end
-if nargin<3
-    isSegmentedMri = 0;
-end
-if isempty(isSegmentedMri)
-    isSegmentedMri = 0;
-end
 
 %% initiate diary
 workSpace = whos;
@@ -41,6 +35,7 @@ end
 
 %% load data
 erf_osc_datainfo;
+load(fullfile([pilotsubjects(subj).segmentedmri '.mat']));
 if isPilot
     data = load(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
@@ -96,30 +91,6 @@ freqPre       = ft_freqanalysis(cfg, dataPre);
 freqPost      = ft_freqanalysis(cfg, dataPost);
 
 %% Source analysis
-if isSegmentedMri
-    load(pilotsubjects(subj).segmentedmri);
-else
-    mri = ft_read_mri(pilotsubjects(subj).mri);
-    polhemus = ft_read_headshape(pilotsubjects(subj).headshape);
-    
-    % align mri with MEG data through polhemus headshape
-    cfg                         = [];
-    cfg.coordsys                = 'ctf';
-    cfg.parameter               = 'anatomy';
-    cfg.viewresult              = 'yes';
-    cfg.method                  = 'headshape';
-    cfg.headshape.headshape     = polhemus;
-    cfg.headshape.interactive   = 'no';%'yes';
-    cfg.headshape.icp           = 'yes';
-    mri                         = ft_volumerealign(cfg, mri);
-    
-    % segment mri
-    cfg             = [];
-    cfg.write       = 'no';
-    cfg.coordsys    = 'neuromag';
-    [segmentedmri]  = ft_volumesegment(cfg, mri);
-    save(pilotsubjects(subj).segmentedmri, 'segmentedmri');
-end
 
 % constructs a volume conduction model from the geometry of the head.
 cfg         = [];
