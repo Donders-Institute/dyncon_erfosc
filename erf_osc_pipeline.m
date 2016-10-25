@@ -19,6 +19,10 @@ erf_osc_preprocessing_artifact(subj, isPilot, existArtifact)
 % to CTF coordinate system and segment.
 erf_osc_preprocessing_mri(subj, isPilot)
 
+%% TFA
+
+erf_osc_analysis_tfa(subj, isPilot);
+
 %% Gamma power
 % estimate gamma peak frequency; create virtual gamma channel; calculate
 % gamma power and gamma phase pre stimulus reversal.
@@ -29,4 +33,9 @@ erf_osc_analysis_gamma_virtualchan(subj, isPilot)
 
 erf_osc_analysis_gamma_pow(subj, isPilot);
 
+erf_osc_analysis_gamma_phase(subj, isPilot);
 
+
+%% ERF
+
+erf_osc_analysis_erf_dss_aseo(subj, isPilot)

@@ -38,7 +38,7 @@ gammaPow = gamPow.powspctrm;
 load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_angle_%d', subj, subj));
 
 % load ERF
-load(sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d.mat', subj, subj), 'r1', 'q1');
+load(sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d.mat', subj, subj), 'q1');
 
 
 %% gamma pow - ERF components

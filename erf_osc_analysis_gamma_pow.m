@@ -50,20 +50,22 @@ dataPre      = ft_selectdata(cfg, gamPowData);
 dataPost     = ft_selectdata(cfg, gamPowDataShift);
 
 peakFreq = 2*round(peakFreq/2);
-
+smoothing = 6;
 %% gamma power
 cfg             = [];
 cfg.method      = 'mtmfft';
 cfg.output      = 'pow';
-cfg.tapsmofrq   = 5;
-cfg.foilim      = [peakFreq peakFreq];
+cfg.tapsmofrq   = smoothing;
+cfg.foilim      = [(peakFreq - 6*smoothing) (peakFreq + 6*smoothing)];
 cfg.keeptrials  = 'no'; % average baseline over trials
 gamPowPre       = ft_freqanalysis(cfg, dataPre);
 cfg.keeptrials  = 'yes';
 gamPowPost      = ft_freqanalysis(cfg, dataPost);
 
 gamPow = gamPowPost;
-gamPow.powspctrm = (gamPow.powspctrm - gamPowPre.powspctrm)/gamPowPre.powspctrm;
+gamPowPre.powspctrm = repmat(gamPowPre.powspctrm, [size(gamPow.powspctrm,1), 1]);
+
+gamPow.powspctrm = (squeeze(gamPow.powspctrm) - gamPowPre.powspctrm)./gamPowPre.powspctrm;
 
 
 %% save

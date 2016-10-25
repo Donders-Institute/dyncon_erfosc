@@ -1,4 +1,4 @@
-function [data, avgorig, avgnew, avgcomp, comp, r1, r2] = erf_osc_analysis_erf_dss_aseo(subj, isPilot)
+function erf_osc_analysis_erf_dss_aseo(subj, isPilot)
 if nargin<1
     subj = 3;
 end
@@ -71,8 +71,8 @@ nComponent = 1;
 params          = [];
 params.time     = dataShift.time;
 params.demean   = 'prezero';
-params.pre      = 0.05*fs; % 50 ms pre shift as baseline
-params.pst      = 0.25*fs; % 750 ms after shift
+params.pre      = 0.05*fs; % 50 ms pre stim reversal as baseline
+params.pst      = 0.75*fs; % 750 ms after stim reversal
 
 [~,~,avgorig] = denoise_avg2(params,dataShift.trial,s);
 
@@ -149,18 +149,20 @@ for k = 1:nComponent;
     
     % estimate the single-trial variables for the peaks estimated with the
     % peak fitting algorithm
-    [r1e(k),r2e(k)] = doASEO(comp_sel,'initcomp',repmat(taper',[1 size(initcomp,1)]).*initcomp','jitter',jitter, 'numiteration', 2);
+%     [r1(k),r2(k)] = doASEO(comp_sel,'initcomp',repmat(taper',[1 size(initcomp,1)]).*initcomp','jitter',jitter, 'numiteration', 1);
     
     % use the ASEO algorithm with visually selected latencies for the (2)
     % peaks.
-    waveformInitSet = [54 79; 81 126]';
-    jitter2 = [-20 20; -20 20];
-    [q1c(k), q2c(k)] = doASEO(comp_sel, 'waveformInitSet', waveformInitSet, 'jitter', jitter2, 'numiteration', 100);
+    waveformInitSet = [119 160;161 226;230 459]';%[54 79; 81 126]';
+    waveformInitSet = waveformInitSet(:);
+    jitter2 = [-20 20; -20 20; -20 20];
+    ASEOiteration = 1;
+    [q1(k), q2(k)] = doASEO(comp_sel, 'waveformInitSet', waveformInitSet, 'jitter', jitter2, 'numiteration', ASEOiteration);
 end
 
 %% save
 filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d', subj, subj);
-save(fullfile([filename '.mat']),'comp', 'r1', 'r2', 'q1', 'q2', 'avgorig', 'avgcomp')
+save(fullfile([filename '.mat']),'comp', 'q1', 'q2', 'avgorig', 'avgcomp')
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']));
 

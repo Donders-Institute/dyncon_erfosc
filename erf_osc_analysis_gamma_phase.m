@@ -44,7 +44,7 @@ cfg.offset         = -(gamPowData.trialinfo(:,5)-gamPowData.trialinfo(:,4));
 gamPowDataShift    = ft_redefinetrial(cfg, gamPowData);
 
 cfg          = [];
-cfg.latency  = [-0.5/peakFreq 0-1/fs];
+cfg.latency  = [-5/peakFreq 0-1/fs]; % 5 cycles of peak freq
 dataPreShift = ft_selectdata(cfg, gamPowDataShift);
 
 %% estimate gamma angle
@@ -57,18 +57,18 @@ cfg.tapsmofrq  = 5;
 cfg.foilim     = [peakFreq peakFreq];
 fcomp          = ft_freqanalysis(cfg, dataPreShift);
 gamAngle       = angle(fcomp.fourierspctrm(:,1,:)); % in radians
-gamAngle       = radtodeg(gamAngle)+180; % shift to 0-360 degree
+% gamAngle       = radtodeg(gamAngle)+180; % shift to 0-360 degree
 
-bins = 0:60:360;
-angleBin = zeros(nTrials,1);
-for iTrl = 1:nTrials
-angleBin(iTrl) = bins(nearest(bins, gamAngle(iTrl)));
-end
-angleBin(angleBin==0) = 360;
+% bins = 0:60:360;
+% angleBin = zeros(nTrials,1);
+% for iTrl = 1:nTrials
+% angleBin(iTrl) = bins(nearest(bins, gamAngle(iTrl)));
+% end
+% angleBin(angleBin==0) = 360;
 
 %% save
 filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_angle_%d', subj, subj);
-save(fullfile([filename '.mat']), 'gamAngle', 'bins', 'angleBin');
+save(fullfile([filename '.mat']), 'gamAngle');
 diary off
 movefile('tmpDiary', fullfile([filename '.txt']));
 end

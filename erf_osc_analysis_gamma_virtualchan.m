@@ -1,4 +1,4 @@
-function erf_osc_analysis_gamma_virtualchan(subj, isPilot, isSegmentedMri)
+function erf_osc_analysis_gamma_virtualchan(subj, isPilot)
 % This function estimates gamma power at the estimated gamma peak frequency
 
 if nargin<1
