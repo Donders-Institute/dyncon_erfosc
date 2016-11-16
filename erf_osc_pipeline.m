@@ -33,7 +33,7 @@ erf_osc_analysis_gamma_virtualchan(subj, isPilot)
 
 erf_osc_analysis_gamma_pow(subj, isPilot);
 
-erf_osc_analysis_gamma_phase(subj, isPilot);
+% erf_osc_analysis_gamma_phase(subj, isPilot);
 
 
 %% ERF

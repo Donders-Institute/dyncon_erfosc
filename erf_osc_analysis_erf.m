@@ -42,10 +42,10 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
@@ -57,50 +57,51 @@ nTrials = length(idxM);
 
 cfg=[];
 cfg.trials = idxM;
+cfg.channel = 'MEG';
 dataM = ft_selectdata(cfg, data);
 
 % baseline correct with last 100ms from baseline window
 cfg=[];
 cfg.baseline = [-0.1 0];
-dataOnsetMBl = ft_timelockbaseline(cfg, dataM);
+dataOnsetBl = ft_timelockbaseline(cfg, dataM);
 
 cfg=[];
 cfg.offset = -(dataM.trialinfo(:,5)-dataM.trialinfo(:,4));
-dataShiftM = ft_redefinetrial(cfg, dataM);
-dataShiftMBl = ft_redefinetrial(cfg, dataOnsetMBl);
+% dataShiftM = ft_redefinetrial(cfg, dataM);
+dataShiftMBl = ft_redefinetrial(cfg, dataOnsetBl);
 
 % baseline correct shifted data with 100ms preShift window
-cfg=[];
-cfg.baseline = [-0.1 0];
-dataShiftMBlPre = ft_timelockbaseline(cfg, dataShiftM);
+% cfg=[];
+% cfg.baseline = [-0.1 0];
+% dataShiftMBlPre = ft_timelockbaseline(cfg, dataShiftM);
 
 
 %% Time-lock analysis
 cfg=[];
 cfg.vartrllength = 2;
-cfg.channel = 'MEG';
+cfg.channel = {'MLP', 'MRP'};
 % cfg.keeptrials='yes';
 % based on grating onset (baseline window corrected)
-tlOnset = ft_timelockanalysis(cfg, dataOnsetMBl);
+% tlOnset = ft_timelockanalysis(cfg, dataOnsetMBl);
 % based on grating shift (baseline window corrected)
 tlShift = ft_timelockanalysis(cfg, dataShiftMBl);
 % based on grating shift (100ms preShift corrected)
-tlShiftPre = ft_timelockanalysis(cfg, dataShiftMBlPre);
+% tlShiftPre = ft_timelockanalysis(cfg, dataShiftMBlPre);
 
 % downsample for clarity in plots
 cfg=[];
 cfg.resamplefs = 200;
-tlOnsetM_rs = ft_resampledata(cfg, tlOnset);
+% tlOnsetM_rs = ft_resampledata(cfg, tlOnset);
 tlShiftM_rs = ft_resampledata(cfg, tlShift);
-tlShiftPreM_rs = ft_resampledata(cfg, tlShiftPre);
+% tlShiftPreM_rs = ft_resampledata(cfg, tlShiftPre);
 
 
 %% save
-if ~exist(sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d', subj), 'dir');
-    mkdir(sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d', subj));
+if ~exist(sprintf('/project/3011085.02/Results/ERF_oscillation/erf/%02d', subj), 'dir');
+    mkdir(sprintf('/project/3011085.02/Results/ERF_oscillation/erf/%02d', subj));
 end
-filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/timelock_%d', subj, subj);
-save(fullfile([filename '.mat']), 'tlOnsetM_rs', 'tlShiftM_rs', 'tlShiftPreM_rs')
+filename = sprintf('/project/3011085.02/Results/ERF_oscillation/erf/%02d/timelock_%d', subj, subj);
+save(fullfile([filename '.mat']), 'tlShiftM_rs')
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']));
 

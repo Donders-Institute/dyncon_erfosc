@@ -1,9 +1,9 @@
 function erf_osc_analysis_erf_dss_aseo(subj, isPilot)
 if nargin<1
-    subj = 3;
+    subj = 4;
 end
 if isempty(subj)
-    subj = 3;
+    subj = 4;
 end
 if nargin<2
     isPilot = true;
@@ -35,10 +35,10 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
@@ -65,7 +65,7 @@ dataShift   = ft_selectdata(cfg, dataShift);
 % represent the ERF (data is timelocked to stimilus reversal)
 
 s.X = 1; % 1 source signal estimate?
-nComponent = 1;
+nComponent = 2;
 
 % run a dss decomposition
 params          = [];
@@ -109,15 +109,19 @@ N = size(avgcomp,2);
 % estimate how many peaks (max 5) have to be used to approach real signal
 
 % get the parameters for the peaks
-taper       = tukeywin(N,0.2)';
-center      = params.pre+round(params.pst/2)+1;
-window      = N-1-params.pre;
-maxnumpeaks = 3;
+% taper       = tukeywin(N,0.2)';
 
-f1 = cell(1,maxnumpeaks);
-f2 = cell(1,maxnumpeaks);
+% peak fit algorithm
+% center      = params.pre+round(params.pst/2)+1;
+% window      = N-1-params.pre;
+% maxnumpeaks = 3;
+
+% f1 = cell(1,maxnumpeaks);
+% f2 = cell(1,maxnumpeaks);
 % for each component, fit 1-5 peaks and
-for k = 1:nComponent;
+for k = 1%1:nComponent;
+    % peakfit algorithm
+    %{
     for numpeaks = 1:maxnumpeaks
         [f1{numpeaks},f2{numpeaks},tmp1,tmp2,tmp3,xi,m{numpeaks}]=peakfit_jm(avgcomp(k,:).*taper,center,window,numpeaks,1,[],15,0,0,[],1,1);
     end
@@ -142,6 +146,11 @@ for k = 1:nComponent;
     
     
     figure;plot(initcomp','b');hold on;plot(avgcomp(k,:),'r');drawnow;
+    %} 
+    figure; plot(comp.time{1}, avgcomp(k,:),'r')
+%     input('Please enter the peak latencies in erf_osc_datainfo. press any key to continue');
+    erf_osc_datainfo;
+    
     
     cfgb         = [];
     cfgb.channel = comp.label(k);
@@ -153,15 +162,16 @@ for k = 1:nComponent;
     
     % use the ASEO algorithm with visually selected latencies for the (2)
     % peaks.
-    waveformInitSet = [119 160;161 226;230 459]';%[54 79; 81 126]';
+    waveformInitSet = pilotsubjects(subj).aseo;
+% waveformInitSet = [119 161; 162 226; 230 459]';
     waveformInitSet = waveformInitSet(:);
-    jitter2 = [-20 20; -20 20; -20 20];
-    ASEOiteration = 1;
-    [q1(k), q2(k)] = doASEO(comp_sel, 'waveformInitSet', waveformInitSet, 'jitter', jitter2, 'numiteration', ASEOiteration);
+    jitter = [-20 20; -20 20; -20 20];
+    ASEOiteration = 3;
+    [q1(k), q2(k)] = doASEO(comp_sel, 'waveformInitSet', waveformInitSet, 'jitter', jitter, 'numiteration', ASEOiteration);
 end
 
 %% save
-filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d', subj, subj);
+filename = sprintf('/project/3011085.02/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d', subj, subj);
 save(fullfile([filename '.mat']),'comp', 'q1', 'q2', 'avgorig', 'avgcomp')
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']));

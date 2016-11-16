@@ -28,27 +28,28 @@ end
 
 %% load data
 % load gamma peak freq
-load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
+load(sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
+peakFreq = 2*round(peakFreq/2);
 
 % load gamma power
-load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_pow_%d.mat', subj, subj));
+load(sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_pow_%d.mat', subj, subj));
 gammaPow = gamPow.powspctrm;
 
 % load gamma phase
-load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_angle_%d', subj, subj));
+% load(sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_angle_%d', subj, subj));
 
 % load ERF
-load(sprintf('/home/electromag/matves/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d.mat', subj, subj), 'q1');
+load(sprintf('/project/3011085.02/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d.mat', subj, subj), 'q1');
 
 
 %% gamma pow - ERF components
 peakIdx = find(gamPow.freq==peakFreq);
-[rAmp pAmp] = corr(gammaPow(:,peakIdx), q1(1).params.amplitude, 'type', 'pearson')
-[rLat pLat] = corr(gammaPow(:,peakIdx), q1(1).params.latency, 'type', 'pearson')
+[rAmp{1} pAmp{1}] = corr(gammaPow(:,peakIdx), q1(1).params.amplitude, 'type', 'spearman')
+[rLat{1} pLat{1}] = corr(gammaPow(:,peakIdx), q1(1).params.latency, 'type', 'spearman')
 
 for iFreq = 1:length(gamPow.freq)
-[rA(iFreq,:), pA(iFreq,:)] = corr(gammaPow(:,iFreq), q1(1).params.amplitude, 'type', 'pearson');
-[rL(iFreq,:), pL(iFreq,:)] = corr(gammaPow(:,iFreq), q1(1).params.latency, 'type', 'pearson');
+[rA(iFreq,:), pA(iFreq,:)] = corr(gammaPow(:,iFreq), q1(1).params.amplitude, 'type', 'spearman');
+[rL(iFreq,:), pL(iFreq,:)] = corr(gammaPow(:,iFreq), q1(1).params.latency, 'type', 'spearman');
 end
 
 %% gamma phase - ERF components
@@ -80,7 +81,7 @@ plot(60:60:360, gam, '.')
 
 
 %% save
-% filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_pow_%d', subj, subj);
+% filename = sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_pow_%d', subj, subj);
 % save(fullfile([filename '.mat']), 'gammaPow');
 % diary off
 % movefile('tmpDiary', fullfile([filename '.txt']));

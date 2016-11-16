@@ -14,9 +14,9 @@ if isempty(isPilot);
 end
 
 if isPilot
-    load(sprintf('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot/pilot_headposition_%02d.mat', subj));
+    load(sprintf('/project/3011085.02/Data/ERF_oscillation/behavioral_log/pilot/pilot_headposition_%02d.mat', subj));
 else
-    load(sprintf('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/experiment/headposition_%02d.mat', subj));
+    load(sprintf('/project/3011085.02/Data/ERF_oscillation/behavioral_log/experiment/headposition_%02d.mat', subj));
 end
 
 figure;

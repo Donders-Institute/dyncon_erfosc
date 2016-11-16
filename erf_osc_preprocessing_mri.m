@@ -28,6 +28,7 @@ erf_osc_datainfo;
 mri = ft_read_mri(pilotsubjects(subj).mri);
 mri.coordsys = 'mni';
 polhemus = ft_read_headshape(pilotsubjects(subj).headshape);
+polhemus.unit='cm';
 
 % align mri with MEG data through polhemus headshape
 cfg                         = [];
@@ -38,7 +39,7 @@ cfg.headshape.headshape     = polhemus;
 cfg.headshape.interactive   = 'yes';
 cfg.headshape.icp           = 'yes';
 cfg.coordsys                = 'ctf';
-mri                         = ft_volumerealign(cfg, mri);
+mri2                         = ft_volumerealign(cfg, mri);
 
 % segment mri
 cfg             = [];

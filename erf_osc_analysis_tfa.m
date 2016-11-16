@@ -42,10 +42,10 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/home/electromag/matves/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
@@ -115,7 +115,7 @@ tfaHigh = ft_freqanalysis(cfg,data);
 
 
 %% save
-filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/tfa_%d', subj, subj);
+filename = sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/tfa_%d', subj, subj);
 save(fullfile([filename '.mat']), 'powActive', 'powBaseline', 'tfaLow', 'tfaHigh');
 diary off
 movefile('tmpDiary', fullfile([filename '.txt']));

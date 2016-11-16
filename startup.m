@@ -13,11 +13,12 @@ else
     addpath('/home/electromag/matves/MATLAB');
     addpath('/home/electromag/matves/dyncon');
     addpath('/home/electromag/matves/Data/bbcm/');
-    addpath('/home/electromag//matves/MATLAB/cellfunction/');
+    addpath('/home/electromag/matves/MATLAB/cellfunction/');
     % Dss and ASEO
     addpath('/home/electromag/matves/MATLAB/dss_aseo/peakfit');
     addpath('/home/electromag/matves/MATLAB/dss_aseo/ASEO');
     addpath('/home/electromag/matves/MATLAB/dss_aseo/dss2_1-0');
+    addpath('/home/electromag/matves/fieldtrip/singletrial/');
     
     cd('/home/electromag/matves/dyncon/erfosc');
 end

@@ -46,8 +46,8 @@ gamPowDataShift    = ft_redefinetrial(cfg, gamPowData);
 
 cfg          = [];
 cfg.latency  = [-0.5+1/fs 0];
-dataPre      = ft_selectdata(cfg, gamPowData);
-dataPost     = ft_selectdata(cfg, gamPowDataShift);
+dataBl      = ft_selectdata(cfg, gamPowData);
+dataPre     = ft_selectdata(cfg, gamPowDataShift);
 
 peakFreq = 2*round(peakFreq/2);
 smoothing = 6;
@@ -58,9 +58,9 @@ cfg.output      = 'pow';
 cfg.tapsmofrq   = smoothing;
 cfg.foilim      = [(peakFreq - 6*smoothing) (peakFreq + 6*smoothing)];
 cfg.keeptrials  = 'no'; % average baseline over trials
-gamPowPre       = ft_freqanalysis(cfg, dataPre);
+gamPowPre       = ft_freqanalysis(cfg, dataBl);
 cfg.keeptrials  = 'yes';
-gamPowPost      = ft_freqanalysis(cfg, dataPost);
+gamPowPost      = ft_freqanalysis(cfg, dataPre);
 
 gamPow = gamPowPost;
 gamPowPre.powspctrm = repmat(gamPowPre.powspctrm, [size(gamPow.powspctrm,1), 1]);

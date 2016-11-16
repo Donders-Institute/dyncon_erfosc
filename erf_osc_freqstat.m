@@ -30,7 +30,7 @@ cfg.neighbours = ft_prepare_neighbours(cfg_neighb, tfaHannLeft_onset);
 [stat_shift_bl] = ft_freqstatistics(cfg, tfaHannLeft_shift, tfaHannLeft_bl);
 
 %% save
-filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/freqstat_subj%d', subj);
+filename = sprintf('/project/3011085.02/Results/ERF_oscillation/freq/freqstat_subj%d', subj);
 save(fullfile([filename '.mat']), 'stat_on_bl', 'stat_shift_bl'); 
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']))
