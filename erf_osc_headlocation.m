@@ -83,9 +83,9 @@ meanposchange = mean(abs(cc_rel(:,1:3)*1000)) % from start-end trial
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/Data/ERF_oscillation/behavioral_log/pilot/pilot_headposition_%02d', subj);
+    filename = sprintf('/project/3011085.02/Data/behavioral_log/pilot/pilot_headposition_%02d', subj);
 else
-    filename = sprintf('/project/3011085.02/Data/ERF_oscillation/behavioral_log/experiment/headposition_%02d', subj);
+    filename = sprintf('/project/3011085.02/Data/behavioral_log/experiment/headposition_%02d', subj);
 end
 save(fullfile([filename '.mat']), 'cc', 'cc_dem', 'cc_rel');
 diary off

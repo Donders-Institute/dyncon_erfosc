@@ -28,18 +28,18 @@ end
 
 %% load data
 % load gamma peak freq
-load(sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
+load(sprintf('/project/3011085.02/Results/freq/%02d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
 peakFreq = 2*round(peakFreq/2);
 
 % load gamma power
-load(sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_pow_%d.mat', subj, subj));
+load(sprintf('/project/3011085.02/Results/freq/%02d/gamma_pow_%d.mat', subj, subj));
 gammaPow = gamPow.powspctrm;
 
 % load gamma phase
-% load(sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_angle_%d', subj, subj));
+% load(sprintf('/project/3011085.02/Results/freq/%02d/gamma_angle_%d', subj, subj));
 
 % load ERF
-load(sprintf('/project/3011085.02/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d.mat', subj, subj), 'q1');
+load(sprintf('/project/3011085.02/Results/erf/%02d/dss_ASEO_%d.mat', subj, subj), 'q1');
 
 
 %% gamma pow - ERF components

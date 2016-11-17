@@ -34,8 +34,8 @@ end
 
 %% load data
 erf_osc_datainfo;
-load(sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
-load(sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_peak_%d', subj, subj), 'peakFreq');
+load(sprintf('/project/3011085.02/Results/freq/%02d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
+load(sprintf('/project/3011085.02/Results/freq/%02d/gamma_peak_%d', subj, subj), 'peakFreq');
 fs = gamPowData.fsample;
 nTrials = length(gamPowData.trial);
 
@@ -67,7 +67,7 @@ gamAngle       = angle(fcomp.fourierspctrm(:,1,:)); % in radians
 % angleBin(angleBin==0) = 360;
 
 %% save
-filename = sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_angle_%d', subj, subj);
+filename = sprintf('/project/3011085.02/Results/freq/%02d/gamma_angle_%d', subj, subj);
 save(fullfile([filename '.mat']), 'gamAngle');
 diary off
 movefile('tmpDiary', fullfile([filename '.txt']));

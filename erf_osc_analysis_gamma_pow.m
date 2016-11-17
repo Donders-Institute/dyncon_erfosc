@@ -36,8 +36,8 @@ end
 
 %% load data
 erf_osc_datainfo;
-load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
-load(sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
+load(sprintf('/home/electromag/matves/Results/freq/%02d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
+load(sprintf('/home/electromag/matves/Results/freq/%02d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
 fs = gamPowData.fsample;
 
 cfg                = [];
@@ -69,7 +69,7 @@ gamPow.powspctrm = (squeeze(gamPow.powspctrm) - gamPowPre.powspctrm)./gamPowPre.
 
 
 %% save
-filename = sprintf('/home/electromag/matves/Results/ERF_oscillation/freq/%02d/gamma_pow_%d', subj, subj);
+filename = sprintf('/home/electromag/matves/Results/freq/%02d/gamma_pow_%d', subj, subj);
 save(fullfile([filename '.mat']), 'gamPow');
 diary off
 movefile('tmpDiary', fullfile([filename '.txt']));

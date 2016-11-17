@@ -62,9 +62,9 @@ comp = ft_componentanalysis(cfg, dataResample);
 
 % save
 if isPilot
-    save(sprintf('/project/3011085.02/Data/ERF_oscillation/artifacts/pilot/%02d/icaComp.mat', subj), 'comp');
+    save(sprintf('/project/3011085.02/Data/artifacts/pilot/%02d/icaComp.mat', subj), 'comp');
 else
-    save(sprintf('/project/3011085.02/Data/ERF_oscillation/artifacts/experiment/%02d/icaComp.mat', subj), 'comp');
+    save(sprintf('/project/3011085.02/Data/artifacts/experiment/%02d/icaComp.mat', subj), 'comp');
 end
 
 end

@@ -35,10 +35,10 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/Data/ERF_oscillation/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/Data/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/Data/ERF_oscillation/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/Data/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
@@ -171,7 +171,7 @@ for k = 1%1:nComponent;
 end
 
 %% save
-filename = sprintf('/project/3011085.02/Results/ERF_oscillation/erf/%02d/dss_ASEO_%d', subj, subj);
+filename = sprintf('/project/3011085.02/Results/erf/%02d/dss_ASEO_%d', subj, subj);
 save(fullfile([filename '.mat']),'comp', 'q1', 'q2', 'avgorig', 'avgcomp')
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']));
