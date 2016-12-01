@@ -37,14 +37,17 @@ end
 erf_osc_datainfo;
 load(fullfile([pilotsubjects(subj).segmentedmri '.mat']));
 if isPilot
-    data = load(sprintf('/project/3011085.02/Data/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
     load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
+    load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_peak_%d', subj, subj), 'peakFreq');
 else
-    data = load(sprintf('/project/3011085.02/Data/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
+    load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
+    load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_peak', subj), 'peakFreq');
 end
-load(sprintf('/project/3011085.02/Results/freq/%02d/gamma_peak_%d', subj, subj), 'peakFreq');
+
 data = data.dataClean;
 cfg         = [];
 cfg.channel = 'MEG';
@@ -172,7 +175,11 @@ for i=1:length(dataShift.trial)
 end
 
 %% save
-filename = sprintf('/project/3011085.02/Results/freq/%02d/gamma_virtual_channel_%d', subj, subj);
+if isPilot
+    filename = sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_virtual_channel_%d', subj, subj);
+else
+    filename = sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_virtual_channel', subj, subj);
+end
 save(fullfile([filename '.mat']), 'gamPowData', 'beamformerGamPow');
 diary off
 movefile('tmpDiary', fullfile([filename '.txt']));

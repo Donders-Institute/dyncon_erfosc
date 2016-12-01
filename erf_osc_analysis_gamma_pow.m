@@ -36,8 +36,13 @@ end
 
 %% load data
 erf_osc_datainfo;
-load(sprintf('/home/electromag/matves/Results/freq/%02d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
-load(sprintf('/home/electromag/matves/Results/freq/%02d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
+if isPilot
+    load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
+else
+    load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_peak.mat', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_virtual_channel.mat', subj), 'gamPowData');
+end
 fs = gamPowData.fsample;
 
 cfg                = [];
@@ -69,7 +74,11 @@ gamPow.powspctrm = (squeeze(gamPow.powspctrm) - gamPowPre.powspctrm)./gamPowPre.
 
 
 %% save
-filename = sprintf('/home/electromag/matves/Results/freq/%02d/gamma_pow_%d', subj, subj);
+if isPilot
+    filename = sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_pow_%d', subj, subj);
+else
+    filename = sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_pow', subj);
+end
 save(fullfile([filename '.mat']), 'gamPow');
 diary off
 movefile('tmpDiary', fullfile([filename '.txt']));

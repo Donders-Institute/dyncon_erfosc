@@ -28,18 +28,23 @@ end
 
 %% load data
 % load gamma peak freq
-load(sprintf('/project/3011085.02/Results/freq/%02d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
-peakFreq = 2*round(peakFreq/2);
+if isPilot
+    load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_pow_%d.mat', subj, subj)); % load gamma power
+    load(sprintf('/project/3011085.02/results/erf/pilot-0%d/dss_ASEO_%d.mat', subj, subj), 'q1'); % load ERF
+    % load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_angle_%d', subj, subj)); % load gamma phase
+else
+    load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_peak.mat', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_pow.mat', subj)); % load gamma power
+    load(sprintf('/project/3011085.02/results/erf/subj-0%d/dss_ASEO.mat', subj), 'q1'); % load ERF
+    % load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_angle', subj)); % load gamma phase
+end
 
-% load gamma power
-load(sprintf('/project/3011085.02/Results/freq/%02d/gamma_pow_%d.mat', subj, subj));
+peakFreq = 2*round(peakFreq/2);
 gammaPow = gamPow.powspctrm;
 
-% load gamma phase
-% load(sprintf('/project/3011085.02/Results/freq/%02d/gamma_angle_%d', subj, subj));
 
-% load ERF
-load(sprintf('/project/3011085.02/Results/erf/%02d/dss_ASEO_%d.mat', subj, subj), 'q1');
+
 
 
 %% gamma pow - ERF components
@@ -81,7 +86,11 @@ plot(60:60:360, gam, '.')
 
 
 %% save
-% filename = sprintf('/project/3011085.02/Results/ERF_oscillation/freq/%02d/gamma_pow_%d', subj, subj);
+% if isPilot
+%     filename = sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_pow_%d', subj, subj);
+% else
+%     filename = sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_pow', subj, subj);
+% end
 % save(fullfile([filename '.mat']), 'gammaPow');
 % diary off
 % movefile('tmpDiary', fullfile([filename '.txt']));

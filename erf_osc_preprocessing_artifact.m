@@ -298,15 +298,15 @@ if ~existArtifact
     artfctdef.muscle.artifact = artifact_muscle;
     artfctdef.badtrial = trlind;
     if isPilot
-        if ~exist(sprintf('/project/3011085.02/Data/artifacts/pilot/%02d', subj), 'dir');
-            mkdir(sprintf('/project/3011085.02/Data/artifacts/pilot/%02d', subj));
+        if ~exist(sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/', subj), 'dir');
+            mkdir(sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/', subj));
         end
-        save(sprintf('/project/3011085.02/Data/artifacts/pilot/%02d/artifact.mat', subj), 'artfctdef');
+        save(sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/artifact.mat', subj), 'artfctdef');
     else
-        if ~exist(sprintf('/project/3011085.02/Data/artifacts/experiment/%02d', subj), 'dir');
-            mkdir(sprintf('/project/3011085.02/Data/artifacts/experiment/%02d', subj));
+        if ~exist(sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/', subj), 'dir');
+            mkdir(sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/', subj));
         end
-        save(sprintf('/project/3011085.02/Data/artifacts/experiment/%02d/artifact.mat', subj), 'artfctdef');
+        save(sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/artifact.mat', subj), 'artfctdef');
     end
     
     
@@ -314,9 +314,9 @@ if ~existArtifact
     % if artifacts were selected before, load them.
 else
     if isPilot
-        load(sprintf('/project/3011085.02/Data/artifacts/pilot/%02d/artifact.mat', subj), 'artfctdef');
+        load(sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/artifact.mat', subj), 'artfctdef');
     else
-        load(sprintf('/project/3011085.02/Data/artifacts/experiment/%02d/artifact.mat', subj), 'artfctdef');
+        load(sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/artifact.mat', subj), 'artfctdef');
     end
 end
 
@@ -344,9 +344,9 @@ if ~existArtifact
     
     % save
     if isPilot
-        filename = sprintf('/project/3011085.02/Data/artifacts/pilot/%02d/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/icaComp.mat', subj);
     else
-        filename = sprintf('/project/3011085.02/Data/artifacts/experiment/%02d/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/icaComp.mat', subj);
     end
     save(filename, 'comp')
     
@@ -363,9 +363,9 @@ if ~existArtifact
 
 else
     if isPilot
-        filename = sprintf('/project/3011085.02/Data/artifacts/pilot/%02d/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/icaComp.mat', subj);
     else
-        filename = sprintf('/project/3011085.02/Data/artifacts/experiment/%02d/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01//icaComp.mat', subj);
     end
     load(filename, 'comp')
 end
@@ -391,9 +391,9 @@ dataClean = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/Data/clean_data/pilot/%02d/cleandata', subj);
+    filename = sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/cleandata', subj);
 else
-    filename = sprintf('/project/3011085.02/Data/clean_data/experiment/%02d/cleandata', subj);
+    filename = sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/cleandata', subj);
 end
 save(fullfile([filename '.mat']), 'dataClean', '-v7.3');
 diary off

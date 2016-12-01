@@ -30,7 +30,11 @@ cfg.neighbours = ft_prepare_neighbours(cfg_neighb, tfaHannLeft_onset);
 [stat_shift_bl] = ft_freqstatistics(cfg, tfaHannLeft_shift, tfaHannLeft_bl);
 
 %% save
-filename = sprintf('/project/3011085.02/Results/freq/freqstat_subj%d', subj);
+if isPilot
+    filename = sprintf('/project/3011085.02/results/freq/pilot-0%d/freqstat_%d', subj, subj);
+else
+    filename = sprintf('/project/3011085.02/results/freq/subj-0%d/freqstat', subj, subj);
+end
 save(fullfile([filename '.mat']), 'stat_on_bl', 'stat_shift_bl'); 
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']))

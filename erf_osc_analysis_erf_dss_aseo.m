@@ -35,10 +35,10 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/Data/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/Data/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
@@ -163,15 +163,20 @@ for k = 1%1:nComponent;
     % use the ASEO algorithm with visually selected latencies for the (2)
     % peaks.
     waveformInitSet = pilotsubjects(subj).aseo;
+    waveformInitSet = waveformInitSet';
 % waveformInitSet = [119 161; 162 226; 230 459]';
     waveformInitSet = waveformInitSet(:);
-    jitter = [-20 20; -20 20; -20 20];
-    ASEOiteration = 3;
+    jitter = [-50 50; -50 50; -50 50];
+    ASEOiteration = 1;
     [q1(k), q2(k)] = doASEO(comp_sel, 'waveformInitSet', waveformInitSet, 'jitter', jitter, 'numiteration', ASEOiteration);
 end
 
 %% save
-filename = sprintf('/project/3011085.02/Results/erf/%02d/dss_ASEO_%d', subj, subj);
+if isPilot
+    filename = sprintf('/project/3011085.02/results/erf/pilot-0%d/dss_ASEO_%d', subj, subj);
+else
+    filename = sprintf('/project/3011085.02/results/erf/subj-0%d/dss_ASEO', subj);
+end
 save(fullfile([filename '.mat']),'comp', 'q1', 'q2', 'avgorig', 'avgcomp')
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']));

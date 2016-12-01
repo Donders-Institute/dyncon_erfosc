@@ -42,10 +42,10 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/Data/clean_data/pilot/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/Data/clean_data/experiment/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
@@ -97,10 +97,11 @@ tlShiftM_rs = ft_resampledata(cfg, tlShift);
 
 
 %% save
-if ~exist(sprintf('/project/3011085.02/Results/erf/%02d', subj), 'dir');
-    mkdir(sprintf('/project/3011085.02/Results/erf/%02d', subj));
+if isPilot
+    filename = sprintf('/project/3011085.02/results/erf/pilot-0%d/timelock_%d', subj, subj);
+else
+    filename = sprintf('/project/3011085.02/results/erf/subj-0%d/timelock', subj);
 end
-filename = sprintf('/project/3011085.02/Results/erf/%02d/timelock_%d', subj, subj);
 save(fullfile([filename '.mat']), 'tlShiftM_rs')
 diary off
 movefile('tmpDiary', fullfile([filename, '.txt']));
