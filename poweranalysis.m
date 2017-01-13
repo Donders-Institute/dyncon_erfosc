@@ -2,7 +2,7 @@
 
 %% load data
 erf_osc_datainfo;
-data1 = load(sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/cleandata.mat', 4), 'dataClean');
+data1 = load(sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/cleandata.mat', 4), 'dataClean');
 load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
 
 data1 = data1.dataClean;

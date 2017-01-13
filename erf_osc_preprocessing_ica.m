@@ -62,9 +62,9 @@ comp = ft_componentanalysis(cfg, dataResample);
 
 % save
 if isPilot
-    save(sprintf('/project/3011085.02/clean/meg/pilot-0%d/ses-01/icaComp.mat', subj), 'comp');
+    save(sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/icaComp.mat', subj), 'comp');
 else
-    save(sprintf('/project/3011085.02/clean/meg/subj-0%d/ses-01/icaComp.mat', subj), 'comp');
+    save(sprintf('/project/3011085.02/clean/subj-0%d/ses-meg01/icaComp.mat', subj), 'comp');
 end
 
 end
