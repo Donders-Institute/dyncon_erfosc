@@ -152,9 +152,9 @@ if ~existArtifact
     [~, artifact_muscle] = ft_artifact_zvalue(cfg, data);
     
     %% Find EOG saccade artifacts
-    % NOTE: this algorhythm marks artifacts if saccades are made with a
-    % visual angle larger than 1 degree. It does not mark trials as
-    % artifacts if eye gaze is off fixation per se.
+    % this algorithm marks events as artifacts if eye movements are made
+    % with more than 1 visual degree off the central fixation point.
+    artifact_EOG_saccade = [];
     
     % pixel coords for 1920x1080 screen, upper left is (0,0)
     % these dimensions can be found in PHYSICAL.INI or your presentation/PTB
@@ -235,6 +235,23 @@ if ~existArtifact
         visAngleY{iTrial} = rad2deg(atan((yGaze{iTrial}/2)/(totDist*screenResY/screenWidth_y)))*2;
     end
     
+    % mark event as artifact if fixation from fixation point is broken with
+    % more than 1 visual degree.
+    for iTrial = 1:size(data.trial,2)
+        breakFixation = find(sqrt(visAngleX{iTrial}.^2 + visAngleY{iTrial}.^2) >1); % pythagoras
+        for i = 1:length(breakFixation)
+            % begin sample of off-fixation event is beginsample of trial
+            % plus amount of samples till t=0 plus amount of samples from
+            % t=0
+            artifact_EOG_saccade(end+1,1) = data.sampleinfo(iTrial,1) + (breakFixation(i)-1);
+            artifact_EOG_saccade(end, 2) = artifact_EOG_saccade(end, 1) + 1; % end sample is 1 sample after begin sample
+            % note: end sample is a bit ugly because one off-fixation event
+            % will likely take longer than 1 sample, so one event will span
+            % multiple 'artifacts'
+        end
+    end
+    
+    %{
     % find onset and offset latencies of sacades with ft_detect_movement
     cfg=[];
     cfg.channel = {'UADC005', 'UADC006'};
@@ -268,9 +285,8 @@ if ~existArtifact
             artifact_EOG_saccade(end+1,:) = movement(iSaccade, 1:2);
         end
     end
-    if ~exist('artifact_EOG_saccade')
-        artifact_EOG_saccade = [];
-    end
+    %}
+
     
     %% find EOG blink artifacts
     % channel selection, cutoff and padding
