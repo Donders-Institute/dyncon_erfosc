@@ -14,9 +14,9 @@ if isempty(isPilot);
 end
 
 if isPilot
-    load(sprintf('/project/3011085.02/clean/behavior/pilot-0%d/ses-01/pilot_headposition_0%d.mat', subj, subj));
+    load(sprintf('/project/3011085.02/processed/pilot-00%d/ses-beh01/pilot_headposition_0%d.mat', subj, subj));
 else
-    load(sprintf('/project/3011085.02/clean/behavior/subj-0%d/ses-01/headposition_0%d.mat', subj, subj));
+    load(sprintf('/project/3011085.02/processed/subj-00%d/ses-beh01/headposition_0%d.mat', subj, subj));
 end
 
 figure;
