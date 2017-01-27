@@ -194,7 +194,7 @@ try
     
     % settings grating
     [x,y]=meshgrid(-gratingRadius:gratingRadius,-gratingRadius:gratingRadius);
-    f=0.35*2*pi; % period of the grating.
+    f=0.55*2*pi; % period of the grating.
     
     
     %% Generate stimulus
@@ -362,9 +362,11 @@ try
             [VBLTimestamp StimulusOnsetTime FlipTimestamp Missed Beampos] = Screen('Flip', window, VBLTimestamp + (waitframes - 0.5) * ifi);
             if jFrame==1
                 btsi.sendTrigger(xp.TRIG_ONSET_GRATING);
+                imwrite(Screen('GetImage', window), 'test1.jpg');
             end
             if isShiftFrame;
                 btsi.sendTrigger(xp.TRIG_SHIFT);
+                imwrite(Screen('GetImage', window), 'test2.jpg');
             end
 %             imwrite(Screen('GetImage', window), 'test.jpg');
             log.PTBtiming.grating.vblTimestamp{iTrl}(jFrame) = VBLTimestamp;

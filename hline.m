@@ -1,4 +1,4 @@
-function hline(y, varargin)
+function [h] = hline(y, varargin)
 
 % HLINE plot a horizontal line in the current graph
 

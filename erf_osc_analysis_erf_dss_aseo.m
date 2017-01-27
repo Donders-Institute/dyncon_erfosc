@@ -35,10 +35,10 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/clean/subj-0%d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
@@ -173,9 +173,9 @@ end
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/erf/pilot-0%d/dss_ASEO_%d', subj, subj);
+    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/dss_ASEO', subj);
 else
-    filename = sprintf('/project/3011085.02/results/erf/subj-0%d/dss_ASEO', subj);
+    filename = sprintf('/project/3011085.02/results/erf/subj-%03d/dss_ASEO', subj);
 end
 save(fullfile([filename '.mat']),'comp', 'q1', 'q2', 'avgorig', 'avgcomp')
 diary off

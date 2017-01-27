@@ -37,11 +37,11 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_peak_%d.mat', subj, subj), 'peakFreq');
-    load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak.mat', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
 else
-    load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_peak.mat', subj), 'peakFreq');
-    load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_virtual_channel.mat', subj), 'gamPowData');
+    load(sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_peak.mat', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
 end
 fs = gamPowData.fsample;
 
@@ -75,9 +75,9 @@ gamPow.powspctrm = (squeeze(gamPow.powspctrm) - gamPowPre.powspctrm)./gamPowPre.
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_pow_%d', subj, subj);
+    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_pow', subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_pow', subj);
+    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_pow', subj);
 end
 save(fullfile([filename '.mat']), 'gamPow');
 diary off

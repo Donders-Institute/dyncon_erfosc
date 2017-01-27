@@ -21,10 +21,10 @@ if isempty(subj)
     subj = 4;
 end
 if nargin<2
-    isPilot = true;
+    isPilot = false;
 end
 if isempty(isPilot);
-    isPilot = true;
+    isPilot = false;
 end
 if nargin<3
     existArtifact = false;
@@ -235,10 +235,14 @@ if ~existArtifact
         visAngleY{iTrial} = rad2deg(atan((yGaze{iTrial}/2)/(totDist*screenResY/screenWidth_y)))*2;
     end
     
+    trialartfct=[];
     % mark event as artifact if fixation from fixation point is broken with
     % more than 1 visual degree.
     for iTrial = 1:size(data.trial,2)
         breakFixation = find(sqrt(visAngleX{iTrial}.^2 + visAngleY{iTrial}.^2) >1); % pythagoras
+        if breakFixation
+            trialartfct(end+1,1) = iTrial;
+        end
         for i = 1:length(breakFixation)
             % begin sample of off-fixation event is beginsample of trial
             % plus amount of samples till t=0 plus amount of samples from
@@ -250,6 +254,8 @@ if ~existArtifact
             % multiple 'artifacts'
         end
     end
+    
+    fprintf(sprintf('%d trials contain off-fixation events and are marked as artifacts', trialartfct))
     
     %{
     % find onset and offset latencies of sacades with ft_detect_movement
@@ -314,15 +320,15 @@ if ~existArtifact
     artfctdef.muscle.artifact = artifact_muscle;
     artfctdef.badtrial = trlind;
     if isPilot
-        if ~exist(sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/', subj), 'dir');
-            mkdir(sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/', subj));
+        if ~exist(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/', subj), 'dir');
+            mkdir(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/', subj));
         end
-        save(sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
     else
-        if ~exist(sprintf('/project/3011085.02/clean/subj-0%d/ses-meg01/', subj), 'dir');
-            mkdir(sprintf('/project/3011085.02/clean/subj-0%d/ses-meg01/', subj));
+        if ~exist(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/', subj), 'dir');
+            mkdir(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/', subj));
         end
-        save(sprintf('/project/3011085.02/clean/subj-0%d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        save(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
     end
     
     
@@ -330,9 +336,9 @@ if ~existArtifact
     % if artifacts were selected before, load them.
 else
     if isPilot
-        load(sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
     else
-        load(sprintf('/project/3011085.02/clean/subj-0%d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        load(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
     end
 end
 
@@ -360,9 +366,9 @@ if ~existArtifact
     
     % save
     if isPilot
-        filename = sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/icaComp.mat', subj);
     else
-        filename = sprintf('/project/3011085.02/clean/subj-0%d/ses-meg01/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/icaComp.mat', subj);
     end
     save(filename, 'comp')
     
@@ -379,9 +385,9 @@ if ~existArtifact
 
 else
     if isPilot
-        filename = sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/icaComp.mat', subj);
     else
-        filename = sprintf('/project/3011085.02/clean/subj-0%d/ses-meg01//icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01//icaComp.mat', subj);
     end
     load(filename, 'comp')
 end
@@ -407,9 +413,9 @@ dataClean = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/clean/pilot-0%d/ses-meg01/cleandata', subj);
+    filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata', subj);
 else
-    filename = sprintf('/project/3011085.02/clean/subj-0%d/ses-meg01/cleandata', subj);
+    filename = sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/cleandata', subj);
 end
 save(fullfile([filename '.mat']), 'dataClean', '-v7.3');
 diary off

@@ -35,8 +35,8 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_virtual_channel_%d.mat', subj, subj), 'gamPowData');
-    load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_peak_%d', subj, subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq');
 else
     load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_virtual_channel.mat', subj), 'gamPowData');
     load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_peak', subj), 'peakFreq');
@@ -73,9 +73,9 @@ gamAngle       = angle(fcomp.fourierspctrm(:,1,:)); % in radians
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_angle_%d', subj, subj);
+    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_angle', subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_angle', subj);
+    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_angle', subj);
 end
 save(fullfile([filename '.mat']), 'gamAngle');
 diary off

@@ -17,56 +17,56 @@ end
 %% Load data
 cfg                         = [];
 if pilot==2
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode2_1200hz_20160713_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/2/pilot_diode_2.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-002/ses-01/pilotdiode2_1200hz_20160713_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-002/ses-01/pilot_diode_2.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating(1:72)+2; % in seconds (1 baseline 1 blink)
 elseif pilot==3
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode3_1200hz_20160725_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/3/pilot_diode_3.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-003/ses-01/pilotdiode3_1200hz_20160725_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-003/ses-01/pilot_diode_3.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating(1:129)+2; % in seconds (1 baseline 1 blink)
 elseif pilot==4
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode4_1200hz_20160725_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/4/pilot_diode_4.mat', 'log');
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-004/ses-01/pilotdiode4_1200hz_20160725_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-004/ses-01/4/pilot_diode_4.mat', 'log');
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==6
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode6_1200hz_20160725_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/6/pilot_diode_6.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-006/ses-01/pilotdiode6_1200hz_20160725_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-006/ses-01/pilot_diode_6.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==7
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode7_1200hz_20160726_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/7/pilot_diode_7.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-007/ses-01/pilotdiode7_1200hz_20160726_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-007/ses-01/pilot_diode_7.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==8
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode8_1200hz_20160726_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/8/pilot_diode_8.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-008/ses-01/pilotdiode8_1200hz_20160726_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-008/ses-01/pilot_diode_8.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==9
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode9_1200hz_20160726_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/9/pilot_diode_9.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-009/ses-01/pilotdiode9_1200hz_20160726_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-009/ses-01/pilot_diode_9.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==10
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode10_1200hz_20160726_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/10/pilot_diode_10.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-010/ses-01/pilotdiode10_1200hz_20160726_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-010/ses-01/pilot_diode_10.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==11
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/diodepilot11_1200hz_20160726_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/11/pilot_diode_11.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-011/ses-01/diodepilot11_1200hz_20160726_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-011/ses-01/pilot_diode_11.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==12
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode12_1200hz_20160802_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/12/pilot_diode_12.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-012/ses-01/pilotdiode12_1200hz_20160802_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-012/ses-01/pilot_diode_12.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==13
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode13_1200hz_20160802_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/13/pilot_diode_13.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-013/ses-01/pilotdiode13_1200hz_20160802_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-013/ses-01/pilot_diode_13.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==14
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode14_1200hz_20160802_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/14/pilot_diode_14.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-014/ses-01/pilotdiode14_1200hz_20160802_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-014/ses-01/pilot_diode_14.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 elseif pilot==15
-    cfg.dataset                 = '/home/electromag/matves/Data/ERF_oscillation/raw_data/pilot_photo_diode/pilotdiode15_1200hz_20160802_01.ds';
-    load('/home/electromag/matves/Data/ERF_oscillation/behavioral_log/pilot_photo_diode/15/pilot_diode_15.mat', 'log');% load behavioral log file
+    cfg.dataset                 = '/project/3011085.02/raw/meg/diode-015/ses-01/pilotdiode15_1200hz_20160802_01.ds';
+    load('/project/3011085.02/raw/behavior/diode-015/ses-01/pilot_diode_15.mat', 'log');% load behavioral log file
     cfg.trialdef.poststim       = log.completeDurationGrating+2; % in seconds (1 baseline, 1 blink)
 end
 
@@ -297,7 +297,7 @@ for iTrl = 1:nTrials
     sampleDiffOffset(iTrl) = sampleOffsetDiode(iTrl) - sampleOffsetTrigger(iTrl);
 end
 figure;
-subplot(1,2,1); histogram(sampleDiffOnset); xlabel('sample diff (fs 1200hz)');title('Difference onset (diode-trigger)');
-subplot(1,2,2); histogram(sampleDiffOffset); xlabel('sample diff (fs 1200hz)');title('Difference offset (diode-trigger)');
+subplot(1,2,1); histogram(sampleDiffOnset); xlabel('sample diff (fs 1200hz)');title('Difference onset (diode-0trigger)');
+subplot(1,2,2); histogram(sampleDiffOffset); xlabel('sample diff (fs 1200hz)');title('Difference offset (diode-0trigger)');
 
 end

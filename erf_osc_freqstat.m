@@ -31,9 +31,9 @@ cfg.neighbours = ft_prepare_neighbours(cfg_neighb, tfaHannLeft_onset);
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-0%d/freqstat_%d', subj, subj);
+    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/freqstat', subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/subj-0%d/freqstat', subj, subj);
+    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/freqstat', subj);
 end
 save(fullfile([filename '.mat']), 'stat_on_bl', 'stat_shift_bl'); 
 diary off

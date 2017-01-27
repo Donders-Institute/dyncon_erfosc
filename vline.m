@@ -1,4 +1,4 @@
-function vline(x, varargin)
+function [h] = vline(x, varargin)
 
 % VLINE plot a vertical line in the current graph
 
