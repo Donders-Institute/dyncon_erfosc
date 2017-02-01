@@ -17,7 +17,8 @@ end
 
 %% initiate diary
 workSpace = whos;
-diary('tmpDiary') % save command window output
+diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
 
@@ -81,7 +82,7 @@ else
 end
 save(fullfile([filename '.mat']), 'gamPow');
 diary off
-movefile('tmpDiary', fullfile([filename '.txt']));
+movefile(diaryname, fullfile([filename '.txt']));
 
 
 end

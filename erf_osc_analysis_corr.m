@@ -9,7 +9,8 @@ end
 
 %% initiate diary
 workSpace = whos;
-diary('tmpDiary') % save command window output
+diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
 
@@ -86,12 +87,12 @@ plot(60:60:360, gam, '.')
 
 
 %% save
-% if isPilot
-%     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_pow', subj);
-% else
-%     filename = sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_pow', subj);
-% end
-% save(fullfile([filename '.mat']), 'gammaPow');
-% diary off
-% movefile('tmpDiary', fullfile([filename '.txt']));
+if isPilot
+    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_pow', subj);
+else
+    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_pow', subj);
+end
+save(fullfile([filename '.mat']), 'gammaPow');
+diary off
+movefile(diaryname, fullfile([filename '.txt']));
 end

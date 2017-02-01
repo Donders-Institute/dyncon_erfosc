@@ -1,7 +1,8 @@
 function erf_osc_freqstat
 
 workSpace = whos;
-diary('tmpDiary') % save command window output
+diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diary(diaryname) % save command window output
 for i = 1:numel(workSpace) % list all workspace variables
     eval(workSpace(i).name)
 end
@@ -37,4 +38,4 @@ else
 end
 save(fullfile([filename '.mat']), 'stat_on_bl', 'stat_shift_bl'); 
 diary off
-movefile('tmpDiary', fullfile([filename, '.txt']))
+movefile(diaryname, fullfile([filename, '.txt']))
