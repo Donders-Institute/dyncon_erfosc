@@ -15,10 +15,10 @@ function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact)
 % = false)
 
 if nargin<1
-    subj = 4;
+    subj = 1;
 end
 if isempty(subj)
-    subj = 4;
+    subj = 1;
 end
 if nargin<2
     isPilot = false;
@@ -35,7 +35,8 @@ end
 
 %% initiate diary
 workSpace = whos;
-diary('tmpDiary') % save command window output
+diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
 
@@ -101,8 +102,8 @@ if ~existArtifact
     dataRejVis        = ft_rejectvisual(cfg, data);
     % you can check the rejected trial number by typing
     trlind=[];
-    for i=1:length(dataRejVis.cfg.artfctdef.summary.artifact)
-        trlind(i)=find(data.sampleinfo(:,1)==dataRejVis.cfg.artfctdef.summary.artifact(i));
+    for i=1:size(dataRejVis.cfg.artfctdef.summary.artifact,1)
+        trlind(i)=find(data.sampleinfo(:,1)==dataRejVis.cfg.artfctdef.summary.artifact(i,1));
     end;
     if trlind
         disp(trlind);
@@ -235,27 +236,36 @@ if ~existArtifact
         visAngleY{iTrial} = rad2deg(atan((yGaze{iTrial}/2)/(totDist*screenResY/screenWidth_y)))*2;
     end
     
-    trialartfct=[];
+
     % mark event as artifact if fixation from fixation point is broken with
-    % more than 1 visual degree.
+    % more than 1 visual degree.    
     for iTrial = 1:size(data.trial,2)
-        breakFixation = find(sqrt(visAngleX{iTrial}.^2 + visAngleY{iTrial}.^2) >1); % pythagoras
-        if breakFixation
-            trialartfct(end+1,1) = iTrial;
-        end
-        for i = 1:length(breakFixation)
-            % begin sample of off-fixation event is beginsample of trial
-            % plus amount of samples till t=0 plus amount of samples from
-            % t=0
-            artifact_EOG_saccade(end+1,1) = data.sampleinfo(iTrial,1) + (breakFixation(i)-1);
-            artifact_EOG_saccade(end, 2) = artifact_EOG_saccade(end, 1) + 1; % end sample is 1 sample after begin sample
-            % note: end sample is a bit ugly because one off-fixation event
-            % will likely take longer than 1 sample, so one event will span
-            % multiple 'artifacts'
+        isFixation = sqrt(visAngleX{iTrial}.^2 + visAngleY{iTrial}.^2) < 1; % note all the samples where fixation is good/bad
+%         samplenumber = data.sampleinfo(iTrial,1);
+%         while samplenumber <= data.sampleinfo(iTrial,2)
+        samplenumber = 1;
+        while samplenumber <= size(isFixation,2) % for the whole trial (in sample numbers)
+            % if there is a new off-fixation event, note the first off-fixation sample
+            if any(isFixation(1, samplenumber:end)==0) 
+                sampleStartOffFixation = (samplenumber -1) + find(isFixation(1, samplenumber:end)==0,1);
+                artifact_EOG_saccade(end+1,1) = data.sampleinfo(iTrial,1) + sampleStartOffFixation;
+%                 samplenumber = sampleStartOffFixation+1;
+                %if there is fixation returns after off-fixation, note last
+                % off-fixation sample of that event
+                if any(isFixation(1, sampleStartOffFixation + 1 : end)==1)
+                    sampleStopOffFixation = sampleStartOffFixation + find(isFixation(1, sampleStartOffFixation + 1 : end) ==1, 1) -1; % stop off-fixation is 1 sample before on fixation again.
+                    artifact_EOG_saccade(end,2) = data.sampleinfo(iTrial,1) + sampleStopOffFixation; 
+                    samplenumber = sampleStopOffFixation +1;
+                else
+                    artifact_EOG_saccade(end,2) = data.sampleinfo(iTrial,2);
+                    samplenumber = data.sampleinfo(iTrial,2);
+                end
+            else
+                break
+            end
         end
     end
     
-    fprintf(sprintf('%d trials contain off-fixation events and are marked as artifacts', trialartfct))
     
     %{
     % find onset and offset latencies of sacades with ft_detect_movement
@@ -304,7 +314,7 @@ if ~existArtifact
     % algorithmic parameters
     cfg2.artfctdef.zvalue.bpfilter   = 'yes';
     cfg2.artfctdef.zvalue.bpfilttype = 'but';
-    cfg2.artfctdef.zvalue.bpfreq     = [1 15];
+    cfg2.artfctdef.zvalue.bpfreq     = [1 30];
     cfg2.artfctdef.zvalue.bpfiltord  = 4;
     cfg2.artfctdef.zvalue.hilbert    = 'yes';
     % feedback
@@ -325,10 +335,10 @@ if ~existArtifact
         end
         save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
     else
-        if ~exist(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/', subj), 'dir');
-            mkdir(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/', subj));
+        if ~exist(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/', subj), 'dir');
+            mkdir(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/', subj));
         end
-        save(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
     end
     
     
@@ -338,7 +348,7 @@ else
     if isPilot
         load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
     else
-        load(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
     end
 end
 
@@ -368,7 +378,7 @@ if ~existArtifact
     if isPilot
         filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/icaComp.mat', subj);
     else
-        filename = sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/icaComp.mat', subj);
     end
     save(filename, 'comp')
     
@@ -387,7 +397,7 @@ else
     if isPilot
         filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/icaComp.mat', subj);
     else
-        filename = sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01//icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01//icaComp.mat', subj);
     end
     load(filename, 'comp')
 end
@@ -415,11 +425,11 @@ dataClean = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
 if isPilot
     filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata', subj);
 else
-    filename = sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/cleandata', subj);
+    filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata', subj);
 end
 save(fullfile([filename '.mat']), 'dataClean', '-v7.3');
 diary off
-movefile('tmpDiary', fullfile([filename, '.txt']));
+movefile(diaryname, fullfile([filename, '.txt']));
 
 end
 
