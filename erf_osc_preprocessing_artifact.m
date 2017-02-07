@@ -223,6 +223,9 @@ if ~existArtifact
     visAngX_deg = visAngX_rad * (180/pi);
     visAngPerPixX = visAngX_deg / screenResX;
     
+    dotSize = 20; % fixation dot is 20 pixels wide (see concentric_grating_experiment)
+    visDegFixDot = visAngPerPixX * dotSize
+    
     % Y
     screenResY=screenBottom+1;
     visAngY_rad = 2 * atan(screenWidth_y/2/totDist);
@@ -236,11 +239,12 @@ if ~existArtifact
         visAngleY{iTrial} = rad2deg(atan((yGaze{iTrial}/2)/(totDist*screenResY/screenWidth_y)))*2;
     end
     
-
+    visDegOffFixation = 1; % trials are marked as artifact if fixation is broken with more than 1 visual degree
+    visDegOffFixation = visDegOffFixation + visDegFixDot; % relative to border of fixation dot
     % mark event as artifact if fixation from fixation point is broken with
     % more than 1 visual degree.    
     for iTrial = 1:size(data.trial,2)
-        isFixation = sqrt(visAngleX{iTrial}.^2 + visAngleY{iTrial}.^2) < 1; % note all the samples where fixation is good/bad
+        isFixation = sqrt(visAngleX{iTrial}.^2 + visAngleY{iTrial}.^2) < visDegOffFixation; % note all the samples where fixation is good/bad
 %         samplenumber = data.sampleinfo(iTrial,1);
 %         while samplenumber <= data.sampleinfo(iTrial,2)
         samplenumber = 1;
@@ -360,7 +364,7 @@ cfg.artfctdef.crittoilim = [-1 3.75];
 dataNoArtfct = ft_rejectartifact(cfg, data);
 
 %% Compute ICA
-if ~existArtifact
+if existArtifact
     % resample
     cfg=[];
     cfg.resamplefs = 150;
