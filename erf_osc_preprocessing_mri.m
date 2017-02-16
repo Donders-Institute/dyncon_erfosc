@@ -2,7 +2,7 @@
 % load structural MRI and polhemus headshape. Realign the structural scan
 % to CTF coordinate system and segment.
 
-subj = 4;
+subj = 32;
 isPilot = false;
 
 erf_osc_datainfo;
