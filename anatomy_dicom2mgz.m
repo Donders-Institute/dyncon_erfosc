@@ -6,6 +6,10 @@ function anatomy_dicom2mgz(subj, cfg)
 subjects = ft_getopt(cfg, 'subjects'); % if isPilot, cfg.subjects=pilotsubjects
 mri = ft_read_mri(subjects(subj).mri); % read in the dicom files
 mgz_dir = subjects(subj).mridir; % filename for saving
+preproc_dir = fullfile(mgz_dir, '/preproc/');
+if ~exist(preproc_dir)
+    mkdir(preproc_dir)
+end
 
 % save the images in the mgz format
 cfg             = [];

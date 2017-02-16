@@ -3,7 +3,7 @@ set -e
 echo -e "\n START: FS2CaretConvertRegisterNonlinear"
 
 Subject="$2"
-FreeSurferFolder="$1"
+FreeSurferFolder="$1"/"$Subject"
 
 # This one is hard-coded
 SurfaceAtlasDIR=/project/3011085.02/scripts/atlas/standard_mesh_atlases

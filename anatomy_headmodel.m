@@ -3,7 +3,7 @@ function anatomy_headmodel(subj, cfg)
 subjects              = ft_getopt(cfg, 'subjects');
 anatomy_preproc_dir   = subjects(subj).mridir;
 anatomy_preproc_dir   = fullfile(anatomy_preproc_dir, '/preproc/');
-headmodel_filename    = fullfile(anatomy_savedir, 'headmodel.mat');
+headmodel_filename    = fullfile(anatomy_preproc_dir, 'headmodel.mat');
 
 mni_resliced_filename       = fullfile(anatomy_preproc_dir, 'mni_resliced.mgz');
 transform                   = fullfile(anatomy_preproc_dir, 'transform_vox2ctf.mat');

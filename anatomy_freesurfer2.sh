@@ -18,7 +18,7 @@ recon-all -smooth2 -subjid $2
 recon-all -inflate2 -subjid $2
 
 # running a full autorecon3 requires the file rawavg.mgz to exist
-cp $SUBJECTS_DIR/mni_resliced.mgz $SUBJECTS_DIR/rawavg.mgz
+cp $SUBJECTS_DIR/$2/mni_resliced.mgz $SUBJECTS_DIR/$2/mri/rawavg.mgz
 
 recon-all -autorecon3 -subjid $2
 

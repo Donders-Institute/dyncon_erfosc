@@ -2,7 +2,7 @@ function anatomy_wmclean(subj, cfg)
 
 subjects                  = ft_getopt(cfg, 'subjects');
 anatomy_preproc_dir       = subjects(subj).mridir;
-anatomy_preproc_dir       = fullfile(anatomy_preproc_dir, '/preproc/');
+anatomy_preproc_dir       = fullfile(anatomy_preproc_dir, '/preproc/mri');
 
 mri   = ft_read_mri(fullfile(anatomy_preproc_dir,'T1.mgz'));
 wm    = ft_read_mri(fullfile(anatomy_preproc_dir,'wm.mgz'));
