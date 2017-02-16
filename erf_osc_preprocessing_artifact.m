@@ -158,10 +158,29 @@ if ~existArtifact
     sprintf('find muscle artifacts')
     [~, artifact_muscle] = ft_artifact_zvalue(cfg, data);
     
+    %% find EOG blink artifacts
+    % channel selection, cutoff and padding
+    cfg2.artfctdef.zvalue.channel     = {'UADC006'}; % Eye tracker data
+    cfg2.artfctdef.zvalue.cutoff      = 2;
+    cfg2.artfctdef.zvalue.trlpadding  = 0;
+    cfg2.artfctdef.zvalue.artpadding  = 0.01;
+    cfg2.artfctdef.zvalue.fltpadding  = 0;
+    % algorithmic parameters
+    cfg2.artfctdef.zvalue.bpfilter   = 'yes';
+    cfg2.artfctdef.zvalue.bpfilttype = 'but';
+    cfg2.artfctdef.zvalue.bpfreq     = [1 30];
+    cfg2.artfctdef.zvalue.bpfiltord  = 4;
+    cfg2.artfctdef.zvalue.hilbert    = 'yes';
+    % feedback
+    cfg2.artfctdef.zvalue.interactive = 'yes';
+    
+    sprintf('find blink artifacts')
+    [~, artifact_EOG_blink] = ft_artifact_zvalue(cfg2);
+   
     %% Find EOG saccade artifacts
     % this algorithm marks events as artifacts if eye movements are made
     % with more than 1 visual degree off the central fixation point.
-    artifact_EOG_saccade = [];
+    
     
     % pixel coords for 1920x1080 screen, upper left is (0,0)
     % these dimensions can be found in PHYSICAL.INI or your presentation/PTB
@@ -244,38 +263,20 @@ if ~existArtifact
         visAngleX{iTrial} = rad2deg(atan((xGaze{iTrial}/2)/(totDist*screenResX/screenWidth_x)))*2;
         visAngleY{iTrial} = rad2deg(atan((yGaze{iTrial}/2)/(totDist*screenResY/screenWidth_y)))*2;
     end
-        
+    
     % NOTE: the rest of the eye movement artifact detection is done after
     % ICA based on visAngleX and Y.
     
-    %% find EOG blink artifacts
-    % channel selection, cutoff and padding
-    cfg2.artfctdef.zvalue.channel     = {'UADC006'}; % Eye tracker data
-    cfg2.artfctdef.zvalue.cutoff      = 2;
-    cfg2.artfctdef.zvalue.trlpadding  = 0;
-    cfg2.artfctdef.zvalue.artpadding  = 0.01;
-    cfg2.artfctdef.zvalue.fltpadding  = 0;
-    % algorithmic parameters
-    cfg2.artfctdef.zvalue.bpfilter   = 'yes';
-    cfg2.artfctdef.zvalue.bpfilttype = 'but';
-    cfg2.artfctdef.zvalue.bpfreq     = [1 30];
-    cfg2.artfctdef.zvalue.bpfiltord  = 4;
-    cfg2.artfctdef.zvalue.hilbert    = 'yes';
-    % feedback
-    cfg2.artfctdef.zvalue.interactive = 'yes';
-    
-    sprintf('find blink artifacts')
-    [~, artifact_EOG_blink] = ft_artifact_zvalue(cfg2);
-    
     %% Save artifacts
-    artfctdef.eyeblink.artifact = artifact_EOG_blink;
-    artfctdef.eyepos.visAngleX = visAngleX;
-    artfctdef.eyepos.visAngleY = visAngleY; % save eye position in artifact definition in order to find artifacts in it later.
-    %     artfctdef.eyesaccade.artifact = artifact_EOG_saccade; % save saccade
-    %     artifacts later
+    artfctdef.badtrial = trlind;
     artfctdef.jump.artifact = artifact_jump;
     artfctdef.muscle.artifact = artifact_muscle;
-    artfctdef.badtrial = trlind;
+    artfctdef.eyeblink.artifact = artifact_EOG_blink;
+    artfctdef.eyepos.visAngleX = visAngleX;
+    artfctdef.eyepos.visAngleY = visAngleY; 
+    artfctdef.eyepos.visDegFixDot = visDegFixDot; % save eye position in artifact definition in order to find artifacts in it later.
+    %     artfctdef.eyesaccade.artifact = artifact_EOG_saccade; % save
+    %     saccade artifacts later
     if isPilot
         if ~exist(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/', subj), 'dir');
             mkdir(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/', subj));
@@ -297,7 +298,7 @@ else
     else
         load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
     end
-    if ~exist(artfctdef.eyesaccade)
+    if ~exist('artfctdef.eyesaccade')
         sprintf('WARNING: possibly eye saccade artifacts have not yet been marked. These do not appear in artfctdef.')
         input('press a key to continue')
     end
@@ -310,7 +311,6 @@ cfg.artfctdef.reject = 'complete'; % remove complete trials
 cfg.artfctdef.crittoilim = [-1 3.75];
 dataNoArtfct = ft_rejectartifact(cfg, data);
 
-save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/dataHalfClean', subj), 'dataNoArtfct')
 %% Compute ICA
 if ~existArtifact
     % resample
@@ -339,7 +339,7 @@ if ~existArtifact
     
     cfg = [];
     cfg.channel = {comp.label{1:10}}; % components to be plotted
-    cfg.layout = 'CTF275.lay'; % specify the layout file that should be used for plotting
+    cfg.layout = 'CTF275_helmet.mat'; % specify the layout file that should be used for plotting
     cfg.compscale = 'local';
     ft_databrowser(cfg, comp);
     
@@ -349,7 +349,7 @@ else
     if isPilot
         filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/icaComp.mat', subj);
     else
-        filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01//icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/icaComp.mat', subj);
     end
     load(filename, 'comp')
 end
@@ -375,9 +375,12 @@ else
 end
 cfg=[];
 cfg.component = subs_comp;
-dataHalfClean = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
+dataNoIca = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
+
+save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/dataHalfClean.mat', subj), 'dataNoIca')
 
 %% remove saccade artifacts
+artifact_EOG_saccade = [];
 if ~exist('visAngleX') || ~exist('visAngleY')
     visAngleX = artfctdef.eyepos.visAngleX;
     visAngleY = artfctdef.eyepos.visAngleY;
@@ -385,6 +388,9 @@ end
 % trials are marked as artifact if fixation is broken with more than
 % amount of visual degrees specified in visDegOffFixation (function
 % input argument)
+if ~exist('visDegFixDot')
+    visDegFixDot =  artfctdef.eyepos.visDegFixDot;
+end
 visDegOffFixation = visDegOffFixation + visDegFixDot; % relative to border of fixation dot
 % mark event as artifact if fixation from fixation point is broken with
 % more than 1 visual degree.
@@ -433,7 +439,7 @@ cfg = [];
 cfg.artfctdef.eyesaccade.artifact = artifact_EOG_saccade;
 cfg.artfctdef.reject = 'complete'; % remove complete trials
 cfg.artfctdef.crittoilim = [-1 3.75];
-dataClean = ft_rejectartifact(cfg, dataHalfClean);
+dataClean = ft_rejectartifact(cfg, dataNoIca);
 
 %% save
 if isPilot
