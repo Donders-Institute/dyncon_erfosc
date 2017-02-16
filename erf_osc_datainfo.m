@@ -58,6 +58,8 @@ pilotsubjects(4).aseo          = [119 161; 162 226; 230 459];
 
 
 %% Experiment
+badsubjects = [5, 10]; %5 (dental fillings left temporal),  10 (corrupt logfile, only 9 blocks completed, many eye blinks)
+
 
 subjects(1).channels           = [];
 subjects(1).dataset            = '/project/3011085.02/raw/sub-001/ses-meg01/sub01ses01_3011085.02_20161130_01.ds';
@@ -65,8 +67,8 @@ subjects(1).logfile            = '/project/3011085.02/raw/sub-001/ses-beh01/sub0
 subjects(1).headshape          = '/project/3011085.02/raw/sub-001/polhemus_erfosc_sub-001.pos';
 subjects(1).mri                = '/project/3011085.02/raw/sub-001/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/PAUGAA_20150915_S22.MR.DCCN_PRISMA.0002.0001.2015.09.15.11.23.24.596922.1311820.IMA';
 subjects(1).mridir             = '/project/3011085.02/processed/sub-001/ses-mri01/';
-subjects(1).ecgcomp            = [3, 13];
-subjects(1).eyecomp            = [2];
+subjects(1).ecgcomp            = [3, 12];
+subjects(1).eyecomp            = [1];
 
 subjects(2).channels           = [];
 subjects(2).dataset            = '/project/3011085.02/raw/sub-002/ses-meg01/sub02ses01_3011085.02_20161130_01.ds';
@@ -74,7 +76,7 @@ subjects(2).logfile            = '/project/3011085.02/raw/sub-002/ses-beh01/sub0
 subjects(2).headshape          = '/project/3011085.02/raw/sub-002/polhemus_erfosc_sub-002.pos';
 subjects(2).mri                = '/project/3011085.02/raw/sub-002/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/PAUGAA_20161201_SUB02.MR.DCCN_PRISMAFIT.0002.0001.2016.12.01.13.26.11.582491.572385364.IMA';
 subjects(2).mridir             = '/project/3011085.02/processed/sub-002/ses-mri01/';
-subjects(2).ecgcomp            = [9, 29];
+subjects(2).ecgcomp            = [14, 30];
 subjects(2).eyecomp            = [3, 4];
 
 subjects(3).channels           = [];
@@ -92,8 +94,8 @@ subjects(4).logfile            = '/project/3011085.02/raw/sub-004/ses-beh01/sub0
 subjects(4).headshape          = '/project/3011085.02/raw/sub-004/polhemus_erfosc_sub-004.pos';
 subjects(4).mri                = '/project/3011085.02/raw/sub-004/ses-mri01/P027_t1.nii.gz';
 subjects(4).mridir             = '/project/3011085.02/processed/sub-004/ses-mri01/';
-subjects(4).ecgcomp            = [2, 4];
-subjects(4).eyecomp            = [];
+subjects(4).ecgcomp            = [5, 16, 34];
+subjects(4).eyecomp            = [1];
 
 subjects(5).channels           = [];
 subjects(5).dataset            = '/project/3011085.02/raw/sub-005/ses-meg01/sub05ses01_3011085.02_20170104_01.ds';
@@ -101,26 +103,26 @@ subjects(5).logfile            = '/project/3011085.02/raw/sub-005/ses-beh01/sub0
 subjects(5).headshape          = '/project/3011085.02/raw/sub-005/polhemus_erfosc_sub-005.pos';
 subjects(5).mri                = '/project/3011085.02/raw/sub-005/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/PAUGAA_20160517_SXX.MR.DCCN_SKYRA.0002.0001.2016.05.17.15.14.58.315238.1202276508.IMA';
 subjects(5).mridir             = '/project/3011085.02/processed/sub-005/ses-mri01/';
-subjects(5).ecgcomp            = [5];
-subjects(5).eyecomp            = [1, 2, 3, 4]; % tooth filling left temporal, high noise levels in MLT sensors. mark components 1,3 as artifacts. CHECK FOR OTHER COMPONENTS. MANY SUSPECTED
+subjects(5).ecgcomp            = [6, 30];
+subjects(5).eyecomp            = [1, 3, 4, 5]; % tooth filling left temporal, high noise levels in MLT sensors. mark components 1. CHECK FOR OTHER COMPONENTS. MANY SUSPECTED
 
 subjects(6).channels           = [];
 subjects(6).dataset            = '/project/3011085.02/raw/sub-006/ses-meg01/sub06ses01_3011085.02_20170104_01.ds';
 subjects(6).logfile            = '/project/3011085.02/raw/sub-006/ses-beh01/sub06ses01.mat';
 subjects(6).headshape          = '/project/3011085.02/raw/sub-006/polhemus_erfosc_sub-006.pos';
-subjects(6).mri                = '/project/3011085.02/raw/sub-006/ses-mri01/007-t1_mprage_sag_p2_iso_1.0/301202610_TOBNAV_S07.MR.TOBNAV_SKYRA.0006.0001.2016.11.24.12.29.16.835954.1313779829.IMA';
+subjects(6).mri                = '/project/3011085.02/raw/sub-006/ses-mri01/007-t1_mprage_sag_p2_iso_1.0/301202610_TOBNAV_S07.MR.TOBNAV_SKYRA.0007.0001.2016.11.24.12.29.16.835954.1313789047.IMA';
 subjects(6).mridir             = '/project/3011085.02/processed/sub-006/ses-mri01/';
 subjects(6).ecgcomp            = [6];
-subjects(6).eyecomp            = [1, 14];
+subjects(6).eyecomp            = [1];
 
 subjects(7).channels           = [];
 subjects(7).dataset            = '/project/3011085.02/raw/sub-007/ses-meg01/sub07ses01_3011085.02_20170104_01.ds';
 subjects(7).logfile            = '/project/3011085.02/raw/sub-007/ses-beh01/sub07ses01.mat';
 subjects(7).headshape          = '/project/3011085.02/raw/sub-007/polhemus_erfosc_sub-007.pos';
-subjects(7).mri                = '/project/3011085.02/raw/sub-007/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/';
+subjects(7).mri                = '/project/3011085.02/raw/sub-007/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.19.45416.2017011710180816482222404.IMA';
 subjects(7).mridir             = '/project/3011085.02/processed/sub-007/ses-mri01/';
-subjects(7).ecgcomp            = [19, 29];
-subjects(7).eyecomp            = [1, 2];
+subjects(7).ecgcomp            = [9, 20];
+subjects(7).eyecomp            = [1, 2, 3];
 
 % huge amount of eye blinks
 subjects(8).channels           = [];
@@ -129,8 +131,8 @@ subjects(8).logfile            = '/project/3011085.02/raw/sub-008/ses-beh01/sub0
 subjects(8).headshape          = '/project/3011085.02/raw/sub-008/polhemus_erfosc_sub-008.pos';
 subjects(8).mri                = '/project/3011085.02/raw/sub-008/ses-mri01/002-t1_mprage_sag_p2_iso_1.0/301202610_TOBNAV_S05.MR.TOBNAV_SKYRA.0002.0001.2016.10.31.20.10.53.378701.1299671212.IMA';
 subjects(8).mridir             = '/project/3011085.02/processed/sub-008/ses-mri01/';
-subjects(8).ecgcomp            = [8, 27];
-subjects(8).eyecomp            = [1];
+subjects(8).ecgcomp            = [12, 39];
+subjects(8).eyecomp            = [2];
 
 subjects(9).channels           = [];
 subjects(9).dataset            = '/project/3011085.02/raw/sub-009/ses-meg01/sub09ses01_3011085.02_20170105_01.ds';
@@ -138,9 +140,11 @@ subjects(9).logfile            = '/project/3011085.02/raw/sub-009/ses-beh01/sub0
 subjects(9).headshape          = '/project/3011085.02/raw/sub-009/polhemus_erfosc_sub-009.pos';
 subjects(9).mri                = '/project/3011085.02/raw/sub-009/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/PAUGAA_20170105_S09.MR.DCCN_SKYRA.0002.0001.2017.01.05.11.21.07.149215.1339150432.IMA';
 subjects(9).mridir             = '/project/3011085.02/processed/sub-009/ses-mri01/';
-subjects(9).ecgcomp            = [8, 26];
-subjects(9).eyecomp            = [1];
+subjects(9).ecgcomp            = [4, 22];
+subjects(9).eyecomp            = [1, 2];
 
+% subject 10 bad subject: corrupt logfile, could only do 9 blocks; many
+% eyeblinks. Discard subject
 subjects(10).channels           = [];
 subjects(10).dataset            = '/project/3011085.02/raw/sub-010/ses-meg01/sub10ses01_3011085.02_20170105_01.ds';
 subjects(10).logfile            = '/project/3011085.02/raw/sub-010/ses-beh01/sub10ses01.mat';
@@ -156,8 +160,8 @@ subjects(11).logfile            = '/project/3011085.02/raw/sub-011/ses-beh01/sub
 subjects(11).headshape          = '/project/3011085.02/raw/sub-011/polhemus_erfosc_sub-011.pos';
 subjects(11).mri                = '/project/3011085.02/raw/sub-011/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/SAMCHO_20160616_COLOR20.MR.DCCN_PRISMA.0002.0001.2016.06.16.11.36.21.938505.222768478.IMA';
 subjects(11).mridir             = '/project/3011085.02/processed/sub-011/ses-mri01/';
-subjects(11).ecgcomp            = [];
-subjects(11).eyecomp            = [];
+subjects(11).ecgcomp            = [3, 10, 20];
+subjects(11).eyecomp            = [1];
 
 subjects(12).channels           = [];
 subjects(12).dataset            = '/project/3011085.02/raw/sub-012/ses-meg01/sub12ses01_3011085.02_20170111_01.ds';
@@ -174,8 +178,8 @@ subjects(13).logfile            = '/project/3011085.02/raw/sub-013/ses-beh01/sub
 subjects(13).headshape          = '/project/3011085.02/raw/sub-013/polhemus_erfosc_sub-013.pos';
 subjects(13).mri                = '/project/3011085.02/raw/sub-013/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/PAUGAA_20170111_S13.MR.DCCN_SKYRA.0002.0001.2017.01.11.11.51.10.945841.1344162904.IMA';
 subjects(13).mridir             = '/project/3011085.02/processed/sub-013/ses-mri01/';
-subjects(13).ecgcomp            = [];
-subjects(13).eyecomp            = [];
+subjects(13).ecgcomp            = [11, 13];
+subjects(13).eyecomp            = [1, 2, 4];
 
 subjects(14).channels           = [];
 subjects(14).dataset            = '/project/3011085.02/raw/sub-014/ses-meg01/sub14ses01_3011085.02_20170111_01.ds';
@@ -183,17 +187,18 @@ subjects(14).logfile            = '/project/3011085.02/raw/sub-014/ses-beh01/sub
 subjects(14).headshape          = '/project/3011085.02/raw/sub-014/polhemus_erfosc_sub-014.pos';
 subjects(14).mri                = '/project/3011085.02/raw/sub-014/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.19.45416.2017011112541298968943021.IMA';
 subjects(14).mridir             = '/project/3011085.02/processed/sub-014/ses-mri01/';
-subjects(14).ecgcomp            = [];
-subjects(14).eyecomp            = [];
+subjects(14).ecgcomp            = [3, 4, 5];
+subjects(14).eyecomp            = [2];
 
+% bad subject, could not maintain fixation. Discard subject
 subjects(15).channels           = [];
 subjects(15).dataset            = '/project/3011085.02/raw/sub-015/ses-meg01/sub15ses01_3011085.02_20170111_01.ds';
 subjects(15).logfile            = '/project/3011085.02/raw/sub-015/ses-beh01/sub15ses01.mat';
 subjects(15).headshape          = '/project/3011085.02/raw/sub-015/polhemus_erfosc_sub-015.pos';
 subjects(15).mri                = '/project/3011085.02/raw/sub-015/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.19.45416.2017011113580594143847289.IMA';
 subjects(15).mridir             = '/project/3011085.02/processed/sub-015/ses-mri01/';
-subjects(15).ecgcomp            = [];
-subjects(15).eyecomp            = [];
+subjects(15).ecgcomp            = [6, 35];
+subjects(15).eyecomp            = [1, 27];
 
 subjects(16).channels           = [];
 subjects(16).dataset            = '/project/3011085.02/raw/sub-016/ses-meg01/sub16ses01_3011085.02_20170112_01.ds';
@@ -201,8 +206,8 @@ subjects(16).logfile            = '/project/3011085.02/raw/sub-016/ses-beh01/sub
 subjects(16).headshape          = '/project/3011085.02/raw/sub-016/polhemus_erfosc_sub-016.pos';
 subjects(16).mri                = '/project/3011085.02/raw/sub-016/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.19.45416.2017011211272151943534752.IMA';
 subjects(16).mridir             = '/project/3011085.02/processed/sub-016/ses-mri01/';
-subjects(16).ecgcomp            = [];
-subjects(16).eyecomp            = [];
+subjects(16).ecgcomp            = [6, 7, 30];
+subjects(16).eyecomp            = [1];
 
 subjects(17).channels           = [];
 subjects(17).dataset            = '/project/3011085.02/raw/sub-017/ses-meg01/sub17ses01_3011085.02_2017_01.ds';
@@ -219,8 +224,8 @@ subjects(18).logfile            = '/project/3011085.02/raw/sub-018/ses-beh01/sub
 subjects(18).headshape          = '/project/3011085.02/raw/sub-018/polhemus_erfosc_sub-018.pos';
 subjects(18).mri                = '/project/3011085.02/raw/sub-018/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.19.45416.201701121317291121285204.IMA';
 subjects(18).mridir             = '/project/3011085.02/processed/sub-018/ses-mri01/';
-subjects(18).ecgcomp            = [];
-subjects(18).eyecomp            = [];
+subjects(18).ecgcomp            = [5, 6];
+subjects(18).eyecomp            = [3, 4, 8];
 
 subjects(19).channels           = [];
 subjects(19).dataset            = '/project/3011085.02/raw/sub-019/ses-meg01/sub19ses01_3011085.02_20170116_01.ds';
@@ -228,8 +233,8 @@ subjects(19).logfile            = '/project/3011085.02/raw/sub-019/ses-beh01/sub
 subjects(19).headshape          = '/project/3011085.02/raw/sub-019/polhemus_erfosc_sub-019.pos';
 subjects(19).mri                = '/project/3011085.02/raw/sub-019/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.19.45416.2017011616052260254962913.IMA';
 subjects(19).mridir             = '/project/3011085.02/processed/sub-019/ses-mri01/';
-subjects(19).ecgcomp            = [];
-subjects(19).eyecomp            = [];
+subjects(19).ecgcomp            = [2, 4, 12];
+subjects(19).eyecomp            = [1, 27];
 
 subjects(20).channels           = [];
 subjects(20).dataset            = '/project/3011085.02/raw/sub-020/ses-meg01/sub20ses01_3011085.02_20170117_01.ds';
@@ -237,8 +242,8 @@ subjects(20).logfile            = '/project/3011085.02/raw/sub-020/ses-beh01/sub
 subjects(20).headshape          = '/project/3011085.02/raw/sub-020/polhemus_erfosc_sub-020.pos';
 subjects(20).mri                = '/project/3011085.02/raw/sub-020/ses-mri01/002-t1_mpr_ns_PH8/PAUGAA_20150826_100903.MR.DCCN_SEQUENCES_STANDARD_SEQUENCES.0002.0001.2015.08.26.10.00.01.246391.106902594.IMA';
 subjects(20).mridir             = '/project/3011085.02/processed/sub-020/ses-mri01/';
-subjects(20).ecgcomp            = [];
-subjects(20).eyecomp            = [];
+subjects(20).ecgcomp            = [6, 10];
+subjects(20).eyecomp            = [2];
 
 subjects(21).channels           = [];
 subjects(21).dataset            = '/project/3011085.02/raw/sub-021/ses-meg01/sub21ses01_3011085.02_20170117_01.ds';
@@ -255,8 +260,8 @@ subjects(22).logfile            = '/project/3011085.02/raw/sub-022/ses-beh01/sub
 subjects(22).headshape          = '/project/3011085.02/raw/sub-022/polhemus_erfosc_sub-022.pos';
 subjects(22).mri                = '/project/3011085.02/raw/sub-022/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/PAUGAA_20170118_S22.MR.DCCN_SKYRA.0002.0001.2017.01.18.10.45.11.593116.1351346244.IMA';
 subjects(22).mridir             = '/project/3011085.02/processed/sub-022/ses-mri01/';
-subjects(22).ecgcomp            = [];
-subjects(22).eyecomp            = [];
+subjects(22).ecgcomp            = [4, 6];
+subjects(22).eyecomp            = [1, 11];
 
 subjects(23).channels           = [];
 subjects(23).dataset            = '/project/3011085.02/raw/sub-023/ses-meg01/sub23ses01_3011085.02_20170118_01.ds';
@@ -264,8 +269,8 @@ subjects(23).logfile            = '/project/3011085.02/raw/sub-023/ses-beh01/sub
 subjects(23).headshape          = '/project/3011085.02/raw/sub-023/polhemus_erfosc_sub-023.pos';
 subjects(23).mri                = '/project/3011085.02/raw/sub-023/ses-mri01/002-t1_mpr_ns_PH8/VITPIA_20131002_S12.MR.FCDC_SEQUENCES_STANDARD_SEQUENCES.0002.0001.2013.10.02.13.41.11.952197.56981592.IMA';
 subjects(23).mridir             = '/project/3011085.02/processed/sub-023/ses-mri01/';
-subjects(23).ecgcomp            = [];
-subjects(23).eyecomp            = [];
+subjects(23).ecgcomp            = [2, 4, 6, 9];
+subjects(23).eyecomp            = [13, 17, 23];
 
 subjects(24).channels           = [];
 subjects(24).dataset            = '/project/3011085.02/raw/sub-024/ses-meg01/sub24ses01_3011085.02_20170118_01.ds';
@@ -282,38 +287,38 @@ subjects(25).logfile            = '/project/3011085.02/raw/sub-025/ses-beh01/sub
 subjects(25).headshape          = '/project/3011085.02/raw/sub-025/polhemus_erfosc_sub-025.pos';
 subjects(25).mri                = '/project/3011085.02/raw/sub-025/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.43.67027.2017011814031851926362919.IMA';
 subjects(25).mridir             = '/project/3011085.02/processed/sub-025/ses-mri01/';
-subjects(25).ecgcomp            = [];
-subjects(25).eyecomp            = [];
+subjects(25).ecgcomp            = [1, 6];
+subjects(25).eyecomp            = [3];
 
 subjects(26).channels           = [];
 subjects(26).dataset            = '/project/3011085.02/raw/sub-026/ses-meg01/sub26ses01_3011085.02_20170118_01.ds';
 subjects(26).logfile            = '/project/3011085.02/raw/sub-026/ses-beh01/sub26ses01.mat';
 subjects(26).headshape          = '/project/3011085.02/raw/sub-026/polhemus_erfosc_sub-026.pos';
-subjects(26).mri                = '/project/3011085.02/raw/sub-026/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/PAUGAA_20161205_S15.MR.DCCN_SKYRA.0001.0001.2016.12.05.10.25.31.305657.1318400078.IMA';
+subjects(26).mri                = '/project/3011085.02/raw/sub-026/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/PAUGAA_20161205_S15.MR.DCCN_SKYRA.0002.0001.2016.12.05.10.25.31.305657.1318410308.IMA';
 subjects(26).mridir             = '/project/3011085.02/processed/sub-026/ses-mri01/';
-subjects(26).ecgcomp            = [];
-subjects(26).eyecomp            = [];
+subjects(26).ecgcomp            = [5, 7, 15];
+subjects(26).eyecomp            = [2];
 
 subjects(27).channels           = [];
-subjects(27).dataset            = '/project/3011085.02/raw/sub-027/ses-meg01/sub27ses01_3011085.02_20170123_01.ds';
+subjects(27).dataset            = '/project/3011085.02/raw/sub-027/ses-meg01/sub027ses01_3011085.02_20170123_01.ds';
 subjects(27).logfile            = '/project/3011085.02/raw/sub-027/ses-beh01/sub27ses01.mat';
 subjects(27).headshape          = '/project/3011085.02/raw/sub-027/polhemus_erfosc_sub-027.pos';
 subjects(27).mri                = '/project/3011085.02/raw/sub-027/ses-mri01/002-t1_mpr_ns_PH8/PAUGAA_20140923_S20.MR.DCCN_SEQUENCES_STANDARD_SEQUENCES.0002.0001.2014.09.23.14.52.22.958467.43979878.IMA';
 subjects(27).mridir             = '/project/3011085.02/processed/sub-027/ses-mri01/';
-subjects(27).ecgcomp            = [];
-subjects(27).eyecomp            = [];
+subjects(27).ecgcomp            = [3, 42];
+subjects(27).eyecomp            = [1];
 
 subjects(28).channels           = [];
-subjects(28).dataset            = '/project/3011085.02/raw/sub-028/ses-meg01/sub28ses01_3011085.02_20170125_01.ds';
+subjects(28).dataset            = '/project/3011085.02/raw/sub-028/ses-meg01/sub028ses01_3011085.02_20170125_01.ds';
 subjects(28).logfile            = '/project/3011085.02/raw/sub-028/ses-beh01/sub28ses01.mat';
 subjects(28).headshape          = '/project/3011085.02/raw/sub-028/polhemus_erfosc_sub-028.pos';
 subjects(28).mri                = '/project/3011085.02/raw/sub-028/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.19.45416.2017012510404133866953306.IMA';
 subjects(28).mridir             = '/project/3011085.02/processed/sub-028/ses-mri01/';
-subjects(28).ecgcomp            = [];
-subjects(28).eyecomp            = [];
+subjects(28).ecgcomp            = [9, 21];
+subjects(28).eyecomp            = [2, 6];
 
 subjects(29).channels           = [];
-subjects(29).dataset            = '/project/3011085.02/raw/sub-029/ses-meg01/sub29ses01_3011085.02_20170125_01.ds';
+subjects(29).dataset            = '/project/3011085.02/raw/sub-029/ses-meg01/sub029ses01_3011085.02_20170125_01.ds';
 subjects(29).logfile            = '/project/3011085.02/raw/sub-029/ses-beh01/sub29ses01.mat';
 subjects(29).headshape          = '/project/3011085.02/raw/sub-029/polhemus_erfosc_sub-029.pos';
 subjects(29).mri                = '/project/3011085.02/raw/sub-029/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/';
@@ -322,37 +327,37 @@ subjects(29).ecgcomp            = [];
 subjects(29).eyecomp            = [];
 
 subjects(30).channels           = [];
-subjects(30).dataset            = '/project/3011085.02/raw/sub-030/ses-meg01/sub30ses01_3011085.02_20170125_01.ds';
+subjects(30).dataset            = '/project/3011085.02/raw/sub-030/ses-meg01/sub030ses01_3011085.02_20170125_01.ds';
 subjects(30).logfile            = '/project/3011085.02/raw/sub-030/ses-beh01/sub30ses01.mat';
 subjects(30).headshape          = '/project/3011085.02/raw/sub-030/polhemus_erfosc_sub-030.pos';
 subjects(30).mri                = '/project/3011085.02/raw/sub-030/ses-mri01/002-t1_mprage_sag_p2_iso_1.0/20170105_CHRUTZ_MEGS02.MR.CHRUTZ_PRISMA.0002.0001.2017.01.05.13.46.41.183639.604120162.IMA';
 subjects(30).mridir             = '/project/3011085.02/processed/sub-030/ses-mri01/';
-subjects(30).ecgcomp            = [];
-subjects(30).eyecomp            = [];
+subjects(30).ecgcomp            = [5, 13, 21];
+subjects(30).eyecomp            = [1, 8];
 
 subjects(31).channels           = [];
-subjects(31).dataset            = '/project/3011085.02/raw/sub-031/ses-meg01/sub31ses01_3011085.02_20170126_01.ds';
+subjects(31).dataset            = '/project/3011085.02/raw/sub-031/ses-meg01/sub031ses01_3011085.02_20170126_01.ds';
 subjects(31).logfile            = '/project/3011085.02/raw/sub-031/ses-beh01/sub31ses01.mat';
 subjects(31).headshape          = '/project/3011085.02/raw/sub-031/polhemus_erfosc_sub-031.pos';
-subjects(31).mri                = '/project/3011085.02/raw/sub-031/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/';
+subjects(31).mri                = '/project/3011085.02/raw/sub-031/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.43.66068.2017012710350118315501039.IMA';
 subjects(31).mridir             = '/project/3011085.02/processed/sub-031/ses-mri01/';
-subjects(31).ecgcomp            = [];
-subjects(31).eyecomp            = [];
+subjects(31).ecgcomp            = [2, 4];
+subjects(31).eyecomp            = [1, 11];
 
 subjects(32).channels           = [];
-subjects(32).dataset            = '/project/3011085.02/raw/sub-032/ses-meg01/sub32ses01_3011085.02_20170126_01.ds';
+subjects(32).dataset            = '/project/3011085.02/raw/sub-032/ses-meg01/sub031ses01_3011085.02_20170126_02.ds';
 subjects(32).logfile            = '/project/3011085.02/raw/sub-032/ses-beh01/sub32ses01.mat';
 subjects(32).headshape          = '/project/3011085.02/raw/sub-032/polhemus_erfosc_sub-032.pos';
-subjects(32).mri                = '/project/3011085.02/raw/sub-032/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/';
-subjects(32).mridir             = '/project/3011085.02/processed/sub-032/ses-mri01/';
-subjects(32).ecgcomp            = [];
-subjects(32).eyecomp            = [];
+subjects(32).mri                = '/project/3011085.02/raw/sub-032/ses-mri02/002-t1_mprage_sag_p2_iso_1.0_20ch_head/00001_1.3.12.2.1107.5.2.43.66068.2017021514302695199429043.IMA';
+subjects(32).mridir             = '/project/3011085.02/processed/sub-032/ses-mri02/';
+subjects(32).ecgcomp            = [7, 9, 26];
+subjects(32).eyecomp            = [1, 2];
 
 subjects(33).channels           = [];
-subjects(33).dataset            = '/project/3011085.02/raw/sub-033/ses-meg01/sub33ses01_3011085.02_20170126_01.ds';
+subjects(33).dataset            = '/project/3011085.02/raw/sub-033/ses-meg01/sub033ses01_3011085.02_20170126_01.ds';
 subjects(33).logfile            = '/project/3011085.02/raw/sub-033/ses-beh01/sub33ses01.mat';
 subjects(33).headshape          = '/project/3011085.02/raw/sub-033/polhemus_erfosc_sub-033.pos';
-subjects(33).mri                = '/project/3011085.02/raw/sub-033/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/';
+subjects(33).mri                = '/project/3011085.02/raw/sub-033/ses-mri01/20160612_125811t1mpragesagp2iso10s010a1001.nii.gz';
 subjects(33).mridir             = '/project/3011085.02/processed/sub-033/ses-mri01/';
-subjects(33).ecgcomp            = [];
-subjects(33).eyecomp            = [];
+subjects(33).ecgcomp            = [4, 6];
+subjects(33).eyecomp            = [2, 8];
