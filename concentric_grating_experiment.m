@@ -14,11 +14,12 @@ function concentric_grating_experiment(fileName, isLive, language, includePeriSt
 %   in periphery)
 
 %% initiate diary
-workSpace = whos;
-diary('tmpDiary') % save command window output
-for i = 1:numel(workSpace) % list all workspace variables
-    eval(workSpace(i).name)
-end
+% workSpace = whos;
+% diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+% diary(diaryname) % save command window output
+% for i = 1:numel(workSpace) % list all workspace variables
+%     eval(workSpace(i).name)
+% end
 
 %% Function settings
 
@@ -73,7 +74,7 @@ try
     if isLive
         screenNo=max(screens);
     else
-        screenNo=0;
+        screenNo=1;
     end
     
     % Find the color values which correspond to white and black: Usually
@@ -312,7 +313,7 @@ try
         nBaselineFrames = round(baselineTime(iTrl)/ifi);
         t01 = GetSecs - t00;
         for jFrame = 1:nBaselineFrames
-            Screen('DrawDots', window, [xCenter yCenter], 20, [255 0 0], [], 2);
+            Screen('DrawDots', window, [xCenter yCenter], 80, [255 0 0], [], 2);
             [VBLTimestamp, StimulusOnsetTime, FlipTimestamp, Missed, Beampos] = Screen('Flip', window, VBLTimestamp + (waitframes - 0.5) * ifi);
             if jFrame==1
                 btsi.sendTrigger(xp.TRIG_ONSET_BASELINE);
@@ -391,7 +392,7 @@ try
             if keyCode(escape) % end the experiment
                 save(fullfile([fileName '.mat']), 'log');
                 diary off
-                movefile('tmpDiary', fullfile([fileName '.txt']));
+                movefile(diaryname, fullfile([fileName '.txt']));
                 sca;
                 Screen('CloseAll')
             elseif keyCode(keyP)
@@ -438,7 +439,7 @@ try
     end % end trial
     save(fullfile([fileName '.mat']), 'log')
     diary off
-    movefile('tmpDiary', fullfile([fileName '.txt']));
+    movefile(diaryname, fullfile([fileName '.txt']));
     
     Priority(0);
     % Close all textures. This is not strictly needed, as
