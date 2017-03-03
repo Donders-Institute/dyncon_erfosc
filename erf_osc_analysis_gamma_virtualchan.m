@@ -1,4 +1,4 @@
-function erf_osc_analysis_gamma_virtualchan(subj, isPilot)
+ function erf_osc_analysis_gamma_virtualchan(subj, isPilot, sourcemodel)
 % This function estimates gamma power at the estimated gamma peak frequency
 
 if nargin<1
@@ -13,10 +13,16 @@ end
 if isempty(isPilot);
     isPilot = true;
 end
+if nargin<3
+    sourcemodel = '3d'; % note that this variable is replaced by the actual sourcemodel
+end
+if isempty(sourcemodel)
+    sourcemodel = '3d';
+end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -36,17 +42,21 @@ end
 
 %% load data
 erf_osc_datainfo;
-load(fullfile([pilotsubjects(subj).segmentedmri '.mat']));
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
     load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq');
 else
-    data = load(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    load(fullfile([subjects(subj).mridir, 'preproc/headmodel.mat']));
     load(subjects(subj).logfile);% load log file
-    load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
-    load(sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_peak', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj), 'peakFreq');
+    if strcmp(sourcemodel, '2d')
+        load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel2d.mat']));
+    else
+        load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel3d.mat']));
+    end
 end
 
 data = data.dataClean;
@@ -68,7 +78,8 @@ dataShift  = ft_redefinetrial(cfg, data);
 
 fs = data.fsample;
 
-
+% select data: 1 second preceding grating start and one second preceding
+% grating shift. Contrast these in terms of gamma frequency at gamma peak
 cfg         = [];
 cfg.latency = [-1+1/fs 0];
 dataPre     = ft_selectdata(cfg, data);
@@ -98,18 +109,7 @@ freqPost      = ft_freqanalysis(cfg, dataPost);
 %% Source analysis
 
 % constructs a volume conduction model from the geometry of the head.
-cfg         = [];
-cfg.method  = 'singleshell';
-headmodel   = ft_prepare_headmodel(cfg, segmentedmri);
 headmodel   = ft_convert_units(headmodel, 'cm');
-
-% constructs a source model, for example a 3-D grid or a cortical sheet.
-cfg                 = [];
-cfg.grid.resolution = 0.5;
-cfg.grid.unit       = 'cm';
-cfg.headmodel       = headmodel;
-cfg.grad            = data.grad;
-sourcemodel         = ft_prepare_sourcemodel(cfg);
 
 % computes the forward model for many dipole locations on a regular 2D or
 % 3D grid and stores it for efficient inverse modelling
@@ -119,14 +119,14 @@ cfg.headmodel       = headmodel;
 cfg.reducerank      = 2;
 cfg.grid.resolution = 0.5;   % use a 3-D grid with a 1 cm resolution
 cfg.grid.unit       = 'cm';
-sourcemodel_lf      = ft_prepare_leadfield(cfg);
+leadfield           = ft_prepare_leadfield(cfg);
 
 % calculate common filter
 cfg                   = [];
 cfg.grad              = freqAll.grad;
 cfg.method            = 'dics';
 cfg.frequency         = peakFreq;
-cfg.grid              = sourcemodel_lf;
+cfg.grid              = leadfield;
 cfg.headmodel         = headmodel;
 cfg.dics.projectnoise = 'yes';
 cfg.dics.lambda       = '5%';
@@ -179,12 +179,11 @@ end
 if isPilot
     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel', subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_virtual_channel', subj);
+    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
 end
 save(fullfile([filename '.mat']), 'gamPowData', 'beamformerGamPow');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
-
 
 end
 
