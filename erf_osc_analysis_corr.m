@@ -1,15 +1,21 @@
-function erf_osc_analysis_corr(subj)
+function erf_osc_analysis_corr(subj, isPilot)
 
 if nargin<1
-    subj = 4;
+    subj = 1;
 end
 if isempty(subj)
-    subj = 4;
+    subj = 1;
+end
+if nargin<2
+    isPilot = false;
+end
+if isempty(isPilot);
+    isPilot = false;
 end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -32,12 +38,12 @@ end
 if isPilot
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak.mat', subj), 'peakFreq');
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_pow.mat', subj)); % load gamma power
-    load(sprintf('/project/3011085.02/results/erf/pilot-%03d/dss_ASEO.mat', subj), 'q1'); % load ERF
+    load(sprintf('/project/3011085.02/results/erf/pilot-%03d/aseo.mat', subj), 'amplitude', 'latency'); % load ERF
     % load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_angle_%d', subj, subj)); % load gamma phase
 else
-    load(sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_peak.mat', subj), 'peakFreq');
-    load(sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_pow.mat', subj)); % load gamma power
-    load(sprintf('/project/3011085.02/results/erf/subj-%03d/dss_ASEO.mat', subj), 'q1'); % load ERF
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_pow.mat', subj)); % load gamma power
+    load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj),  'amplitude', 'latency'); % load ERF
     % load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_angle', subj)); % load gamma phase
 end
 
@@ -50,15 +56,16 @@ gammaPow = gamPow.powspctrm;
 
 %% gamma pow - ERF components
 peakIdx = find(gamPow.freq==peakFreq);
-[rAmp{1} pAmp{1}] = corr(gammaPow(:,peakIdx), q1(1).params.amplitude, 'type', 'spearman')
-[rLat{1} pLat{1}] = corr(gammaPow(:,peakIdx), q1(1).params.latency, 'type', 'spearman')
+[rAmp pAmp] = corr(gammaPow(:,peakIdx), amplitude, 'type', 'spearman')
+[rLat pLat] = corr(gammaPow(:,peakIdx), latency, 'type', 'spearman')
 
-for iFreq = 1:length(gamPow.freq)
-[rA(iFreq,:), pA(iFreq,:)] = corr(gammaPow(:,iFreq), q1(1).params.amplitude, 'type', 'spearman');
-[rL(iFreq,:), pL(iFreq,:)] = corr(gammaPow(:,iFreq), q1(1).params.latency, 'type', 'spearman');
-end
+% for iFreq = 1:length(gamPow.freq)
+% [rA(iFreq,:), pA(iFreq,:)] = corr(gammaPow(:,iFreq), reconstructed.params.amplitude, 'type', 'spearman');
+% [rL(iFreq,:), pL(iFreq,:)] = corr(gammaPow(:,iFreq), reconstructed.params.latency, 'type', 'spearman');
+% end
 
 %% gamma phase - ERF components
+%{
 gamAngle = rad2deg(gamAngle);
 bins = 0:60:360;
 angleBin = zeros(nTrials,1);
@@ -84,15 +91,15 @@ gam360 = mean(gammaPow(idx360,1));
 gam = [gam60, gam120, gam180, gam240, gam300, gam360];
 
 plot(60:60:360, gam, '.')
-
+%}
 
 %% save
-if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_pow', subj);
-else
-    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_pow', subj);
-end
-save(fullfile([filename '.mat']), 'gammaPow');
-diary off
-movefile(diaryname, fullfile([filename '.txt']));
+% if isPilot
+%     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_pow', subj);
+% else
+%     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_pow', subj);
+% end
+% save(fullfile([filename '.mat']), 'gammaPow');
+% diary off
+% movefile(diaryname, fullfile([filename '.txt']));
 end

@@ -8,21 +8,21 @@ function erf_osc_analysis_erf(subj, isPilot)
 % 6: sample of response (=0 if no response or if response too early)
 
 if nargin<1
-    subj = 3;
+    subj = 1;
 end
 if isempty(subj)
-    subj = 3;
+    subj = 1;
 end
 if nargin<2
-    isPilot = true;
+    isPilot = false;
 end
 if isempty(isPilot);
-    isPilot = true;
+    isPilot = false;
 end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -46,14 +46,14 @@ if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
 
 % select only shift trials, with valid response
 idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
-
+fs = data.fsample;
 nTrials = length(idxM);
 
 cfg=[];
@@ -61,49 +61,30 @@ cfg.trials = idxM;
 cfg.channel = 'MEG';
 dataM = ft_selectdata(cfg, data);
 
-% baseline correct with last 100ms from baseline window
-cfg=[];
-cfg.baseline = [-0.1 0];
-dataOnsetBl = ft_timelockbaseline(cfg, dataM);
-
+% realign to grating change
 cfg=[];
 cfg.offset = -(dataM.trialinfo(:,5)-dataM.trialinfo(:,4));
-% dataShiftM = ft_redefinetrial(cfg, dataM);
-dataShiftMBl = ft_redefinetrial(cfg, dataOnsetBl);
+dataShift = ft_redefinetrial(cfg, dataM);
 
-% baseline correct shifted data with 100ms preShift window
-% cfg=[];
-% cfg.baseline = [-0.1 0];
-% dataShiftMBlPre = ft_timelockbaseline(cfg, dataShiftM);
-
+% baseline correct with last 50 ms just before change
+cfg=[];
+cfg.baseline = [-0.050+1/fs 0];
+data = ft_timelockbaseline(cfg, dataShift);
 
 %% Time-lock analysis
 cfg=[];
 cfg.vartrllength = 2;
-cfg.channel = {'MLP', 'MRP'};
-% cfg.keeptrials='yes';
-% based on grating onset (baseline window corrected)
-% tlOnset = ft_timelockanalysis(cfg, dataOnsetMBl);
-% based on grating shift (baseline window corrected)
-tlShift = ft_timelockanalysis(cfg, dataShiftMBl);
-% based on grating shift (100ms preShift corrected)
-% tlShiftPre = ft_timelockanalysis(cfg, dataShiftMBlPre);
-
-% downsample for clarity in plots
-cfg=[];
-cfg.resamplefs = 200;
-% tlOnsetM_rs = ft_resampledata(cfg, tlOnset);
-tlShiftM_rs = ft_resampledata(cfg, tlShift);
-% tlShiftPreM_rs = ft_resampledata(cfg, tlShiftPre);
+cfg.channel = {'MEG'};
+tlShift = ft_timelockanalysis(cfg, data);
 
 
 %% save
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/timelock', subj);
 else
-    filename = sprintf('/project/3011085.02/results/erf/subj-%03d/timelock', subj);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/timelock', subj);
 end
-save(fullfile([filename '.mat']), 'tlShiftM_rs')
+save(fullfile([filename '.mat']), 'tlShift')
 diary off
 movefile(diaryname, fullfile([filename, '.txt']));
 

@@ -142,8 +142,8 @@ sourceDiff.avg.pow    = (sourcePost.avg.pow - sourcePre.avg.pow) ./ sourcePre.av
 
 %% Create virtual channel of maximal gamma power
 % the following position contains the max gamma power difference
-[maxval, maxpowindx] = max(sourceDiff.avg.pow(sourceDiff.inside));
-% [maxval, maxpowindx] = max(sourceDiff.avg.pow);
+% [maxval, maxpowindx] = max(sourceDiff.avg.pow(sourceDiff.inside));
+[maxval, maxpowindx] = max(sourceDiff.avg.pow);
 sourceDiff.pos(maxpowindx, :)
 % we will create a virtual channel based on this location. In order to do
 % this, we have to do timelockanalysis and use an LCMV beamformer, because

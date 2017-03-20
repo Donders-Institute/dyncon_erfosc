@@ -3,21 +3,21 @@ function erf_osc_analysis_gamma_pow(subj, isPilot)
 % power was highest at gamma peak frequency)
 
 if nargin<1
-    subj = 3;
+    subj = 1;
 end
 if isempty(subj)
-    subj = 3;
+    subj = 1;
 end
 if nargin<2
-    isPilot = true;
+    isPilot = false;
 end
 if isempty(isPilot);
-    isPilot = true;
+    isPilot = false;
 end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -41,8 +41,8 @@ if isPilot
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak.mat', subj), 'peakFreq');
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
 else
-    load(sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_peak.mat', subj), 'peakFreq');
-    load(sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
 end
 fs = gamPowData.fsample;
 
@@ -52,8 +52,8 @@ gamPowDataShift    = ft_redefinetrial(cfg, gamPowData);
 
 cfg          = [];
 cfg.latency  = [-0.5+1/fs 0];
-dataBl      = ft_selectdata(cfg, gamPowData);
-dataPre     = ft_selectdata(cfg, gamPowDataShift);
+dataBl      = ft_selectdata(cfg, gamPowData); % baseline
+dataChange     = ft_selectdata(cfg, gamPowDataShift); % pre-change
 
 peakFreq = 2*round(peakFreq/2);
 smoothing = 6;
@@ -64,21 +64,21 @@ cfg.output      = 'pow';
 cfg.tapsmofrq   = smoothing;
 cfg.foilim      = [(peakFreq - 6*smoothing) (peakFreq + 6*smoothing)];
 cfg.keeptrials  = 'no'; % average baseline over trials
-gamPowPre       = ft_freqanalysis(cfg, dataBl);
+gamPowBl       = ft_freqanalysis(cfg, dataBl);
 cfg.keeptrials  = 'yes';
-gamPowPost      = ft_freqanalysis(cfg, dataPre);
+gamPowChange      = ft_freqanalysis(cfg, dataChange);
 
-gamPow = gamPowPost;
-gamPowPre.powspctrm = repmat(gamPowPre.powspctrm, [size(gamPow.powspctrm,1), 1]);
+gamPow = gamPowChange;
+gamPowBl.powspctrm = repmat(gamPowBl.powspctrm, [size(gamPow.powspctrm,1), 1]);
 
-gamPow.powspctrm = (squeeze(gamPow.powspctrm) - gamPowPre.powspctrm)./gamPowPre.powspctrm;
+gamPow.powspctrm = (squeeze(gamPow.powspctrm) - gamPowBl.powspctrm)./gamPowBl.powspctrm;
 
 
 %% save
 if isPilot
     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_pow', subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_pow', subj);
+    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_pow', subj);
 end
 save(fullfile([filename '.mat']), 'gamPow');
 diary off

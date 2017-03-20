@@ -41,7 +41,7 @@ end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime

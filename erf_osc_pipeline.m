@@ -1,8 +1,8 @@
 %% erf_osc_pipeline
 % this script contains the full pipeline for the analysis of the ERF-
 % oscillation experiment.
-subj = 4;
-isPilot = true;
+subj = 1;
+isPilot = false;
 
 %% preprocessing
 % preproces MEG data: remove artifacts, apply filters etc.
@@ -15,9 +15,9 @@ existArtifact = false; % have the artifacts already been defined?
 erf_osc_preprocessing_artifact(subj, isPilot, existArtifact)
 
 
-% load structural MRI and polhemus headshape. Realign the structural scan
-% to CTF coordinate system and segment.
-erf_osc_preprocessing_mri(subj, isPilot)
+% pipeline in itself, using freesurfer, workbench and realigning with
+% different coordinate systems
+erf_osc_preprocessing_mri
 
 %% TFA
 
@@ -37,5 +37,11 @@ erf_osc_analysis_gamma_pow(subj, isPilot);
 
 
 %% ERF
+erf_osc_analysis_erf(subj, isPilot);
+
 
 erf_osc_analysis_erf_dss_aseo(subj, isPilot)
+
+%% Corelation ERF - gamma power
+
+erf_osc_analysis_corr(subj, isPilot)

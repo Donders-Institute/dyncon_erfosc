@@ -22,7 +22,7 @@ end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -46,14 +46,14 @@ if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
 fs = data.fsample;
 
 % select only shift trials, with valid response
-idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,2)==0);
+idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
 nTrials = length(idxM);
 
 cfg=[];
@@ -119,7 +119,7 @@ tfaHigh = ft_freqanalysis(cfg,data);
 if isPilot
     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/tfa', subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/tfa', subj);
+    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tfa', subj);
 end
 save(fullfile([filename '.mat']), 'powActive', 'powBaseline', 'tfaLow', 'tfaHigh');
 diary off

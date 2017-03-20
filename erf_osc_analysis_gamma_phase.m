@@ -15,7 +15,7 @@ end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -39,8 +39,8 @@ if isPilot
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq');
 else
-    load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_virtual_channel.mat', subj), 'gamPowData');
-    load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_peak', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/sub-0%d/gamma_virtual_channel.mat', subj), 'gamPowData');
+    load(sprintf('/project/3011085.02/results/freq/sub-0%d/gamma_peak', subj), 'peakFreq');
 end
 fs = gamPowData.fsample;
 nTrials = length(gamPowData.trial);
@@ -76,7 +76,7 @@ gamAngle       = angle(fcomp.fourierspctrm(:,1,:)); % in radians
 if isPilot
     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_angle', subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_angle', subj);
+    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_angle', subj);
 end
 save(fullfile([filename '.mat']), 'gamAngle');
 diary off

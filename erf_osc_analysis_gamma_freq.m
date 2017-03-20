@@ -2,21 +2,21 @@ function erf_osc_analysis_gamma_freq(subj, isPilot)
 % This function estimates the gamma peak frequency
 
 if nargin<1
-    subj = 3;
+    subj = 1;
 end
 if isempty(subj)
-    subj = 3;
+    subj = 1;
 end
 if nargin<2
-    isPilot = true;
+    isPilot = false;
 end
 if isempty(isPilot);
-    isPilot = true;
+    isPilot = false;
 end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('tmpDiary_%s', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -40,7 +40,7 @@ if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/processed/subj-%03d/ses-meg01/%02d/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
@@ -89,7 +89,7 @@ peakFreq      = powDiff.freq(maxIdx);
 if isPilot
     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/subj-%03d/gamma_peak', subj);
+    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj);
 end
 save(fullfile([filename '.mat']), 'peakFreq', 'gammaAvg');
 diary off
