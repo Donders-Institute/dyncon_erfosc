@@ -6,7 +6,7 @@ subjects              = ft_getopt(cfg, 'subjects');
 anatomy_preproc_dir   = subjects(subj).mridir;
 anatomy_preproc_dir   = fullfile(anatomy_preproc_dir, '/preproc/');
 headmodel   = fullfile(anatomy_preproc_dir, 'headmodel.mat');
-sourcemodel = fullfile(anatomy_preproc_dir, 'sourcemodel.mat');
+sourcemodel = fullfile(anatomy_preproc_dir, 'sourcemodel2d.mat');
 
 load(headmodel)
 load(sourcemodel)
