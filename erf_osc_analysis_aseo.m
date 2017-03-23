@@ -1,4 +1,4 @@
-function erf_osc_analysis_aseo(subj, isPilot)
+function erf_osc_analysis_aseo(subj, isPilot, existWindow)
 % This function selects time windows for which the specific ERF peaks and
 % it selects the channels for which the amplitude is highest. Based on
 % these parameters, the ASEO algorithm (Xu et al, 2009) models the
@@ -19,6 +19,13 @@ end
 if isempty(isPilot);
     isPilot = false;
 end
+if nargin<3
+    existWindow = false;
+end
+if isempty(existWindow);
+    existWindow = false;
+end
+
 
 
 %% initiate diary
@@ -93,11 +100,6 @@ tlZscore=tl;
 tlZscore.avg=diag(1./s)*(tl.avg-M);
 gmf = ft_globalmeanfield([], tlZscore);
 
-% y2=tl;
-% y2.avg = diag(1./s)*(tl.avg);
-% z2 = ft_globalmeanfield([], y2);
-
-
 %% Select time window
 % take a first guess at the time window, select channels with highest
 % amplitudes in this window. Then base more precise estimation of time
@@ -107,9 +109,13 @@ guess = [0.050 0.090; 0.095 0.130; 0.135 0.180];
     cfg=[];
     cfg.layout = 'CTF275_helmet.mat';
     tmp = rmfield(tlZscore, 'cfg');
-    ft_topoplotER(cfg, tlZscore);
-    for iPeak = 1:size(guess,1)
-        windowGuess{iPeak} = input('What is the initial estimate of the peak latencies?')
+    ft_topoplotER(cfg, tmp);
+    if existWindow
+        load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj), 'window', 'windowGuess'); % load ERF
+    else
+        for iPeak = 1:size(guess,1)
+            windowGuess{iPeak} = input('What is the initial estimate of the peak latencies?')
+        end
     end
 for iPeak=1:size(guess,1)
     
@@ -150,11 +156,13 @@ for iPeak=1:size(guess,1)
     figure; cfgp=[]; cfgp.xlim = [windowGuess{iPeak}(iPeak,1) windowGuess{iPeak}(iPeak,2)]; cfgp.layout = 'CTF275_helmet.mat'; ft_topoplotER(cfgp, tlZscore)
     figure; subplot(2,1,1); plot(gmf_selchan.time, gmf.avg);hold on; plot(gmf_selchan.time, gmf_selchan.avg); title('(X-M)/s'); xlim([-0.05 0.5]);
     subplot(2,1,2); cfg=[]; cfg.xlim = [-0.05 0.5]; ft_singleplotER(cfg, erfdata_selchan); hold on; hline(0);
-    window{iPeak} = input('What is the latency window of every individual peak?');
+    if ~existWindow
+        window{iPeak} = input('What is the latency window of every individual peak?');
+    end
     
     for i=1:size(window{iPeak}, 1)
         lat = mean([window{iPeak}(i,2) window{iPeak}(i,1)]);
-        var = max(lat/5, 0.010); % lowest peak jitter is 10 ms
+        var = max(lat/5, 0.01); % lowest peak jitter is 10 ms
         windowvar{iPeak}(i,:) = [-var var];
     end
     
@@ -206,6 +214,7 @@ for iPeak=1:size(guess,1)
     
     cfg                      = [];
     cfg.method               = 'aseo';
+%     cfg.aseo.noise           = dum;
     cfg.aseo.waveformInitSet = window{iPeak};
     cfg.aseo.numiteration    = 1;
     cfg.aseo.jitter          = windowvar{iPeak};
