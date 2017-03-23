@@ -25,6 +25,7 @@ bnd = ft_prepare_mesh(cfg, seg);
 cfg = [];
 cfg.method = 'singleshell';
 headmodel = ft_prepare_headmodel(cfg, bnd);
+headmodel = ft_convert_units(headmodel, 'cm');
 
 save(headmodel_filename, 'headmodel');
 
