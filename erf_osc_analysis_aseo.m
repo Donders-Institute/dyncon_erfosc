@@ -6,7 +6,7 @@ function erf_osc_analysis_aseo(subj, isPilot, existWindow)
 % 1. find optimal window for the peaks by selecting highest amplitude
 % channels in occipital/parietal sensors.
 % 2. find specific timewindows for every peak using globalmeanfield
-close all
+% close all
 if nargin<1
     subj = 1;
 end
@@ -211,10 +211,15 @@ for iPeak=1:size(guess,1)
     %% Analysis of Singletrial ERP and Ongoing acivity
     % Seperately model the evoked components and the ongoing activity from
     % a first estimate. Iterate this n times.
+%     cfg             =[];
+%     cfg.lpfilter    = 'yes';
+%     cfg.lpfreq      = 30;
+%     cfg.lpfilttype  = 'firws';
+%     erfdata         = ft_preprocessing(cfg, erfdata);
     
     cfg                      = [];
     cfg.method               = 'aseo';
-%     cfg.aseo.noise           = dum;
+    cfg.aseo.noise           = 'white';
     cfg.aseo.waveformInitSet = window{iPeak};
     cfg.aseo.numiteration    = 1;
     cfg.aseo.jitter          = windowvar{iPeak};
