@@ -99,17 +99,16 @@ freqAll       = ft_freqanalysis(cfg, dataAll);
 
 % calculate power pre and post stimulus
 cfg = [];
-cfg.method    = 'mtmfft';
-cfg.output    = 'powandcsd';
-cfg.tapsmofrq = 5;
-cfg.foilim    = [peakFreq peakFreq];
-freqPre       = ft_freqanalysis(cfg, dataPre);
-freqPost      = ft_freqanalysis(cfg, dataPost);
+cfg.method     = 'mtmfft';
+cfg.output     = 'powandcsd';
+cfg.tapsmofrq  = 5;
+cfg.foilim     = [peakFreq peakFreq];
+freqPre        = ft_freqanalysis(cfg, dataPre);
+cfg.keeptrials = 'yes';
+cfg.pad        = 6;
+freqPost       = ft_freqanalysis(cfg, dataPost);
 
 %% Source analysis
-
-% constructs a volume conduction model from the geometry of the head.
-headmodel   = ft_convert_units(headmodel, 'cm');
 
 % computes the forward model for many dipole locations on a regular 2D or
 % 3D grid and stores it for efficient inverse modelling
@@ -142,14 +141,26 @@ sourceDiff.avg.pow    = (sourcePost.avg.pow - sourcePre.avg.pow) ./ sourcePre.av
 
 %% Create virtual channel of maximal gamma power
 % the following position contains the max gamma power difference
-[maxval, maxpowindx] = max(sourceDiff.avg.pow(sourceDiff.inside));
-% [maxval, maxpowindx] = max(sourceDiff.avg.pow);
+% [maxval, maxpowindx] = max(sourceDiff.avg.pow(sourceDiff.inside));
+[maxval, maxpowindx] = max(sourceDiff.avg.pow);
 sourceDiff.pos(maxpowindx, :)
 % we will create a virtual channel based on this location. In order to do
 % this, we have to do timelockanalysis and use an LCMV beamformer, because
 % this will pass the activity at the location of interest with unit gain,
 % while optimally reducing activity from other locations. This filter then
 % can be applied to the original MEG data
+
+% select the grid information only for the position with maximum gamma
+% power
+virtualgrid = cfg.grid;
+virtualgrid.pos = virtualgrid.pos(maxpowindx,:);
+virtualgrid.inside = virtualgrid.inside(maxpowindx);
+virtualgrid.leadfield = {[virtualgrid.leadfield{maxpowindx}]};
+virtualgrid.filter = {[virtualgrid.filter{maxpowindx}]};
+
+cfg.grid = virtualgrid;
+cfg.rawtrial='yes';
+gammaChan = ft_sourceanalysis(cfg, freqPost);
 
 cfg                   = [];
 cfg.covariance        = 'yes';
@@ -160,21 +171,20 @@ tlock                 = ft_timelockanalysis(cfg, dataAll);
 cfg                 = [];
 cfg.method          = 'lcmv';
 cfg.headmodel       = headmodel;
-cfg.grid.pos        = sourcemodel.pos(sourcemodel.inside(maxpowindx),:);
-% cfg.grid.inside     = sourcemodel.inside;
+cfg.grid.pos        = sourcemodel.pos(maxpowindx,:);
 cfg.grid.unit       = sourcemodel.unit;
 cfg.lcmv.keepfilter = 'yes';
 cfg.projectmom      = 'yes';
 cfg.fixedori        = 'yes';
 source_idx          = ft_sourceanalysis(cfg, tlock);
 
-beamformerGamPow = source_idx.avg.filter;
+gammaFilter = source_idx.avg.filter;
 
-gamPowData              = data;
-gamPowData.label        = {'gam_pow'};
-gamPowData.trial        = [];
+lcmvData              = data;
+lcmvData.label        = {'gam_pow'};
+lcmvData.trial        = [];
 for i=1:length(dataShift.trial)
-    gamPowData.trial{i} = beamformerGamPow{1} * data.trial{i};
+    lcmvData.trial{i} = gammaFilter{1} * data.trial{i};
 end
 
 %% save
@@ -183,7 +193,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
 end
-save(fullfile([filename '.mat']), 'gamPowData', 'beamformerGamPow');
+save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
