@@ -5,7 +5,7 @@ function erf_osc_analysis_aseo(subj, isPilot, existWindow)
 % event-related response and ongoing activity seperately.
 % 1. find optimal window for the peaks by selecting highest amplitude
 % channels in occipital/parietal sensors.
-% 2. find specific timewindows for every peak using globalmeanfield
+% 2. find specific timewindows for every peak 
 % close all
 if nargin<1
     subj = 1;
@@ -98,7 +98,6 @@ M = repmat(m, [1, size(tl.avg,2)]);
 % two z scoring options: x/s or (x-m)/s?
 tlZscore=tl;
 tlZscore.avg=diag(1./s)*(tl.avg-M);
-gmf = ft_globalmeanfield([], tlZscore);
 
 %% Select time window
 % take a first guess at the time window, select channels with highest
@@ -149,13 +148,10 @@ for iPeak=1:size(guess,1)
     dataNegFlip_guess = ft_math(cfg, dataNeg_guess);
     
     erfdata_selchan = ft_appenddata([], dataPos_guess, dataNegFlip_guess);
-    
-    gmf_selchan = ft_globalmeanfield([], erfdata_selchan);
-    
-    % plot globalmeanfield and z-scores timelock data
+       
+    % plot z-scores timelock data
     figure; cfgp=[]; cfgp.xlim = [windowGuess{iPeak}(iPeak,1) windowGuess{iPeak}(iPeak,2)]; cfgp.layout = 'CTF275_helmet.mat'; ft_topoplotER(cfgp, tlZscore)
-    figure; subplot(2,1,1); plot(gmf_selchan.time, gmf.avg);hold on; plot(gmf_selchan.time, gmf_selchan.avg); title('(X-M)/s'); xlim([-0.05 0.5]);
-    subplot(2,1,2); cfg=[]; cfg.xlim = [-0.05 0.5]; ft_singleplotER(cfg, erfdata_selchan); hold on; hline(0);
+    cfg=[]; cfg.xlim = [-0.05 0.5]; ft_singleplotER(cfg, erfdata_selchan); hold on; hline(0);
     if ~existWindow
         window{iPeak} = input('What is the latency window of every individual peak?');
     end
