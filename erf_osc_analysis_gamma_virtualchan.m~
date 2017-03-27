@@ -22,7 +22,7 @@ end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -46,12 +46,14 @@ if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
     load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq_gamma');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/alpha_peak', subj), 'peakFreq_alpha');
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(fullfile([subjects(subj).mridir, 'preproc/headmodel.mat']));
     load(subjects(subj).logfile);% load log file
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj), 'peakFreq_gamma');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/alpha_peak', subj), 'peakFreq_alpha');
     if strcmp(sourcemodel, '2d')
         load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel2d.mat']));
     else
@@ -94,22 +96,24 @@ cfg = [];
 cfg.method    = 'mtmfft';
 cfg.output    = 'powandcsd';
 cfg.tapsmofrq = 5;
-cfg.foilim    = [peakFreq peakFreq];
+cfg.foilim    = [peakFreq_gamma peakFreq_gamma];
 freqAll       = ft_freqanalysis(cfg, dataAll);
 
 % calculate power pre and post stimulus
 cfg = [];
-cfg.method    = 'mtmfft';
-cfg.output    = 'powandcsd';
-cfg.tapsmofrq = 5;
-cfg.foilim    = [peakFreq peakFreq];
-freqPre       = ft_freqanalysis(cfg, dataPre);
-freqPost      = ft_freqanalysis(cfg, dataPost);
+cfg.method     = 'mtmfft';
+cfg.output     = 'powandcsd';
+cfg.tapsmofrq  = 5;
+cfg.foilim     = [peakFreq_gamma peakFreq_gamma];
+freqPre        = ft_freqanalysis(cfg, dataPre);
+cfg.keeptrials = 'yes';
+cfg.pad        = 6;
+freqPost       = ft_freqanalysis(cfg, dataPost);
+cfg.tapsmofrq  = 1;
+cfg.foilim     = [peakFreq_alpha peakFreq_alpha];
+freqPost_alpha = ft_freqanalysis(cfg, dataPost);
 
 %% Source analysis
-
-% constructs a volume conduction model from the geometry of the head.
-headmodel   = ft_convert_units(headmodel, 'cm');
 
 % computes the forward model for many dipole locations on a regular 2D or
 % 3D grid and stores it for efficient inverse modelling
@@ -125,7 +129,7 @@ leadfield           = ft_prepare_leadfield(cfg, freqAll);
 cfg                   = [];
 cfg.grad              = freqAll.grad;
 cfg.method            = 'dics';
-cfg.frequency         = peakFreq;
+cfg.frequency         = peakFreq_gamma;
 cfg.grid              = leadfield;
 cfg.headmodel         = headmodel;
 cfg.dics.projectnoise = 'yes';
@@ -151,6 +155,20 @@ sourceDiff.pos(maxpowindx, :)
 % while optimally reducing activity from other locations. This filter then
 % can be applied to the original MEG data
 
+% select the grid information only for the position with maximum gamma
+% power
+virtualgrid = cfg.grid;
+virtualgrid.pos = virtualgrid.pos(maxpowindx,:);
+virtualgrid.inside = virtualgrid.inside(maxpowindx);
+virtualgrid.leadfield = {[virtualgrid.leadfield{maxpowindx}]};
+virtualgrid.filter = {[virtualgrid.filter{maxpowindx}]};
+
+cfg.grid = virtualgrid;
+cfg.rawtrial='yes';
+gammaChan = ft_sourceanalysis(cfg, freqPost);
+
+alphaChan = ft_sourceanalysis(cfg, freqPost_alpha);
+
 cfg                   = [];
 cfg.covariance        = 'yes';
 cfg.vartrllength      = 2;
@@ -160,21 +178,20 @@ tlock                 = ft_timelockanalysis(cfg, dataAll);
 cfg                 = [];
 cfg.method          = 'lcmv';
 cfg.headmodel       = headmodel;
-cfg.grid.pos        = sourcemodel.pos(sourcemodel.inside(maxpowindx),:);
-% cfg.grid.inside     = sourcemodel.inside;
+cfg.grid.pos        = sourcemodel.pos(maxpowindx,:);
 cfg.grid.unit       = sourcemodel.unit;
 cfg.lcmv.keepfilter = 'yes';
 cfg.projectmom      = 'yes';
 cfg.fixedori        = 'yes';
 source_idx          = ft_sourceanalysis(cfg, tlock);
 
-beamformerGamPow = source_idx.avg.filter;
+gammaFilter = source_idx.avg.filter;
 
-gamPowData              = data;
-gamPowData.label        = {'gam_pow'};
-gamPowData.trial        = [];
+lcmvData              = data;
+lcmvData.label        = {'gam_pow'};
+lcmvData.trial        = [];
 for i=1:length(dataShift.trial)
-    gamPowData.trial{i} = beamformerGamPow{1} * data.trial{i};
+    lcmvData.trial{i} = gammaFilter{1} * data.trial{i};
 end
 
 %% save
@@ -183,7 +200,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
 end
-save(fullfile([filename '.mat']), 'gamPowData', 'beamformerGamPow');
+save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan', 'alphaChan');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 

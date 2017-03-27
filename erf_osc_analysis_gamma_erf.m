@@ -1,11 +1,4 @@
-function erf_osc_analysis_erf(subj, isPilot)
-% trialinfo columns:
-% 1: trialnumber
-% 2: position (-1=left, 0=middle, 1=right)
-% 3: sample of baseline onset
-% 4: sample of grating onset
-% 5: sample of grating shift (=0 if no shift)
-% 6: sample of response (=0 if no response or if response too early)
+function erf_osc_analysis_gamma_erf(subj, isPilot)
 
 if nargin<1
     subj = 1;
@@ -20,7 +13,7 @@ if isempty(isPilot);
     isPilot = false;
 end
 
-%% initiate diary
+%% Initiate Diary
 workSpace = whos;
 diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
 diary(diaryname) % save command window output
@@ -40,52 +33,75 @@ for i = 1:numel(workSpace) % list all workspace variables
     printstruct(eval(workSpace(i).name)) % show its value(s)
 end
 
+
 %% load data
 erf_osc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-    load(pilotsubjects(subj).logfile);% load log file
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-    load(subjects(subj).logfile);% load log file
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
 end
+
 data = data.dataClean;
+cfg         = [];
+cfg.channel = 'MEG';
+data        = ft_selectdata(cfg, data);
+
+fs = data.fsample;
 
 % select only shift trials, with valid response
 idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
-fs = data.fsample;
 nTrials = length(idxM);
 
-cfg=[];
+cfg        = [];
 cfg.trials = idxM;
-cfg.channel = 'MEG';
-dataM = ft_selectdata(cfg, data);
+data       = ft_selectdata(cfg, data);
 
-% realign to grating change
-cfg=[];
-cfg.offset = -(dataM.trialinfo(:,5)-dataM.trialinfo(:,4));
-dataShift = ft_redefinetrial(cfg, dataM);
+cfg        = [];
+cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+dataShift  = ft_redefinetrial(cfg, data);
 
-% baseline correct with last 50 ms just before change
 cfg=[];
 cfg.baseline = [-0.050+1/fs 0];
 data = ft_timelockbaseline(cfg, dataShift);
 
-%% Time-lock analysis
+
+for i=1:length(gammaChan.trial)
+    gammaPow(i) = gammaChan.trial(i).pow;
+end
+
+%% Sort and bin trials on gamma power
+groupSize = round(nTrials/4);
+[~, idxMax] = sort(gammaPow, 2, 'descend');
+idxMax = idxMax(1:groupSize);
+[~, idxMin] = sort(gammaPow, 2, 'ascend');
+idxMin = idxMin(1:groupSize);
+
+cfg=[];
+cfg.trials = idxMax;
+maxGam = ft_selectdata(cfg, data);
+cfg.trials = idxMin;
+minGam = ft_selectdata(cfg, data);
+
+
+%% Timelock analysis
 cfg=[];
 cfg.vartrllength = 2;
-cfg.channel = {'MEG'};
-tlShift = ft_timelockanalysis(cfg, data);
+tlMax = ft_timelockanalysis(cfg, maxGam);
+tlMin = ft_timelockanalysis(cfg, minGam);
 
 
-%% save
+
+
+%% Save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/timelock', subj);
+    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/erf_gamma', subj);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/timelock', subj);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/erf_gamma', subj);
 end
-save(fullfile([filename '.mat']), 'tlShift')
+save(fullfile([filename '.mat']), 'tlMax', 'tlMin');
 diary off
-movefile(diaryname, fullfile([filename, '.txt']));
+movefile(diaryname, fullfile([filename '.txt']));
 
-end

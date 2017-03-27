@@ -15,7 +15,7 @@ end
 
 % %% initiate diary
 % workSpace = whos;
-% diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+% diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
 % diary(diaryname) % save command window output
 % fname = mfilename('fullpath')
 % datetime
@@ -45,7 +45,6 @@ else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan'); % load gamma power
     load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj)); % load ERF
     load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-
     % load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_angle', subj)); % load gamma phase
 end
 

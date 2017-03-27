@@ -1,7 +1,7 @@
 function erf_osc_freqstat
 
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
 diary(diaryname) % save command window output
 for i = 1:numel(workSpace) % list all workspace variables
     eval(workSpace(i).name)

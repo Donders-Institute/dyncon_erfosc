@@ -41,7 +41,7 @@ end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -377,7 +377,7 @@ cfg=[];
 cfg.component = subs_comp;
 dataNoIca = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
 
-save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/dataHalfClean.mat', subj), 'dataNoIca')
+save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/dataHalfClean.mat', subj), 'dataNoIca', '-v7.3')
 
 %% remove saccade artifacts
 artifact_EOG_saccade = [];
