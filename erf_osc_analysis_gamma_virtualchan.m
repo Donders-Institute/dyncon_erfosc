@@ -22,7 +22,7 @@ end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS'));
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -47,11 +47,13 @@ if isPilot
     load(pilotsubjects(subj).logfile);% load log file
     load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq_gamma');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/alpha_peak', subj), 'peakFreq_alpha');
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(fullfile([subjects(subj).mridir, 'preproc/headmodel.mat']));
     load(subjects(subj).logfile);% load log file
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj), 'peakFreq_gamma');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/alpha_peak', subj), 'peakFreq_alpha');
     if strcmp(sourcemodel, '2d')
         load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel2d.mat']));
     else
@@ -107,6 +109,9 @@ freqPre        = ft_freqanalysis(cfg, dataPre);
 cfg.keeptrials = 'yes';
 cfg.pad        = 6;
 freqPost       = ft_freqanalysis(cfg, dataPost);
+cfg.tapsmofrq  = 1;
+cfg.foilim     = [peakFreq_alpha peakFreq_alpha];
+freqPost_alpha = ft_freqanalysis(cfg, dataPost);
 
 %% Source analysis
 
@@ -162,6 +167,8 @@ cfg.grid = virtualgrid;
 cfg.rawtrial='yes';
 gammaChan = ft_sourceanalysis(cfg, freqPost);
 
+alphaChan = ft_sourceanalysis(cfg, freqPost_alpha);
+
 cfg                   = [];
 cfg.covariance        = 'yes';
 cfg.vartrllength      = 2;
@@ -193,7 +200,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
 end
-save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan');
+save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan', 'alphaChan');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
