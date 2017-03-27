@@ -46,12 +46,12 @@ if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
     load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq_gamma');
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(fullfile([subjects(subj).mridir, 'preproc/headmodel.mat']));
     load(subjects(subj).logfile);% load log file
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj), 'peakFreq_gamma');
     if strcmp(sourcemodel, '2d')
         load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel2d.mat']));
     else
@@ -94,7 +94,7 @@ cfg = [];
 cfg.method    = 'mtmfft';
 cfg.output    = 'powandcsd';
 cfg.tapsmofrq = 5;
-cfg.foilim    = [peakFreq peakFreq];
+cfg.foilim    = [peakFreq_gamma peakFreq_gamma];
 freqAll       = ft_freqanalysis(cfg, dataAll);
 
 % calculate power pre and post stimulus
@@ -102,7 +102,7 @@ cfg = [];
 cfg.method     = 'mtmfft';
 cfg.output     = 'powandcsd';
 cfg.tapsmofrq  = 5;
-cfg.foilim     = [peakFreq peakFreq];
+cfg.foilim     = [peakFreq_gamma peakFreq_gamma];
 freqPre        = ft_freqanalysis(cfg, dataPre);
 cfg.keeptrials = 'yes';
 cfg.pad        = 6;
@@ -124,7 +124,7 @@ leadfield           = ft_prepare_leadfield(cfg, freqAll);
 cfg                   = [];
 cfg.grad              = freqAll.grad;
 cfg.method            = 'dics';
-cfg.frequency         = peakFreq;
+cfg.frequency         = peakFreq_gamma;
 cfg.grid              = leadfield;
 cfg.headmodel         = headmodel;
 cfg.dics.projectnoise = 'yes';

@@ -80,9 +80,9 @@ cfg.parameter = 'powspctrm';
 powDiff       = ft_math(cfg, powActive, powBaseline);
 
 % average over channels, take the freq with max gamma pow diff
-gammaAvg      = mean(powDiff.powspctrm,1);
-[maxP maxIdx] = max(gammaAvg);
-peakFreq      = powDiff.freq(maxIdx);
+gammaAvg       = mean(powDiff.powspctrm,1);
+[maxP maxIdx]  = max(gammaAvg);
+peakFreq_gamma = powDiff.freq(maxIdx);
 
 
 %% save
@@ -91,7 +91,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj);
 end
-save(fullfile([filename '.mat']), 'peakFreq', 'gammaAvg');
+save(fullfile([filename '.mat']), 'peakFreq_gamma', 'gammaAvg');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 

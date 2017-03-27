@@ -38,10 +38,10 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak.mat', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
 else
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
 end
 fs = gamPowData.fsample;
@@ -55,14 +55,14 @@ cfg.latency  = [-0.5+1/fs 0];
 dataBl      = ft_selectdata(cfg, gamPowData); % baseline
 dataChange     = ft_selectdata(cfg, gamPowDataShift); % pre-change
 
-peakFreq = 2*round(peakFreq/2);
+peakFreq_gamma = 2*round(peakFreq_gamma/2);
 smoothing = 6;
 %% gamma power
 cfg             = [];
 cfg.method      = 'mtmfft';
 cfg.output      = 'pow';
 cfg.tapsmofrq   = smoothing;
-cfg.foilim      = [(peakFreq - 6*smoothing) (peakFreq + 6*smoothing)];
+cfg.foilim      = [(peakFreq_gamma - 6*smoothing) (peakFreq_gamma + 6*smoothing)];
 cfg.keeptrials  = 'no'; % average baseline over trials
 gamPowBl       = ft_freqanalysis(cfg, dataBl);
 cfg.keeptrials  = 'yes';
