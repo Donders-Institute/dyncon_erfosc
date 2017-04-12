@@ -38,41 +38,14 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    load(sprintf('/project/3011085.02/results/erf/pilot-%03d/dss.mat', subj), 'data_dss');
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
 else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
-    load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock.mat', subj));
+    load(sprintf('/project/3011085.02/results/erf/sub-%03d/dss.mat', subj), 'data_dss');
+    load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock.mat', subj));    
 end
-
-data = data.dataClean;
-cfg         = [];
-cfg.channel = 'MEG';
-data        = ft_selectdata(cfg, data);
-
-fs = data.fsample;
-
-% select only shift trials, with valid response
-idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
-nTrials = length(idxM);
-
-cfg        = [];
-cfg.trials = idxM;
-data       = ft_selectdata(cfg, data);
-
-cfg        = [];
-cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-dataShift  = ft_redefinetrial(cfg, data);
-
-cfg=[];
-cfg.baseline = [-0.050+1/fs 0];
-data = ft_timelockbaseline(cfg, dataShift);
-
-cfg=[];
-cfg.latency = [-4.95 0.7]; % this will ensure the betas have the same size for all subjects
-data = ft_selectdata(cfg, data);
-
+fs=data_dss.fsample;
 for i=1:length(gammaChan.trial)
     gammaPow(i) = log(gammaChan.trial(i).pow);
 end
@@ -87,11 +60,10 @@ cfgp.latency = [0 0.5];
 ft_topoplotER(cfgp, tlShift);
 
 % channel = ;%input('what is the maximum channel?')
-% load(sprintf('/project/3011085.02/results/erf/sub-%03d/erf_gamma.mat', subj), 'channel')
 
 % ch_idx = find(strcmp(channel, data.label));
-for k=1:length(data.label)
-Y = squeeze(data.trial(:,k,:));
+for k=1:length(data_dss.label)
+Y = squeeze(data_dss.trial(:,k,:));
 betas(:,:,k) = design'\Y;
 end
 
@@ -99,19 +71,10 @@ end
 %% Sort and bin trials on gamma power
 groupSize = round(nTrials/5);
 [~, idxMax] = sort(gammaPow, 2, 'descend');
-% idxMax = idxMax(1:groupSize);
-% [~, idxMin] = sort(gammaPow, 2, 'ascend');
-% idxMin = idxMin(1:groupSize);
-data.trial = data.trial(idxMax,:,:);
-% data.dimord = 'rpt_chan_time';
+
+data_dss.trial = data_dss.trial(idxMax,:,:);
 meangamma = mean(gammaPow);
-% cfg=[];
-% cfg.trials = idxMax;
-% cfg.avgoverrpt = 'yes';
-% cfg.latency = [-0.1 inf];
-% maxGam = ft_selectdata(cfg, data);
-% cfg.trials = idxMin;
-% minGam = ft_selectdata(cfg, data);
+
 cfgb=[];
 cfgb.vartrllength = 2;
 init = 1;
@@ -123,7 +86,7 @@ for i = 1:round((nTrials/groupSize)*2)-1
     end
    cfg=[];
    cfg.trials = idxMax(init:z);
-   tmp = ft_selectdata(cfg, data);
+   tmp = ft_selectdata(cfg, data_dss);
    erf{i} = ft_timelockanalysis(cfgb, tmp);
    cfg=[];
    cfg.baseline = [-0.05+1/fs 0];
@@ -132,7 +95,7 @@ for i = 1:round((nTrials/groupSize)*2)-1
    init=init+round(groupSize/2);
 end
 
-erfdata=data;
+erfdata=data_dss;
 erfdata.trial=[];
 for i=1:length(erf)
     erfdata.trial{i} = erf{i}.avg;
