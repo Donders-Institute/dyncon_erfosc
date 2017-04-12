@@ -47,13 +47,13 @@ if isPilot
     load(pilotsubjects(subj).logfile);% load log file
     load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq_gamma');
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/alpha_peak', subj), 'peakFreq_alpha');
+%     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/alpha_peak', subj), 'peakFreq_alpha');
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(fullfile([subjects(subj).mridir, 'preproc/headmodel.mat']));
     load(subjects(subj).logfile);% load log file
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj), 'peakFreq_gamma');
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/alpha_peak', subj), 'peakFreq_alpha');
+%     load(sprintf('/project/3011085.02/results/freq/sub-%03d/alpha_peak', subj), 'peakFreq_alpha');
     if strcmp(sourcemodel, '2d')
         load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel2d.mat']));
     else
@@ -80,10 +80,10 @@ dataShift  = ft_redefinetrial(cfg, data);
 
 fs = data.fsample;
 
-% select data: 1 second preceding grating start and one second preceding
+% select data: 0.25 second preceding grating start and 0.25 second preceding
 % grating shift. Contrast these in terms of gamma frequency at gamma peak
 cfg         = [];
-cfg.latency = [-1+1/fs 0];
+cfg.latency = [-0.25+1/fs 0];
 dataPre     = ft_selectdata(cfg, data);
 % take second preceding shift (NOTE: is it confounding if this includes
 % grating onset, which has higher gamma peak freq?)
@@ -95,7 +95,7 @@ dataAll     = ft_appenddata([], dataPost, dataPre);
 cfg = [];
 cfg.method    = 'mtmfft';
 cfg.output    = 'powandcsd';
-cfg.tapsmofrq = 5;
+cfg.tapsmofrq = 8;
 cfg.foilim    = [peakFreq_gamma peakFreq_gamma];
 freqAll       = ft_freqanalysis(cfg, dataAll);
 
@@ -103,15 +103,15 @@ freqAll       = ft_freqanalysis(cfg, dataAll);
 cfg = [];
 cfg.method     = 'mtmfft';
 cfg.output     = 'powandcsd';
-cfg.tapsmofrq  = 5;
+cfg.tapsmofrq  = 8;
 cfg.foilim     = [peakFreq_gamma peakFreq_gamma];
 freqPre        = ft_freqanalysis(cfg, dataPre);
 cfg.keeptrials = 'yes';
-cfg.pad        = 6;
+% cfg.pad        = 6;
 freqPost       = ft_freqanalysis(cfg, dataPost);
-cfg.tapsmofrq  = 1;
-cfg.foilim     = [peakFreq_alpha peakFreq_alpha];
-freqPost_alpha = ft_freqanalysis(cfg, dataPost);
+% cfg.tapsmofrq  = 1;
+% cfg.foilim     = [peakFreq_alpha peakFreq_alpha];
+% freqPost_alpha = ft_freqanalysis(cfg, dataPost);
 
 %% Source analysis
 
@@ -167,7 +167,7 @@ cfg.grid = virtualgrid;
 cfg.rawtrial='yes';
 gammaChan = ft_sourceanalysis(cfg, freqPost);
 
-alphaChan = ft_sourceanalysis(cfg, freqPost_alpha);
+% alphaChan = ft_sourceanalysis(cfg, freqPost_alpha);
 
 cfg                   = [];
 cfg.covariance        = 'yes';
@@ -200,7 +200,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
 end
-save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan', 'alphaChan');
+save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
