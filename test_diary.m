@@ -2,7 +2,7 @@ function test_diary
 
 %% start diary
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS')); % working directory
+diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF')); % working directory
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
