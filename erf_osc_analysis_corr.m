@@ -36,41 +36,42 @@ end
 %% load data
 % load gamma peak freq
 if isPilot
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak.mat', subj), 'peakFreq');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_pow.mat', subj)); % load gamma power
     load(sprintf('/project/3011085.02/results/erf/pilot-%03d/aseo.mat', subj), 'amplitude', 'latency'); % load ERF
     % load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_angle_%d', subj, subj)); % load gamma phase
 else
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq');
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan'); % load gamma power
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan', 'alphaChan'); % load gamma power
     load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj)); % load ERF
-    load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+%     load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     % load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_angle', subj)); % load gamma phase
 end
 
-peakFreq = 2*round(peakFreq/2);
+% peakFreq_gamma = 2*round(peakFreq_gamma/2);
 % gammaPow = gamPow.powspctrm;
 for i=1:length(gammaChan.trial)
     gammaPow(i) = gammaChan.trial(i).pow;
+    alphaPow(i) = alphaChan.trial(i).pow;
 end
 
-for iPeak = 1:3
-    latency(:, iPeak) = reconstructed{iPeak}.params.latency(:, iPeak);
-    amplitude(:, iPeak) = reconstructed{iPeak}.params.amplitude(:, iPeak);
-end
+% for iPeak = 1:3
+%     latency(:, iPeak) = reconstructed{iPeak}.params.latency(:, iPeak);
+%     amplitude(:, iPeak) = reconstructed{iPeak}.params.amplitude(:, iPeak);
+% end
 
 
-cfg=[];
-cfg.trials = find(dataClean.trialinfo(:,5)>0 & dataClean.trialinfo(:,6)>0);
-data = ft_selectdata(cfg, dataClean);
-rt = data.trialinfo(:,6)-data.trialinfo(:,5); 
+% cfg=[];
+% cfg.trials = find(dataClean.trialinfo(:,5)>0 & dataClean.trialinfo(:,6)>0);
+% data = ft_selectdata(cfg, dataClean);
+% rt = data.trialinfo(:,6)-data.trialinfo(:,5); 
 %% gamma pow - ERF components
 % peakIdx = find(gamPow.freq==peakFreq);
 % [rAmp pAmp] = corr(gammaPow(:,peakIdx), amplitude, 'type', 'spearman')
 % [rLat pLat] = corr(gammaPow(:,peakIdx), latency, 'type', 'spearman')
-% [rAmp pAmp] = corr(gammaPow', amplitude, 'type', 'spearman')
-% [rLat pLat] = corr(gammaPow', latency, 'type', 'spearman')
-[rRT pRT]   = corr(gammaPow', rt, 'type', 'spearman')
+[rAmp pAmp] = corr(gammaPow', amplitude, 'type', 'spearman')
+[rLat pLat] = corr(gammaPow', latency, 'type', 'spearman')
+% [rRT pRT]   = corr(gammaPow', rt, 'type', 'spearman')
 
 % for iFreq = 1:length(gamPow.freq)
 % [rA(iFreq,:), pA(iFreq,:)] = corr(gammaPow(:,iFreq), reconstructed.params.amplitude, 'type', 'spearman');
