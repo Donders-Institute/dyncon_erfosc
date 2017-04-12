@@ -37,6 +37,7 @@ cfg.grid.template   = sourcemodel;
 cfg.grid.nonlinear  = 'yes';
 cfg.mri = mri; %segmentedmri;
 sourcemodel = ft_prepare_sourcemodel(cfg);
+sourcemodel = ft_convert_units(sourcemodel, 'mm');
 
 % remove the mri-structure from grid.cfg
 sourcemodel.cfg = rmfield(sourcemodel.cfg, 'mri');

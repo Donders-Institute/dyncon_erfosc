@@ -25,6 +25,7 @@ T2 = transform_vox2ctf;
 sourcemodel = ft_transform_geometry((T2/T1), sourcemodel);
 sourcemodel.inside = sourcemodel.atlasroi>0;
 sourcemodel = rmfield(sourcemodel, 'atlasroi');
+sourcemodel = ft_convert_units(sourcemodel, 'mm');
 
 save(sourcemodel2d_filename, 'sourcemodel');
 

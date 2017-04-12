@@ -46,6 +46,7 @@ mri = ft_volumerealign(cfg, mri_resliced_mni);
 
 % refine the coregistration based on the polhemus point cloud
 polhemus = ft_read_headshape(subjects(subj).headshape);
+polhemus.pos(polhemus.pos(:,3)<-10,:)=[];
 polhemus.unit='cm';
 
 cfg                         = [];
@@ -55,8 +56,8 @@ cfg.viewresult              = 'yes';
 cfg.method                  = 'headshape';
 cfg.headshape.headshape     = polhemus;
 cfg.headshape.interactive   = 'yes';
-cfg.headshape.icp           = 'yes';
-mri_ctf    = ft_volumerealign(cfg, mri_resliced_mni);
+cfg.headshape.icp           = 'no';
+mri_ctf    = ft_volumerealign(cfg, mri);
 
 
 % save the transformation matrix
