@@ -6,7 +6,7 @@ function erf_osc_analysis_aseo(subj, isPilot, existWindow, doDSS)
 % 1. find optimal window for the peaks by selecting highest amplitude
 % channels in occipital/parietal sensors.
 % 2. find specific timewindows for every peak 
-% close all
+close all
 if nargin<1
     subj = 1;
 end
@@ -112,21 +112,26 @@ tlZscore.avg=diag(1./s)*(tl.avg-M);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if doDSS
+cfgp=[];
+cfgp.layout = 'CTF275_helmet.mat';
+cfgp.latency = [0 0.5];
+ft_topoplotER(cfgp, tlShift);
 
 cfg = [];
 cfg.latency = [-0.05+1/fs 0.5];
 dat = ft_selectdata(cfg, dataShift);
 
-s.X = 1;
+windowGuess = [0 0.5];
+state.X = 1;
 nComp = 4;
 % run a dss decomposition
 params      = [];
 params.time = dat.time;
 params.demean = 'prezero';
 params.pre = 0.05*fs;
-params.pst = fs*0.120;
+params.pst = fs*windowGuess(1,2);
 
-[~,~,avgorig] = denoise_avg2(params,dat.trial,s);
+[~,~,avgorig] = denoise_avg2(params,dat.trial,state);
 
 cfg          = [];
 cfg.method   = 'dss';
@@ -136,20 +141,21 @@ cfg.dss.wdim = 100;
 cfg.numcomponent = nComp;
 cfg.cellmode = 'yes';
 
-dss = ft_componentanalysis(cfg, dat);
+comp = ft_componentanalysis(cfg, dat);
 
 cfgp = [];
 cfgp.layout = 'CTF275_helmet.mat';
+cfgp.component = 1;
 
 for iComp = 1:nComp
     cfg=[];
     cfg.channel = sprintf('dss00%d', iComp);
-    comp{iComp} = ft_selectdata(cfg, dss);
+    erfdata{iComp} = ft_selectdata(cfg, comp);
     
     % plot
     figure;
-    subplot(1,2,1); ft_topoplotIC(cfgp, comp{iComp})
-    subplot(1,2,2); ft_singleplotER([], comp{iComp})
+    subplot(1,2,1); ft_topoplotIC(cfgp, erfdata{iComp})
+    subplot(1,2,2); ft_singleplotER([], erfdata{iComp})
     suptitle(sprintf('component %d', iComp))
 end
 compnum = input('which component number should be used for ASEO?')
@@ -167,8 +173,11 @@ window = input('what is the initial estimate of the components?')
     cfg.aseo.waveformInitSet = window;
     cfg.aseo.numiteration    = 1;
     cfg.aseo.jitter          = windowvar;
-    [reconstructed, residual] = ft_singletrialanalysis(cfg, comp{compnum});
+    [reconstructed, residual] = ft_singletrialanalysis(cfg, erfdata{compnum});
 
+    
+    latency = reconstructed.params.latency;
+    amplitude = reconstructed.params.amplitude;
 else
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 guess = [0.050 0.090; 0.095 0.130; 0.135 0.180];
