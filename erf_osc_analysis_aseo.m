@@ -5,7 +5,7 @@ function erf_osc_analysis_aseo(subj, isPilot, existWindow, doDSS)
 % event-related response and ongoing activity seperately.
 % 1. find optimal window for the peaks by selecting highest amplitude
 % channels in occipital/parietal sensors.
-% 2. find specific timewindows for every peak 
+% 2. find specific timewindows for every peak
 close all
 if nargin<1
     subj = 1;
@@ -61,33 +61,48 @@ if isPilot
     load(sprintf('/project/3011085.02/results/erf/pilot-%03d/timelock.mat', subj));
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    if doDSS
+        data = load(sprintf('/project/3011085.02/results/erf/sub-%03d/dss.mat', subj), 'data_dss');
+    else
+        data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    end
     load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock.mat', subj));
     load(subjects(subj).logfile);% load log file
 end
-data = data.dataClean;
-fs = data.fsample;
-
-% select only shift trials, with valid response
-idxM        = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
-cfg         = [];
-cfg.trials  = idxM;
-cfg.channel = 'MEG';
-data        = ft_selectdata(cfg, data);
-
-% redifine zero point to shift onset
-cfg         = [];
-cfg.offset  = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-dataShift   = ft_redefinetrial(cfg, data);
-
-cfg         = [];
-cfg.latency = [-0.05+1/fs 0.75];
-dataShift   = ft_selectdata(cfg, dataShift);
-
-cfg=[];
-cfg.demean = 'yes';
-cfg.baselinewindow = [-0.05+1/fs 0];
-dataShift = ft_preprocessing(cfg, dataShift);
+if doDss
+    dataShift = data.data_dss;
+    fs=data.fample;
+    
+    cfg=[];
+    cfg.latency = [-0.5+1/fs 0.65];
+    dataShift = ft_selectdata(cfg, dataShift);
+    
+else
+    
+    data = data.dataClean;
+    fs = data.fsample;
+    
+    % select only shift trials, with valid response
+    idxM        = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
+    cfg         = [];
+    cfg.trials  = idxM;
+    cfg.channel = 'MEG';
+    data        = ft_selectdata(cfg, data);
+    
+    % redifine zero point to shift onset
+    cfg         = [];
+    cfg.offset  = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    dataShift   = ft_redefinetrial(cfg, data);
+    
+    cfg         = [];
+    cfg.latency = [-0.05+1/fs 0.65];
+    dataShift   = ft_selectdata(cfg, dataShift);
+    
+    cfg=[];
+    cfg.demean = 'yes';
+    cfg.baselinewindow = [-0.05+1/fs 0];
+    dataShift = ft_preprocessing(cfg, dataShift);
+end
 
 %% baseline correction and z-scoring
 cfg=[];
@@ -110,88 +125,18 @@ tlZscore.avg=diag(1./s)*(tl.avg-M);
 % amplitudes in this window. Then base more precise estimation of time
 % window these channels
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if doDSS
-cfgp=[];
-cfgp.layout = 'CTF275_helmet.mat';
-cfgp.latency = [0 0.5];
-ft_topoplotER(cfgp, tlShift);
-
-cfg = [];
-cfg.latency = [-0.05+1/fs 0.5];
-dat = ft_selectdata(cfg, dataShift);
-
-windowGuess = [0 0.5];
-state.X = 1;
-nComp = 4;
-% run a dss decomposition
-params      = [];
-params.time = dat.time;
-params.demean = 'prezero';
-params.pre = 0.05*fs;
-params.pst = fs*windowGuess(1,2);
-
-[~,~,avgorig] = denoise_avg2(params,dat.trial,state);
-
-cfg          = [];
-cfg.method   = 'dss';
-cfg.dss.denf.function = 'denoise_avg2';
-cfg.dss.denf.params = params;
-cfg.dss.wdim = 100;
-cfg.numcomponent = nComp;
-cfg.cellmode = 'yes';
-
-comp = ft_componentanalysis(cfg, dat);
-
-cfgp = [];
-cfgp.layout = 'CTF275_helmet.mat';
-cfgp.component = 1;
-
-for iComp = 1:nComp
-    cfg=[];
-    cfg.channel = sprintf('dss00%d', iComp);
-    erfdata{iComp} = ft_selectdata(cfg, comp);
-    
-    % plot
-    figure;
-    subplot(1,2,1); ft_topoplotIC(cfgp, erfdata{iComp})
-    subplot(1,2,2); ft_singleplotER([], erfdata{iComp})
-    suptitle(sprintf('component %d', iComp))
-end
-compnum = input('which component number should be used for ASEO?')
-window = input('what is the initial estimate of the components?')
-
-    for i=1:size(window, 1)
-        lat = mean([window(i,2) window(i,1)]);
-        var = max(lat/5, 0.01); % lowest peak jitter is 10 ms
-        windowvar(i,:) = [-var var];
-    end
-
-    cfg                      = [];
-    cfg.method               = 'aseo';
-    cfg.aseo.noise           = 'white';
-    cfg.aseo.waveformInitSet = window;
-    cfg.aseo.numiteration    = 1;
-    cfg.aseo.jitter          = windowvar;
-    [reconstructed, residual] = ft_singletrialanalysis(cfg, erfdata{compnum});
-
-    
-    latency = reconstructed.params.latency;
-    amplitude = reconstructed.params.amplitude;
-else
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 guess = [0.050 0.090; 0.095 0.130; 0.135 0.180];
-    cfg=[];
-    cfg.layout = 'CTF275_helmet.mat';
-    tmp = rmfield(tlZscore, 'cfg');
-    ft_topoplotER(cfg, tmp);
-    if existWindow
-        load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj), 'window', 'windowGuess'); % load ERF
-    else
-        for iPeak = 1:size(guess,1)
-            windowGuess{iPeak} = input('What is the initial estimate of the peak latencies?')
-        end
+cfg=[];
+cfg.layout = 'CTF275_helmet.mat';
+tmp = rmfield(tlZscore, 'cfg');
+ft_topoplotER(cfg, tmp);
+if existWindow
+    load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj), 'window', 'windowGuess'); % load ERF
+else
+    for iPeak = 1:size(guess,1)
+        windowGuess{iPeak} = input('What is the initial estimate of the peak latencies?')
     end
+end
 for iPeak=1:size(guess,1)
     
     cfg=[];
@@ -224,7 +169,7 @@ for iPeak=1:size(guess,1)
     dataNegFlip_guess = ft_math(cfg, dataNeg_guess);
     
     erfdata_selchan = ft_appenddata([], dataPos_guess, dataNegFlip_guess);
-       
+    
     % plot z-scores timelock data
     figure; cfgp=[]; cfgp.xlim = [windowGuess{iPeak}(iPeak,1) windowGuess{iPeak}(iPeak,2)]; cfgp.layout = 'CTF275_helmet.mat'; ft_topoplotER(cfgp, tlZscore)
     cfg=[]; cfg.xlim = [-0.05 0.5]; ft_singleplotER(cfg, erfdata_selchan); hold on; hline(0);
@@ -283,11 +228,11 @@ for iPeak=1:size(guess,1)
     %% Analysis of Singletrial ERP and Ongoing acivity
     % Seperately model the evoked components and the ongoing activity from
     % a first estimate. Iterate this n times.
-%     cfg             =[];
-%     cfg.lpfilter    = 'yes';
-%     cfg.lpfreq      = 30;
-%     cfg.lpfilttype  = 'firws';
-%     erfdata         = ft_preprocessing(cfg, erfdata);
+    %     cfg             =[];
+    %     cfg.lpfilter    = 'yes';
+    %     cfg.lpfreq      = 30;
+    %     cfg.lpfilttype  = 'firws';
+    %     erfdata         = ft_preprocessing(cfg, erfdata);
     
     cfg                      = [];
     cfg.method               = 'aseo';
@@ -303,7 +248,7 @@ for iPeak = 1:size(window,1)
     latency(:, iPeak) = reconstructed{iPeak}.params.latency(:, iPeak);
     amplitude(:, iPeak) = reconstructed{iPeak}.params.amplitude(:, iPeak);
 end
-end
+
 %% save
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/aseo', subj);
