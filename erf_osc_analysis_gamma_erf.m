@@ -12,7 +12,9 @@ end
 if isempty(isPilot);
     isPilot = false;
 end
-close all
+
+
+% close all
 
 %% Initiate Diary
 workSpace = whos;
@@ -43,37 +45,32 @@ if isPilot
 else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
     load(sprintf('/project/3011085.02/results/erf/sub-%03d/dss.mat', subj), 'data_dss');
-    load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock.mat', subj));    
+%     load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock.mat', subj));    
 end
 fs=data_dss.fsample;
 for i=1:length(gammaChan.trial)
     gammaPow(i) = log(gammaChan.trial(i).pow);
 end
+gammaPow = gammaPow-mean(gammaPow);
+ nTrials = length(data_dss.trial);
 
-
-%% mutual information / GLM
-% rt = (data.trialinfo(:,6)-data.trialinfo(:,5))'; 
-design = [ones(size(gammaPow)); gammaPow-mean(gammaPow)];
-cfgp=[];
-cfgp.layout = 'CTF275_helmet.mat';
-cfgp.latency = [0 0.5];
-ft_topoplotER(cfgp, tlShift);
-
-% channel = ;%input('what is the maximum channel?')
-
-% ch_idx = find(strcmp(channel, data.label));
-for k=1:length(data_dss.label)
-Y = squeeze(data_dss.trial(:,k,:));
-betas(:,:,k) = design'\Y;
-end
-
-
-%% Sort and bin trials on gamma power
+ 
+%% GLM on binned trials
 groupSize = round(nTrials/5);
 [~, idxMax] = sort(gammaPow, 2, 'descend');
 
-data_dss.trial = data_dss.trial(idxMax,:,:);
-meangamma = mean(gammaPow);
+erfdata = data_dss;
+% cfg=[];
+% cfg.lpifilter = 'yes';
+% cfg.lpfilterord = 2;
+% cfg.lpfilttype = 'firws';
+% erfdata = ft_preprocessing(cfg, erfdata);
+erfdata.time=erfdata.time{1};
+erfdata.trial=erfdata.trial(idxMax);
+erfdata.trialinfo=erfdata.trialinfo(idxMax,:);
+erfdata.trial = cat(3, erfdata.trial{:});
+erfdata.trial = permute(erfdata.trial, [3,1,2]);
+
 
 cfgb=[];
 cfgb.vartrllength = 2;
@@ -85,24 +82,56 @@ for i = 1:round((nTrials/groupSize)*2)-1
         z = init+groupSize-1;
     end
    cfg=[];
-   cfg.trials = idxMax(init:z);
-   tmp = ft_selectdata(cfg, data_dss);
+   cfg.trials = init:z;
+   tmp = ft_selectdata(cfg, erfdata);
    erf{i} = ft_timelockanalysis(cfgb, tmp);
+   var = erf{i}.var;
    cfg=[];
    cfg.baseline = [-0.05+1/fs 0];
    erf{i} = ft_timelockbaseline(cfg, erf{i});
-   erf{i}.gamma = mean(gammaPow(idxMax(init:z))-meangamma);
+   gamma(i) = mean(gammaPow(idxMax(init:z)));
+   erf{i}.var = var;
    init=init+round(groupSize/2);
 end
 
-erfdata=data_dss;
-erfdata.trial=[];
-for i=1:length(erf)
-    erfdata.trial{i} = erf{i}.avg;
-    erfdata.var{i} = erf{i}.var;
-    gamma(1,i) = erf{i}.gamma;
+erfdata.trial = [];
+for i = 1:round((nTrials/groupSize)*2)-1
+erfdata.trial(i,:,:) = erf{i}.avg;
+erfdata.var(i,:,:) = erf{i}.var;
+end
+% 
+% t1 = nearest(erfdata.time, (-0.5+1/fs));
+% t2 = nearest(erfdata.time, 0);
+% S = sqrt(erfdata.var);
+% M = mean(erfdata.trial(:,:,t1:t2),3);
+% M = repmat(M,[1,1,length(erfdata.time)]);
+% erfdata.trial=(erfdata.trial-M)./S;
+
+design = [ones(size(gamma)); gamma];
+for k=1:length(erfdata.label)
+Y = squeeze(erfdata.trial(:,k,:));
+betas_bin(:,:,k) = design'\Y;
 end
 
+%% GLM on all trials
+design = [ones(size(gammaPow)); gammaPow];
+data=data_dss;
+data.trial = cat(3,data.trial{:});
+data.trial = permute(data.trial, [3,1,2]);
+data.time = data.time{1};
+
+t1 = nearest(data.time, (-0.5+1/fs));
+t2 = nearest(data.time, 0);
+S = std(data.trial(:,:,t1:t2), [], 3);
+S = repmat(S,[1,1,length(data.time)]);
+M = mean(data.trial(:,:,t1:t2),3);
+M = repmat(M,[1,1,length(data.time)]);
+data.trial=(data.trial-M)./S;
+
+for k=1:length(data.label)
+Y = squeeze(data.trial(:,k,:));
+betas_trials(:,:,k) = design'\Y;
+end
 
 %% Save
 if isPilot
@@ -110,7 +139,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/erf_gamma', subj);
 end
-save(fullfile([filename '.mat']), 'betas', 'erfdata', 'gamma');
+save(fullfile([filename '.mat']), 'betas_bin','betas_trials', 'erfdata', 'gamma');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
