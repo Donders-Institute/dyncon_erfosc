@@ -1,4 +1,4 @@
-function erf_osc_analysis_gamma_erf(subj, isPilot, zscore)
+function erf_osc_analysis_glm_gamma_time(subj, isPilot, zscore)
 % do a linear regression of pre-change gamma power over time.
 if nargin<1
     subj = 1;
