@@ -16,7 +16,7 @@ close all
 
 %% Initiate Diary
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
+diaryname = tempname;
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -61,30 +61,34 @@ cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
 dataShift  = ft_redefinetrial(cfg, data);
 
 cfg=[];
-cfg.baselinewindow = [-0.050+1/fs 0];
-dataShift = ft_preprocessing(cfg, dataShift);
-
-cfg=[];
-cfg.latency = [-4.95 0.7]; % this will ensure the betas have the same size for all subjects
+cfg.latency = [-0.05 0.5];
+dataShift2 = ft_selectdata(cfg, dataShift);
+cfg.latency = [-2.5 0.65]; % this will ensure the betas have the same size for all subjects
 dataShift = ft_selectdata(cfg, dataShift);
 
-%% DSS component analysis
 
 cfg=[];
+cfg.baselinewindow = [-0.050+1/fs 0];
 cfg.demean = 'yes';
-data_erf = ft_preprocessing(cfg, dataShift);
+dataShift = ft_preprocessing(cfg, dataShift);
+dataShift2 = ft_preprocessing(cfg, dataShift2);
 
+%% DSS component analysis
 
 windowGuess = [0 0.4];
 state.X = 1;
 nComp = 25;
 % run a dss decomposition
 params      = [];
-params.time = data_erf.time;
+% params.time = dataShift.time;
+params.time = dataShift2.time;
+
 params.demean = 'prezero';
 params.pre = 0.05*fs-1;
 params.pst = fs*windowGuess(1,2);
-[~,~,avgorig] = denoise_avg2(params,data_erf.trial,state);
+% [~,~,avgorig] = denoise_avg2(params,dataShift.trial,state);
+[~,~,avgorig] = denoise_avg2(params,dataShift2.trial,state);
+
 cfg          = [];
 cfg.method   = 'dss';
 cfg.dss.denf.function = 'denoise_avg2';
@@ -92,7 +96,9 @@ cfg.dss.denf.params = params;
 cfg.dss.wdim = 100;
 cfg.numcomponent = nComp;
 cfg.cellmode = 'yes';
-comp = ft_componentanalysis(cfg, data_erf);
+% comp = ft_componentanalysis(cfg, dataShift);
+
+comp = ft_componentanalysis(cfg, dataShift2);
 
 %% select components
 
@@ -118,9 +124,9 @@ data_dss = ft_rejectcomponent(cfg, comp_orig, dataShift);
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/dss', subj);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/dss', subj);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/dss2', subj);
 end
-save(fullfile([filename '.mat']), 'data_dss', 'nComp_keep');
+save(fullfile([filename '.mat']), 'data_dss', 'nComp_keep', '-v7.3');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 

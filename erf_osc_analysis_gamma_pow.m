@@ -1,6 +1,6 @@
 function erf_osc_analysis_gamma_pow(subj, isPilot)
-% This function estimates gamma power at the virtual channel (where gamma
-% power was highest at gamma peak frequency)
+% This function makes an estimate of gamma power increase active-baseline
+% in order to exclude participants that do not show a clear gamma peak
 
 if nargin<1
     subj = 1;
@@ -17,7 +17,7 @@ end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
+diaryname = tempname;
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -38,40 +38,62 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
 else
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gamPowData');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
 end
-fs = gamPowData.fsample;
+data=data.dataClean;
+fs = data.fsample;
 
-cfg                = [];
-cfg.offset         = -(gamPowData.trialinfo(:,5)-gamPowData.trialinfo(:,4));
-gamPowDataShift    = ft_redefinetrial(cfg, gamPowData);
+% select only shift trials, with valid response
+idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
+nTrials = length(idxM);
 
-cfg          = [];
-cfg.latency  = [-0.5+1/fs 0];
-dataBl      = ft_selectdata(cfg, gamPowData); % baseline
-dataChange     = ft_selectdata(cfg, gamPowDataShift); % pre-change
+cfg        = [];
+cfg.trials = idxM;
+cfg.channel = 'MEG';
+data       = ft_selectdata(cfg, data);
 
-peakFreq_gamma = 2*round(peakFreq_gamma/2);
-smoothing = 6;
+for iTrl=1:size(data.trial,2)
+    blonset(iTrl,1) = data.time{iTrl}(1);
+end
+cfg=[];
+% baseline window
+% cfg.trl = [data.trialinfo(:,3), data.trialinfo(:,4) data.trialinfo(:,3)-data.trialinfo(:,4)];
+% the first column represents the start of the baseline period. It's sample
+% number is inaccurate w.r.t. the time axis in the data (possibly because
+% of previous use of ft_selectdata?). This results in NaNs in the data. 
+% Thus, don't use the samplenumber provided by trialinfo, but calculate on 
+% the spot based on time axis.
+cfg.trl = [data.trialinfo(:,4)+blonset*fs, data.trialinfo(:,4)];
+cfg.trl = [cfg.trl, cfg.trl(:,1)-cfg.trl(:,2)];
+dataBl = ft_redefinetrial(cfg, data);
+
+cfg=[];
+% post erf period till stimulus reversal
+cfg.trl = [data.trialinfo(:,4)+0.4*fs data.trialinfo(:,5) 0.4*fs*ones(nTrials,1)];
+dataAct = ft_redefinetrial(cfg, data);
+
+cfg         = [];
+cfg.length  = 0.5; % 0.5 second windows
+cfg.overlap = 0.5; % half overlap
+bl = ft_redefinetrial(cfg, dataBl); % PROBLEM!!
+% bl.trial contains NaNs. in ft_freqanalysis, this results in the whole
+% array becoming NaN. specifically in ft_preproc_polyremoval of
+% ft_specest_mtmfft
+act = ft_redefinetrial(cfg, dataAct);
+
+
 %% gamma power
 cfg             = [];
 cfg.method      = 'mtmfft';
 cfg.output      = 'pow';
-cfg.tapsmofrq   = smoothing;
-cfg.foilim      = [(peakFreq_gamma - 6*smoothing) (peakFreq_gamma + 6*smoothing)];
+cfg.taper       = 'hanning';
+cfg.foilim      = [2 100];
 cfg.keeptrials  = 'no'; % average baseline over trials
-gamPowBl       = ft_freqanalysis(cfg, dataBl);
-cfg.keeptrials  = 'yes';
-gamPowChange      = ft_freqanalysis(cfg, dataChange);
-
-gamPow = gamPowChange;
-gamPowBl.powspctrm = repmat(gamPowBl.powspctrm, [size(gamPow.powspctrm,1), 1]);
-
-gamPow.powspctrm = (squeeze(gamPow.powspctrm) - gamPowBl.powspctrm)./gamPowBl.powspctrm;
+cfg.channel     = {'MLO', 'MZO', 'MRO'};
+powBl        = ft_freqanalysis(cfg, bl);
+powAct       = ft_freqanalysis(cfg, act);
 
 
 %% save
@@ -80,7 +102,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_pow', subj);
 end
-save(fullfile([filename '.mat']), 'gamPow');
+save(fullfile([filename '.mat']), 'gamPowBl', 'gamPowAct');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 

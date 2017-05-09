@@ -1,4 +1,6 @@
 function erf_osc_analysis_glm_erf_tfch(subj, isPilot, glm)
+% linear regression of peak amplitude over time-frequency (with fixed 
+% channel) or over frequency-channel (with fixed (avg) time).
 
 if nargin<1
     subj = 1;
@@ -22,7 +24,7 @@ end
 
 %% Initiate Diary
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
+diaryname = tempname;
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime

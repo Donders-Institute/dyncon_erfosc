@@ -42,7 +42,7 @@ if isPilot
     % load(sprintf('/project/3011085.02/results/freq/pilot-0%d/gamma_angle_%d', subj, subj)); % load gamma phase
 else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan', 'alphaChan'); % load gamma power
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan'); % load gamma power
     load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj)); % load ERF
 %     load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     % load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_angle', subj)); % load gamma phase
@@ -51,9 +51,9 @@ end
 % peakFreq_gamma = 2*round(peakFreq_gamma/2);
 % gammaPow = gamPow.powspctrm;
 for i=1:length(gammaChan.trial)
-    gammaPow(i) = gammaChan.trial(i).pow;
-    alphaPow(i) = alphaChan.trial(i).pow;
+    gammaPow(i) = log(gammaChan.trial(i).pow);
 end
+gammaPow = gammaPow-mean(gammaPow);
 
 % for iPeak = 1:3
 %     latency(:, iPeak) = reconstructed{iPeak}.params.latency(:, iPeak);

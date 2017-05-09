@@ -8,21 +8,21 @@ function erf_osc_analysis_tfa(subj, isPilot)
 % 5: sample of grating shift (=0 if no shift)
 % 6: sample of response (=0 if no response or if response too early)
 if nargin<1
-    subj = 3;
+    subj = 1;
 end
 if isempty(subj)
-    subj = 3;
+    subj = 1;
 end
 if nargin<2
-    isPilot = true;
+    isPilot = false;
 end
 if isempty(isPilot);
-    isPilot = true;
+    isPilot = false;
 end
 
 %% initiate diary
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
+diaryname = tempname;
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
