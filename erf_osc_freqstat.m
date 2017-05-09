@@ -1,10 +1,22 @@
 function erf_osc_freqstat
 
 workSpace = whos;
-diaryname = sprintf('/project/3011085.02/scripts/erfosc/tmpDiary_%s.txt', datestr(now, 'dd.mm.yyyy_HH:MM:SS.FFF'));
+diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
 diary(diaryname) % save command window output
+fname = mfilename('fullpath')
+datetime
+
+fid = fopen(fullfile([fname '.m']));
+tline = fgets(fid); % returns first line of fid
+while ischar(tline) % at the end of the script tline=-1
+    disp(tline) % display tline
+    tline = fgets(fid); % returns the next line of fid
+end
+fclose(fid);
+
 for i = 1:numel(workSpace) % list all workspace variables
-    eval(workSpace(i).name)
+    workSpace(i).name % list the variable name
+    printstruct(eval(workSpace(i).name)) % show its value(s)
 end
 
 %% frequency statistics

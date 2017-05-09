@@ -36,7 +36,7 @@ end
 
 %% initiate diary
 workSpace = whos;
-diaryname = tempname;
+diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime

@@ -23,7 +23,7 @@ end
 
 %% Initiate Diary
 workSpace = whos;
-diaryname = tempname;
+diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
 diary(diaryname) % save command window output
 fname = mfilename('fullpath')
 datetime
@@ -60,67 +60,67 @@ end
 gammaPow = gammaPow-mean(gammaPow);
 nTrials = length(data_dss.trial);
 
-
-%% GLM on binned trials
-groupSize = round(nTrials/5);
 [~, idxMax] = sort(gammaPow, 2, 'descend');
 
-erfdata = data_dss;
-cfg=[];
-cfg.lpifilter = 'yes';
-cfg.lpfilttype = 'firws';
-erfdata = ft_preprocessing(cfg, erfdata);
-erfdata.time=erfdata.time{1};
-erfdata.trial=erfdata.trial(idxMax);
-erfdata.trialinfo=erfdata.trialinfo(idxMax,:);
-erfdata.trial = cat(3, erfdata.trial{:});
-erfdata.trial = permute(erfdata.trial, [3,1,2]);
-
-
-cfgb=[];
-cfgb.vartrllength = 2;
-init = 1;
-for i = 1:round((nTrials/groupSize)*2)-1
-    if init+groupSize-1>nTrials
-        z = nTrials;
-    else
-        z = init+groupSize-1;
-    end
-    cfg=[];
-    cfg.trials = init:z;
-    tmp = ft_selectdata(cfg, erfdata);
-    erf{i} = ft_timelockanalysis(cfgb, tmp);
-    var = erf{i}.var;
-    cfg=[];
-    cfg.baseline = [-0.05+1/fs 0];
-    erf{i} = ft_timelockbaseline(cfg, erf{i});
-    gamma(i) = mean(gammaPow2(idxMax(init:z)));
-    erf{i}.var = var;
-    init=init+round(groupSize/2);
-end
-gamma = log(gamma);
-gamma = gamma-mean(gamma);
-
-erfdata.trial = [];
-for i = 1:round((nTrials/groupSize)*2)-1
-    erfdata.trial(i,:,:) = erf{i}.avg;
-    erfdata.var(i,:,:) = erf{i}.var;
-end
-
-if zscore
-    t1 = nearest(erfdata.time, (-0.5+1/fs));
-    t2 = nearest(erfdata.time, 0);
-    S = sqrt(erfdata.var);
-    M = mean(erfdata.trial(:,:,t1:t2),3);
-    M = repmat(M,[1,1,length(erfdata.time)]);
-    erfdata.trial=(erfdata.trial-M)./S;
-end
-
-design = [ones(size(gamma)); gamma];
-for k=1:length(erfdata.label)
-    Y = squeeze(erfdata.trial(:,k,:));
-    betas_bin(:,:,k) = design'\Y;
-end
+%% GLM on binned trials
+% groupSize = round(nTrials/5);
+% 
+% erfdata = data_dss;
+% cfg=[];
+% cfg.lpifilter = 'yes';
+% cfg.lpfilttype = 'firws';
+% erfdata = ft_preprocessing(cfg, erfdata);
+% erfdata.time=erfdata.time{1};
+% erfdata.trial=erfdata.trial(idxMax);
+% erfdata.trialinfo=erfdata.trialinfo(idxMax,:);
+% erfdata.trial = cat(3, erfdata.trial{:});
+% erfdata.trial = permute(erfdata.trial, [3,1,2]);
+% 
+% 
+% cfgb=[];
+% cfgb.vartrllength = 2;
+% init = 1;
+% for i = 1:round((nTrials/groupSize)*2)-1
+%     if init+groupSize-1>nTrials
+%         z = nTrials;
+%     else
+%         z = init+groupSize-1;
+%     end
+%     cfg=[];
+%     cfg.trials = init:z;
+%     tmp = ft_selectdata(cfg, erfdata);
+%     erf{i} = ft_timelockanalysis(cfgb, tmp);
+%     var = erf{i}.var;
+%     cfg=[];
+%     cfg.baseline = [-0.05+1/fs 0];
+%     erf{i} = ft_timelockbaseline(cfg, erf{i});
+%     gamma(i) = mean(gammaPow2(idxMax(init:z)));
+%     erf{i}.var = var;
+%     init=init+round(groupSize/2);
+% end
+% gamma = log(gamma);
+% gamma = gamma-mean(gamma);
+% 
+% erfdata.trial = [];
+% for i = 1:round((nTrials/groupSize)*2)-1
+%     erfdata.trial(i,:,:) = erf{i}.avg;
+%     erfdata.var(i,:,:) = erf{i}.var;
+% end
+% 
+% if zscore
+%     t1 = nearest(erfdata.time, (-0.5+1/fs));
+%     t2 = nearest(erfdata.time, 0);
+%     S = sqrt(erfdata.var);
+%     M = mean(erfdata.trial(:,:,t1:t2),3);
+%     M = repmat(M,[1,1,length(erfdata.time)]);
+%     erfdata.trial=(erfdata.trial-M)./S;
+% end
+% 
+% design = [ones(size(gamma)); gamma];
+% for k=1:length(erfdata.label)
+%     Y = squeeze(erfdata.trial(:,k,:));
+%     betas_bin(:,:,k) = design'\Y;
+% end
 
 %% GLM on all trials
 design = [ones(size(gammaPow)); gammaPow];
@@ -150,13 +150,15 @@ end
 c =[191   203   192   203   186   195];
 t1 = find(data.time>0,1);
 Y_trials = squeeze(data.trial(:,:,t1:t1+419));
+
+
 %% Save
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_gamma_time', subj);
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time', subj);
 end
-save(fullfile([filename '.mat']), 'betas_bin','betas_trials', 'erfdata', 'gamma','Y_trials', '-v7.3');
+save(fullfile([filename '.mat']), 'betas_trials', 'erfdata','Y_trials', '-v7.3');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
