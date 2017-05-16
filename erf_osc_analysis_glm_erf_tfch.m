@@ -126,18 +126,53 @@ lat = win(window,:);
         end
         bl = l;
         bl.powspctrm = permute(betas_l, [2,1,3]);
-        bh.label=h.label;
-        bh.dimord = 'chan_freq_time';
+        bl.label=l.label;
+        bl.dimord = 'chan_freq_time';
     end
     
-    
+    %% planar gradiant transformation of beta weights
+tl=[];
+tl.avg    = squeeze(betas_trials(2,:,:))';
+tl.time   = data_dss.time{1};
+tl.dimord = 'chan_time';
+tl.label  = data_dss.label;
+tl.grad   = data_dss.grad;
+% 
+% % planar combination
+cfg                 = [];
+cfg.feedback        = 'no';
+cfg.method          = 'template';
+cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
+cfg.planarmethod    = 'sincos';
+tlPlanar            = ft_megplanar(cfg, tl);
+cfg                 = [];
+cfg.demean          = 'yes';
+cfg.baselinewindow  = [-0.25 0];
+tlPlanarCmb         = ft_combineplanar(cfg,tlPlanar);
+%     
+
+%%
+t1        = nearest(tl.time, -2);
+t2        = nearest(tl.time, 0);
+mu        = rmfield(tl, 'avg');
+mu.avg    = mean(tl.avg(:,t1:t2), 2);
+mu.avg    = repmat(mu.avg, [1, length(tl.time)]);
+sigma     = rmfield(tl, 'avg');
+sigma.avg = std(tl.avg(:,t1:t2),[],2);
+sigma.avg = repmat(sigma.avg, [1, length(tl.time)]);
+
+cfg=[];
+cfg.parameter = 'avg';
+cfg.operation = '(x1-x2)./x3';
+tlPlanarCmbZ2 = ft_math(cfg, tl, mu, sigma);
+
     %% Save
     if isPilot
             filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_erf_tf', subj);
     else
             filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_erf_tf', subj);
     end
-    save(fullfile([filename '.mat']),'betas_h', 'betas_l', 'bl', 'bh', 'betas_h', '-v7.3');
+    save(fullfile([filename '.mat']),'betas_h', 'betas_l', 'bl', 'bh', 'betas_h','lat', '-v7.3');
     diary off
     movefile(diaryname, fullfile([filename '.txt']));
     
