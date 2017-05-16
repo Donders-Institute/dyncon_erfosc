@@ -110,7 +110,7 @@ cfg.tapsmofrq    = 8; % 8 Hz freq smoothing on both sides
 cfg.foi          = 28:4:100;
 cfg.pad          = 6;
 cfg.t_ftimwin    = ones(length(cfg.foi),1).*(1/4);
-cfg.toi          = -1.5:0.05:3.75;
+cfg.toi          = -1:0.05:3.75;
 cfg.keeptrials   = 'yes';
 tfaHigh = ft_freqanalysis(cfg,data);
 
