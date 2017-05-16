@@ -113,7 +113,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/pow', subj);
 end
-save(fullfile([filename '.mat']), 'powAct', 'powBl', 'gamRatio');
+save(fullfile([filename '.mat']), 'gamRatio');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
