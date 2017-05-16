@@ -70,13 +70,13 @@ data.time = data.time{1};
 
 for k=1:length(data.label)
     Y = squeeze(data.trial(:,k,:));
-    betas_trials(:,:,k) = design'\Y;
+    betas(:,:,k) = design'\Y;
 end
 
 %% planar gradiant transformation of beta weights
 % put beta weights in timelock structure
 tl=[];
-tl.avg    = squeeze(betas_trials(2,:,:))';
+tl.avg    = squeeze(betas(2,:,:))';
 tl.time   = data_dss.time{1};
 tl.dimord = 'chan_time';
 tl.label  = data_dss.label;
@@ -108,7 +108,7 @@ sigma.avg = repmat(sigma.avg, [1, length(tl.time)]);
 cfg=[];
 cfg.parameter = 'avg';
 cfg.operation = '(x1-x2)./x3';
-tlPlanarCmbZ2 = ft_math(cfg, tl, mu, sigma);
+tlPlanarCmbZ = ft_math(cfg, tl, mu, sigma);
 
 %% Save
 if isPilot
@@ -116,7 +116,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time', subj);
 end
-save(fullfile([filename '.mat']), 'betas_trials', 'tlPlanarCmbZ','tlPlanarCmb', '-v7.3');
+save(fullfile([filename '.mat']), 'betas', 'tlPlanarCmbZ','tlPlanarCmb', '-v7.3');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
