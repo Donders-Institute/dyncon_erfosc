@@ -68,21 +68,10 @@ data.trial = cat(3,data.trial{:});
 data.trial = permute(data.trial, [3,1,2]);
 data.time = data.time{1};
 
-if zscore
-    t1 = nearest(data.time, (-0.5+1/fs));
-    t2 = nearest(data.time, 0);
-    S = std(data.trial(:,:,t1:t2), [], 3);
-    S = repmat(S,[1,1,length(data.time)]);
-    M = mean(data.trial(:,:,t1:t2),3);
-    M = repmat(M,[1,1,length(data.time)]);
-    data.trial=(data.trial-M)./S;
-end
-
 for k=1:length(data.label)
     Y = squeeze(data.trial(:,k,:));
     betas_trials(:,:,k) = design'\Y;
 end
-
 
 %% planar gradiant transformation of beta weights
 % put beta weights in timelock structure
@@ -101,8 +90,25 @@ cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
 cfg.planarmethod    = 'sincos';
 tlPlanar            = ft_megplanar(cfg, tl);
 cfg                 = [];
+cfg.demean          = 'yes';
+cfg.baselinewindow  = [-0.25 0];
 tlPlanarCmb         = ft_combineplanar(cfg,tlPlanar);
 
+%% Normalize beta weights
+% zscore manually based on baseline window
+t1        = nearest(tl.time, -2);
+t2        = nearest(tl.time, 0);
+mu        = rmfield(tl, 'avg');
+mu.avg    = mean(tl.avg(:,t1:t2), 2);
+mu.avg    = repmat(mu.avg, [1, length(tl.time)]);
+sigma     = rmfield(tl, 'avg');
+sigma.avg = std(tl.avg(:,t1:t2),[],2);
+sigma.avg = repmat(sigma.avg, [1, length(tl.time)]);
+
+cfg=[];
+cfg.parameter = 'avg';
+cfg.operation = '(x1-x2)./x3';
+tlPlanarCmbZ2 = ft_math(cfg, tl, mu, sigma);
 
 %% Save
 if isPilot
@@ -110,7 +116,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time', subj);
 end
-save(fullfile([filename '.mat']), 'betas_trials', 'tlPlanarCmb', '-v7.3');
+save(fullfile([filename '.mat']), 'betas_trials', 'tlPlanarCmbZ','tlPlanarCmb', '-v7.3');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
