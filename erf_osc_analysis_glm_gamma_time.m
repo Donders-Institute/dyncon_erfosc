@@ -96,7 +96,7 @@ tlPlanarCmb         = ft_combineplanar(cfg,tlPlanar);
 
 %% Normalize beta weights
 % zscore manually based on baseline window
-t1        = nearest(tl.time, -2);
+t1        = nearest(tl.time, -0.25);
 t2        = nearest(tl.time, 0);
 mu        = rmfield(tl, 'avg');
 mu.avg    = mean(tl.avg(:,t1:t2), 2);
