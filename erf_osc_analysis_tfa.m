@@ -1,5 +1,5 @@
-function erf_osc_analysis_tfa(subj, isPilot)
-% 
+function erf_osc_analysis_tfa(subj, isPilot, zeropoint)
+%
 % trialinfo columns:
 % 1: trialnumber
 % 2: position (-1=left, 0=middle, 1=right)
@@ -18,6 +18,12 @@ if nargin<2
 end
 if isempty(isPilot);
     isPilot = false;
+end
+if nargin<3
+    zeropoint = 'onset'; % other option 'reversal': redefine time axis to stimulus reversal or keep it at stimulus onset
+end
+if isempty(zeropoint);
+    zeropoint = 'onset';
 end
 
 %% initiate diary
@@ -44,10 +50,8 @@ end
 erf_osc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-    load(pilotsubjects(subj).logfile);% load log file
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-    load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
 fs = data.fsample;
@@ -61,27 +65,17 @@ cfg.trials = idxM(1:nTrials);
 data = ft_selectdata(cfg, data);
 
 % data timelocked to grating shift
-% cfg=[];
-% cfg.offset = -(dataM.trialinfo(:,5)-dataM.trialinfo(:,4));
-% dataShiftM = ft_redefinetrial(cfg, dataM);
+if strcmp(zeropoint, 'reversal')
+    cfg=[];
+    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    data = ft_redefinetrial(cfg, data);
+end
 
-%% FFT, powerspectrum
+% since trials are kept and are not the same length, memory wise it's more
+% efficient to just take the length of the shortest trial.
 cfg=[];
-cfg.latency = [-0.5+1/fs 0];
-dataBaseline = ft_selectdata(cfg, data);
-cfg.latency = [0.3+1/fs 0.8]; % take active time window after first erfs
-dataActive  = ft_selectdata(cfg, data);
-
-cfg=[];
-cfg.foilim = [2 100];
-cfg.method = 'mtmfft';
-cfg.output = 'pow';
-cfg.tapsmofrq = 8;
-cfg.taper = 'dpss';
-cfg.channel = 'MEG';
-cfg.keeptrials = 'yes';
-powActive = ft_freqanalysis(cfg, dataActive);
-powBaseline = ft_freqanalysis(cfg, dataBaseline);
+cfg.latency = [-1.75 1.75];
+data = ft_selectdata(cfg, data);
 
 
 %% TFA, low frequencies (2-30)
@@ -92,9 +86,9 @@ cfg.channel      = 'MEG';
 cfg.method       = 'mtmconvol';
 cfg.taper        = 'hanning';
 cfg.pad          = 6;
-cfg.foi          = 2:2:30;% analysis 2 to 30 Hz in steps of 2 Hz 
+cfg.foi          = 2:2:30;% analysis 2 to 30 Hz in steps of 2 Hz
 cfg.t_ftimwin    = ones(length(cfg.foi),1).*0.5;   % length of time window = 0.5 sec
-cfg.toi          = -1:0.05:3.75;                  % time window "slides" from -0.5 to 1.5 sec in steps of 0.05 sec (50 ms)
+cfg.toi          = -1.75:0.05:1.75;                  % time window "slides" from -0.5 to 1.5 sec in steps of 0.05 sec (50 ms)
 cfg.keeptrials   = 'yes';
 tfaLow = ft_freqanalysis(cfg, data);
 
@@ -110,18 +104,25 @@ cfg.tapsmofrq    = 8; % 8 Hz freq smoothing on both sides
 cfg.foi          = 28:4:100;
 cfg.pad          = 6;
 cfg.t_ftimwin    = ones(length(cfg.foi),1).*(1/4);
-cfg.toi          = -1:0.05:3.75;
+cfg.toi          = -1.75:0.05:1.75;
 cfg.keeptrials   = 'yes';
 tfaHigh = ft_freqanalysis(cfg,data);
 
-
 %% save
-if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/tfa', subj);
-else
-    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tfa', subj);
+if strcmp(zeropoint, 'onset')
+    if isPilot
+        filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/tfa_onset', subj);
+    else
+        filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_onset', subj);
+    end
+elseif strcmp(zeropoint, 'reversal')
+    if isPilot
+        filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/tfa_reversal', subj);
+    else
+        filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_reversal', subj);
+    end
 end
-save(fullfile([filename '.mat']), 'powActive', 'powBaseline', 'tfaLow', 'tfaHigh');
+save(fullfile([filename '.mat']), 'tfaLow', 'tfaHigh');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
