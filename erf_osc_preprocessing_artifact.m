@@ -79,6 +79,7 @@ cfg.catchtrial = cfg.logfile.log.trlNoShift;
 cfg.continuous = 'yes';
 cfg = ft_definetrial(cfg);
 cfg2=cfg; % use this for finding EOG artifacts.
+nTrialsPreClean = size(cfg.trl,1);
 
 % preprocess data
 cfg.continuous = 'yes';
@@ -440,6 +441,9 @@ cfg.artfctdef.eyesaccade.artifact = artifact_EOG_saccade;
 cfg.artfctdef.reject = 'complete'; % remove complete trials
 cfg.artfctdef.crittoilim = [-1 3.75];
 dataClean = ft_rejectartifact(cfg, dataNoIca);
+nTrialsPostClean = length(dataClean.trial);
+idxM = find(dataClean.trialinfo(:,5)>0 & dataClean.trialinfo(:,6)>0 & dataClean.trialinfo(:,2)==0);
+nTrialsValid = length(idxM);
 
 %% save
 if isPilot
@@ -447,7 +451,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata', subj);
 end
-save(fullfile([filename '.mat']), 'dataClean', '-v7.3');
+save(fullfile([filename '.mat']), 'dataClean','nTrialsPreClean','nTrialsPostClean','nTrialsValid', '-v7.3');
 diary off
 movefile(diaryname, fullfile([filename, '.txt']));
 
