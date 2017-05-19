@@ -1,4 +1,4 @@
-function erf_osc_analysis_glm_erf_tfch(subj, isPilot, freqRange, zeropoint;)
+function erf_osc_analysis_glm_erf_tfch(subj, isPilot, freqRange, zeropoint)
 % linear regression of peak amplitude over time-frequency (with fixed
 % channel) or over frequency-channel (with fixed (avg) time).
 
@@ -54,9 +54,8 @@ if isPilot
     load(sprintf('/project/3011085.02/results/erf/pilot-%03d/dss.mat', subj), 'data_dss');
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
 else
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%d.mat', subj, zeropoint));
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
     load(sprintf('/project/3011085.02/results/erf/sub-%03d/dss.mat', subj), 'data_dss');
-    %     load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock.mat', subj));
 end
 fs=data_dss.fsample;
 nTrials = length(data_dss.trial);
@@ -95,11 +94,7 @@ p1amp = squeeze(mean(trialdata(:,idxtime,:),2));
 
 % baselinecorrect with average baseline over trials
 if strcmp(freqRange, 'high');
-    cfg=[];
-    cfg.latency = [-1+1/fs -0.25];
-    cfg.avgoverrpt = 'yes';
-    cfg.avgovertime = 'yes';
-    baselineH = ft_selectdata(cfg, tfaHigh);
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_onset.mat', subj), 'baselineH');
     baselineH.time = tfaHigh.time;
     baselineH.dimord = tfaHigh.dimord;
     baselineH.powspctrm = repmat(baselineH.powspctrm, [1,1,length(baselineH.time), size(tfaHigh.powspctrm, 1)]);
@@ -108,9 +103,9 @@ if strcmp(freqRange, 'high');
     cfg.parameter = 'powspctrm';
     cfg.operation = 'subtract';
     tfaHigh = ft_math(cfg, tfaHigh, baselineH);
-    
+
     for freq=1:19
-        for ch=1:length(d.label);
+        for ch=1:length(data_dss.label);
             design = [ones(size(p1amp(ch,:))); p1amp(ch,:)];
             design(2,:) = (design(2,:)-mean(design(2,:)))./std(design(2,:));
             Y_h = squeeze(squeeze(tfaHigh.powspctrm(:,ch,freq,:)));
@@ -119,12 +114,7 @@ if strcmp(freqRange, 'high');
     end
     
 elseif strcmp(freqRange, 'low')
-    % do the same for low frequency TFR
-    cfg=[];
-    cfg.latency = [-1+1/fs -0.25];
-    cfg.avgoverrpt = 'yes';
-    cfg.avgovertime = 'yes';
-    baselineL = ft_selectdata(cfg, tfaLow);
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_onset.mat', subj), 'baselineL');
     baselineL.time = tfaLow.time;
     baselineL.dimord = tfaLow.dimord;
     baselineL.powspctrm = repmat(baselineL.powspctrm, [1,1,length(baselineL.time), size(tfaLow.powspctrm, 1)]);
@@ -135,7 +125,7 @@ elseif strcmp(freqRange, 'low')
     tfaLow = ft_math(cfg, tfaLow, baselineL);
     
     for freq=1:15
-        for ch=1:length(d.label);
+        for ch=1:length(data_dss.label);
             design = [ones(size(p1amp(ch,:))); p1amp(ch,:)];
             design(2,:) = (design(2,:)-mean(design(2,:)))./std(design(2,:));
             Y_l = squeeze(squeeze(tfaLow.powspctrm(:,ch,freq,:)));
@@ -246,16 +236,16 @@ end
 %% Save
 if strcmp(freqRange, 'high')
     if isPilot
-        filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tfH_%d', subj, zeropoint);
+        filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tfH_%s', subj, zeropoint);
     else
-        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tfH_%d', subj, zeropoint);
+        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tfH_%s', subj, zeropoint);
     end
     save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb', 'bhPlanarCmbZ','lat', '-v7.3');
 elseif strcmp(freqRange, 'low')
     if isPilot
-        filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tfL_%d', subj, zeropoint);
+        filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tfL_%s', subj, zeropoint);
     else
-        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tfL_%d', subj, zeropoint);
+        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tfL_%s', subj, zeropoint);
     end
     save(fullfile([filename '.mat']), 'betas_l', 'blPlanarCmb','blPlanarCmbZ', 'lat', '-v7.3');
 end
