@@ -108,6 +108,22 @@ cfg.toi          = -1.75:0.05:1.75;
 cfg.keeptrials   = 'yes';
 tfaHigh = ft_freqanalysis(cfg,data);
 
+%% get baseline
+if strcmp(zeropoint, 'onset')
+    cfg=[];
+    cfg.latency = [-1+1/fs -0.25];
+    cfg.avgoverrpt = 'yes';
+    cfg.avgovertime = 'yes';
+    baselineH = ft_selectdata(cfg, tfaHigh);
+    
+    cfg=[];
+    cfg.latency = [-1+1/fs -0.25];
+    cfg.avgoverrpt = 'yes';
+    cfg.avgovertime = 'yes';
+    baselineL = ft_selectdata(cfg, tfaLow);
+end
+
+
 %% save
 if strcmp(zeropoint, 'onset')
     if isPilot
@@ -122,7 +138,7 @@ elseif strcmp(zeropoint, 'reversal')
         filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_reversal', subj);
     end
 end
-save(fullfile([filename '.mat']), 'tfaLow', 'tfaHigh');
+save(fullfile([filename '.mat']), 'tfaLow', 'tfaHigh', 'baselineLow', 'baselineHigh');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
