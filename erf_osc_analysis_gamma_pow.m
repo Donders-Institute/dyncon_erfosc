@@ -98,13 +98,15 @@ powAct          = ft_freqanalysis(cfg, act);
 cfg=[];
 cfg.parameter = 'powspctrm';
 cfg.operation = 'x1./x2';
+powRatio      = ft_math(cfg, powAct, powBl);
+cfg.operation = 'subtract';
 powDiff       = ft_math(cfg, powAct, powBl);
 
 cfg=[];
 cfg.frequency = [40 74];
 cfg.avgoverfreq = 'yes';
 cfg.avgoverchan = 'yes';
-gamRatio        = ft_selectdata(cfg, powDiff);
+gamRatio        = ft_selectdata(cfg, powRatio);
 gamRatio        = gamRatio.powspctrm;
 
 %% save
@@ -113,7 +115,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/pow', subj);
 end
-save(fullfile([filename '.mat']), 'gamRatio');
+save(fullfile([filename '.mat']), 'gamRatio', 'powDiff');
 diary off
 movefile(diaryname, fullfile([filename '.txt']));
 
