@@ -14,25 +14,8 @@ if isempty(isPilot);
     isPilot = false;
 end
 
-%% initiate diary
-workSpace = whos;
-diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
-diary(diaryname) % save command window output
-fname = mfilename('fullpath')
-datetime
-
-fid = fopen(fullfile([fname '.m']));
-tline = fgets(fid); % returns first line of fid
-while ischar(tline) % at the end of the script tline=-1
-    disp(tline) % display tline
-    tline = fgets(fid); % returns the next line of fid
-end
-fclose(fid);
-
-for i = 1:numel(workSpace) % list all workspace variables
-    workSpace(i).name % list the variable name
-    printstruct(eval(workSpace(i).name)) % show its value(s)
-end
+% initiate diary
+ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
@@ -92,8 +75,7 @@ else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj);
 end
 save(fullfile([filename '.mat']), 'peakFreq_gamma', 'gammaAvg');
-diary off
-movefile(diaryname, fullfile([filename '.txt']));
+ft_diary('off')
 
 
 end
