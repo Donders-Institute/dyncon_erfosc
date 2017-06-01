@@ -26,25 +26,8 @@ if isempty(zeropoint);
     zeropoint = 'onset';
 end
 
-%% initiate diary
-workSpace = whos;
-diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
-diary(diaryname) % save command window output
-fname = mfilename('fullpath')
-datetime
-
-fid = fopen(fullfile([fname '.m']));
-tline = fgets(fid); % returns first line of fid
-while ischar(tline) % at the end of the script tline=-1
-    disp(tline) % display tline
-    tline = fgets(fid); % returns the next line of fid
-end
-fclose(fid);
-
-for i = 1:numel(workSpace) % list all workspace variables
-    workSpace(i).name % list the variable name
-    printstruct(eval(workSpace(i).name)) % show its value(s)
-end
+% initiate diary
+ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
@@ -61,7 +44,8 @@ idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
 nTrials = length(idxM);
 
 cfg=[];
-cfg.trials = idxM(1:nTrials);
+cfg.trials = idxM;
+cfg.channel = 'MEG';
 data = ft_selectdata(cfg, data);
 
 % data timelocked to grating shift
@@ -111,13 +95,13 @@ tfaHigh = ft_freqanalysis(cfg,data);
 %% get baseline
 if strcmp(zeropoint, 'onset')
     cfg=[];
-    cfg.latency = [-1+1/fs -0.25];
+    cfg.latency = [-1 -0.25];
     cfg.avgoverrpt = 'yes';
     cfg.avgovertime = 'yes';
     baselineH = ft_selectdata(cfg, tfaHigh);
     
     cfg=[];
-    cfg.latency = [-1+1/fs -0.25];
+    cfg.latency = [-1 -0.25];
     cfg.avgoverrpt = 'yes';
     cfg.avgovertime = 'yes';
     baselineL = ft_selectdata(cfg, tfaLow);
@@ -125,23 +109,18 @@ end
 
 
 %% save
-if strcmp(zeropoint, 'onset')
-    if isPilot
-        filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/tfa_onset', subj);
-    else
-        filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_onset', subj);
-    end
-elseif strcmp(zeropoint, 'reversal')
-    if isPilot
-        filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/tfa_reversal', subj);
-    else
-        filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_reversal', subj);
-    end
-end
-save(fullfile([filename '.mat']), 'tfaLow', 'tfaHigh', 'baselineLow', 'baselineHigh');
-diary off
-movefile(diaryname, fullfile([filename '.txt']));
 
+if isPilot
+    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/tfa_%s', subj, zeropoint);
+else
+    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s', subj, zeropoint);
+end
+if strcmp(zeropoint, 'onset')
+    save(fullfile([filename '.mat']), 'tfaLow', 'tfaHigh', 'baselineL', 'baselineH');
+elseif strcmp(zeropoint, 'reversal')
+    save(fullfile([filename '.mat']), 'tfaLow', 'tfaHigh');
+end
+ft_diary('off')
 
 end
 
