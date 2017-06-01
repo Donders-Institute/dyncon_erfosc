@@ -15,25 +15,8 @@ end
 
 % close all
 
-%% Initiate Diary
-workSpace = whos;
-diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
-diary(diaryname) % save command window output
-fname = mfilename('fullpath')
-datetime
-
-fid = fopen(fullfile([fname '.m']));
-tline = fgets(fid); % returns first line of fid
-while ischar(tline) % at the end of the script tline=-1
-    disp(tline) % display tline
-    tline = fgets(fid); % returns the next line of fid
-end
-fclose(fid);
-
-for i = 1:numel(workSpace) % list all workspace variables
-    workSpace(i).name % list the variable name
-    printstruct(eval(workSpace(i).name)) % show its value(s)
-end
+% Initiate Diary
+ft_diary('on')
 
 
 %% load data
@@ -116,7 +99,6 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time', subj);
 end
-save(fullfile([filename '.mat']), 'betas', 'tlPlanarCmbZ','tlPlanarCmb', '-v7.3');
-diary off
-movefile(diaryname, fullfile([filename '.txt']));
+save(fullfile([filename '.mat']), 'betas', 'tlPlanarCmbZ', '-v7.3');
+ft_diary('off')
 
