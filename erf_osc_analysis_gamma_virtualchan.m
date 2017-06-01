@@ -20,40 +20,19 @@ if isempty(sourcemodel)
     sourcemodel = '3d';
 end
 
-%% initiate diary
-workSpace = whos;
-diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
-diary(diaryname) % save command window output
-fname = mfilename('fullpath')
-datetime
-
-fid = fopen(fullfile([fname '.m']));
-tline = fgets(fid); % returns first line of fid
-while ischar(tline) % at the end of the script tline=-1
-    disp(tline) % display tline
-    tline = fgets(fid); % returns the next line of fid
-end
-fclose(fid);
-
-for i = 1:numel(workSpace) % list all workspace variables
-    workSpace(i).name % list the variable name
-    printstruct(eval(workSpace(i).name)) % show its value(s)
-end
+% initiate diary
+ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-    load(pilotsubjects(subj).logfile);% load log file
     load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq_gamma');
-%     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/alpha_peak', subj), 'peakFreq_alpha');
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(fullfile([subjects(subj).mridir, 'preproc/headmodel.mat']));
-    load(subjects(subj).logfile);% load log file
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj), 'peakFreq_gamma');
-%     load(sprintf('/project/3011085.02/results/freq/sub-%03d/alpha_peak', subj), 'peakFreq_alpha');
     if strcmp(sourcemodel, '2d')
         load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel2d.mat']));
     else
@@ -62,6 +41,8 @@ else
 end
 
 data = data.dataClean;
+fs = data.fsample;
+
 cfg         = [];
 cfg.channel = 'MEG';
 data        = ft_selectdata(cfg, data);
@@ -75,10 +56,9 @@ cfg.trials = idxM;
 data       = ft_selectdata(cfg, data);
 
 cfg        = [];
-cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4)); % trialinfo is specified in 1200 Hz. If data is resampled, it has to be taken care of for ft_redefinetrial.
 dataShift  = ft_redefinetrial(cfg, data);
 
-fs = data.fsample;
 
 % select data: 0.25 second preceding grating start and 0.25 second preceding
 % grating shift. Contrast these in terms of gamma frequency at gamma peak
@@ -201,8 +181,7 @@ else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
 end
 save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan');
-diary off
-movefile(diaryname, fullfile([filename '.txt']));
+ft_diary('off')
 
 
 end
