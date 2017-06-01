@@ -1,4 +1,4 @@
-function erf_osc_analysis_glm_erf_tfch(subj, isPilot, freqRange, zeropoint)
+function erf_osc_analysis_glm_erf_tfch(subj, isPilot, freqRange, zeropoint, erfoi)
 % linear regression of peak amplitude over time-frequency (with fixed
 % channel) or over frequency-channel (with fixed (avg) time).
 
@@ -26,27 +26,15 @@ end
 if isempty(zeropoint);
     zeropoint = 'onset';
 end
-
-%% Initiate Diary
-workSpace = whos;
-diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
-diary(diaryname) % save command window output
-fname = mfilename('fullpath')
-datetime
-
-fid = fopen(fullfile([fname '.m']));
-tline = fgets(fid); % returns first line of fid
-while ischar(tline) % at the end of the script tline=-1
-    disp(tline) % display tline
-    tline = fgets(fid); % returns the next line of fid
+if nargin<5 % erf of interest
+    erfoi = 'reversal'; % other option 'onset': redefine time axis to stimulus reversal or keep it at stimulus onset
 end
-fclose(fid);
-
-for i = 1:numel(workSpace) % list all workspace variables
-    workSpace(i).name % list the variable name
-    printstruct(eval(workSpace(i).name)) % show its value(s)
+if isempty(erfoi);
+    erfoi = 'reversal';
 end
 
+% Initiate Diary
+ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
@@ -55,7 +43,11 @@ if isPilot
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
 else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
-    load(sprintf('/project/3011085.02/results/erf/sub-%03d/dss.mat', subj), 'data_dss');
+    if strcmp(erfoi, 'reversal')
+        load(sprintf('/project/3011085.02/results/erf/sub-%03d/dss.mat', subj), 'data_dss');
+    else
+        [data_dss, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'onset', false)
+    end
 end
 fs=data_dss.fsample;
 nTrials = length(data_dss.trial);
@@ -103,7 +95,7 @@ if strcmp(freqRange, 'high');
     cfg.parameter = 'powspctrm';
     cfg.operation = 'subtract';
     tfaHigh = ft_math(cfg, tfaHigh, baselineH);
-
+    
     for freq=1:19
         for ch=1:length(data_dss.label);
             design = [ones(size(p1amp(ch,:))); p1amp(ch,:)];
@@ -234,22 +226,17 @@ elseif strcmp(freqRange, 'low')
     blPlanarCmbZ = ft_math(cfg, blPlanarCmb, muL, sigmaL);
 end
 %% Save
+
+if isPilot
+    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+else
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+end
 if strcmp(freqRange, 'high')
-    if isPilot
-        filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tfH_%s', subj, zeropoint);
-    else
-        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tfH_%s', subj, zeropoint);
-    end
-    save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb', 'bhPlanarCmbZ','lat', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_h', 'bhPlanarCmbZ','lat', '-v7.3');
 elseif strcmp(freqRange, 'low')
-    if isPilot
-        filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tfL_%s', subj, zeropoint);
-    else
-        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tfL_%s', subj, zeropoint);
-    end
-    save(fullfile([filename '.mat']), 'betas_l', 'blPlanarCmb','blPlanarCmbZ', 'lat', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_l', 'blPlanarCmbZ', 'lat', '-v7.3');
 end
 
-diary off
-movefile(diaryname, fullfile([filename '.txt']));
+ft_diary('off')
 
