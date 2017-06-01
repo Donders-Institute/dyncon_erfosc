@@ -1,4 +1,4 @@
-function erf_osc_analysis_dss(subj, isPilot)
+function [data_dss, nComp_keep] = erf_osc_analysis_dss(subj, isPilot, zeropoint, doSave)
 
 if nargin<1
     subj = 1;
@@ -12,28 +12,40 @@ end
 if isempty(isPilot);
     isPilot = false;
 end
-close all
+if nargin<3
+    zeropoint = 'reversal';
+end
+if isempty(zeropoint)
+    zeropoint = 'reversal';
+end
+if nargin<4
+    doSave = true;
+end
+if isempty(doSave)
+    doSave = true;
+end
 
 %% Initiate Diary
-workSpace = whos;
-diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
-diary(diaryname) % save command window output
-fname = mfilename('fullpath')
-datetime
-
-fid = fopen(fullfile([fname '.m']));
-tline = fgets(fid); % returns first line of fid
-while ischar(tline) % at the end of the script tline=-1
-    disp(tline) % display tline
-    tline = fgets(fid); % returns the next line of fid
+if doSave
+    workSpace = whos;
+    diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
+    diary(diaryname) % save command window output
+    fname = mfilename('fullpath')
+    datetime
+    
+    fid = fopen(fullfile([fname '.m']));
+    tline = fgets(fid); % returns first line of fid
+    while ischar(tline) % at the end of the script tline=-1
+        disp(tline) % display tline
+        tline = fgets(fid); % returns the next line of fid
+    end
+    fclose(fid);
+    
+    for i = 1:numel(workSpace) % list all workspace variables
+        workSpace(i).name % list the variable name
+        printstruct(eval(workSpace(i).name)) % show its value(s)
+    end
 end
-fclose(fid);
-
-for i = 1:numel(workSpace) % list all workspace variables
-    workSpace(i).name % list the variable name
-    printstruct(eval(workSpace(i).name)) % show its value(s)
-end
-
 
 %% load data
 erf_osc_datainfo;
@@ -41,7 +53,6 @@ if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-    load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock.mat', subj));
 end
 
 data = data.dataClean;
@@ -56,38 +67,37 @@ cfg.trials = idxM;
 cfg.channel = 'MEG';
 data       = ft_selectdata(cfg, data);
 
-cfg        = [];
-cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-dataShift  = ft_redefinetrial(cfg, data);
+if strcmp(zeropoint, 'reversal')
+    cfg        = [];
+    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    data  = ft_redefinetrial(cfg, data);
+end
 
 cfg=[];
-cfg.latency = [-0.05 0.5];
-dataShift2 = ft_selectdata(cfg, dataShift);
 cfg.latency = [-2.5 0.65]; % this will ensure the betas have the same size for all subjects
-dataShift = ft_selectdata(cfg, dataShift);
+data = ft_selectdata(cfg, data);
 
 
 cfg=[];
 cfg.baselinewindow = [-0.050+1/fs 0];
 cfg.demean = 'yes';
-dataShift = ft_preprocessing(cfg, dataShift);
-dataShift2 = ft_preprocessing(cfg, dataShift2);
+data = ft_preprocessing(cfg, data);
+
 
 %% DSS component analysis
 
-windowGuess = [0 0.4];
+windowGuess = [-0.05 0.5];
 state.X = 1;
 nComp = 25;
 % run a dss decomposition
 params      = [];
 % params.time = dataShift.time;
-params.time = dataShift2.time;
+params.time = data.time;
 
 params.demean = 'prezero';
-params.pre = 0.05*fs-1;
+params.pre = abs(windowGuess(1,1))*fs-1;
 params.pst = fs*windowGuess(1,2);
-% [~,~,avgorig] = denoise_avg2(params,dataShift.trial,state);
-[~,~,avgorig] = denoise_avg2(params,dataShift2.trial,state);
+[~,~,avgorig] = denoise_avg2(params,data.trial,state);
 
 cfg          = [];
 cfg.method   = 'dss';
@@ -98,7 +108,7 @@ cfg.numcomponent = nComp;
 cfg.cellmode = 'yes';
 % comp = ft_componentanalysis(cfg, dataShift);
 
-comp = ft_componentanalysis(cfg, dataShift2);
+comp = ft_componentanalysis(cfg, data);
 
 %% select components
 
@@ -113,20 +123,21 @@ nComp_keep = length(find(s>=0.05)); % keep components that explain at least 5% o
 cfg=[];
 cfg.unmixing = comp.unmixing;
 cfg.topolabel = comp.topolabel;
-comp_orig = ft_componentanalysis(cfg, dataShift);
+comp_orig = ft_componentanalysis(cfg, data);
 
 cfg=[];
 cfg.components = nComp_keep+1:nComp;
-data_dss = ft_rejectcomponent(cfg, comp_orig, dataShift);
+data_dss = ft_rejectcomponent(cfg, comp_orig, data);
 
 
 %% Save
-if isPilot
-    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/dss', subj);
-else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/dss2', subj);
+if doSave
+    if isPilot
+        filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/dss', subj);
+    else
+        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/dss', subj);
+    end
+    save(fullfile([filename '.mat']), 'data_dss', 'nComp_keep', '-v7.3');
+    diary off
+    movefile(diaryname, fullfile([filename '.txt']));
 end
-save(fullfile([filename '.mat']), 'data_dss', 'nComp_keep', '-v7.3');
-diary off
-movefile(diaryname, fullfile([filename '.txt']));
-
