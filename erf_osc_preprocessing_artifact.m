@@ -39,25 +39,8 @@ if isempty(visDegOffFixation)
     visDegOffFixation = 1;
 end
 
-%% initiate diary
-workSpace = whos;
-diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
-diary(diaryname) % save command window output
-fname = mfilename('fullpath')
-datetime
-
-fid = fopen(fullfile([fname '.m']));
-tline = fgets(fid); % returns first line of fid
-while ischar(tline) % at the end of the script tline=-1
-    disp(tline) % display tline
-    tline = fgets(fid); % returns the next line of fid
-end
-fclose(fid);
-
-for i = 1:numel(workSpace) % list all workspace variables
-    workSpace(i).name % list the variable name
-    printstruct(eval(workSpace(i).name)) % show its value(s)
-end
+% initiate diary
+ft_diary('on')
 
 %% Load data and define trials
 erf_osc_datainfo; % load subject specific info.
@@ -378,7 +361,7 @@ cfg=[];
 cfg.component = subs_comp;
 dataNoIca = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
 
-save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/dataHalfClean.mat', subj), 'dataNoIca', '-v7.3')
+% save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/dataHalfClean.mat', subj), 'dataNoIca', '-v7.3')
 
 %% remove saccade artifacts
 artifact_EOG_saccade = [];
@@ -392,9 +375,9 @@ end
 if ~exist('visDegFixDot')
     visDegFixDot =  artfctdef.eyepos.visDegFixDot;
 end
-visDegOffFixation = visDegOffFixation + visDegFixDot; % relative to border of fixation dot
+% visDegOffFixation = visDegOffFixation + visDegFixDot; % relative to border of fixation dot
 % mark event as artifact if fixation from fixation point is broken with
-% more than 1 visual degree.
+% more than x visual degree.
 for iTrial = 1:size(data.trial,2)
     isFixation = sqrt(visAngleX{iTrial}.^2 + visAngleY{iTrial}.^2) < visDegOffFixation; % note all the samples where fixation is good/bad
     %         samplenumber = data.sampleinfo(iTrial,1);
@@ -412,6 +395,7 @@ for iTrial = 1:size(data.trial,2)
                 sampleStopOffFixation = sampleStartOffFixation + find(isFixation(1, sampleStartOffFixation + 1 : end) ==1, 1) -1; % stop off-fixation is 1 sample before on fixation again.
                 artifact_EOG_saccade(end,2) = data.sampleinfo(iTrial,1) + sampleStopOffFixation;
                 samplenumber = sampleStopOffFixation +1;
+break
             else
                 artifact_EOG_saccade(end,2) = data.sampleinfo(iTrial,2);
                 samplenumber = data.sampleinfo(iTrial,2);
@@ -441,6 +425,13 @@ cfg.artfctdef.eyesaccade.artifact = artifact_EOG_saccade;
 cfg.artfctdef.reject = 'complete'; % remove complete trials
 cfg.artfctdef.crittoilim = [-1 3.75];
 dataClean = ft_rejectartifact(cfg, dataNoIca);
+
+% cfg=[];
+% cfg.detrend = 'no';
+% cfg.demean = 'no';
+% cfg.resamplefs = 600;
+% dataClean = ft_resampledata(cfg, dataClean);
+
 nTrialsPostClean = length(dataClean.trial);
 idxM = find(dataClean.trialinfo(:,5)>0 & dataClean.trialinfo(:,6)>0 & dataClean.trialinfo(:,2)==0);
 nTrialsValid = length(idxM);
@@ -452,8 +443,7 @@ else
     filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata', subj);
 end
 save(fullfile([filename '.mat']), 'dataClean','nTrialsPreClean','nTrialsPostClean','nTrialsValid', '-v7.3');
-diary off
-movefile(diaryname, fullfile([filename, '.txt']));
+ft_diary('off')
 
 end
 
