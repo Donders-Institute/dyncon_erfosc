@@ -1,4 +1,4 @@
-function erf_osc_analysis_glm_erf_tfch(subj, isPilot, freqRange, zeropoint, erfoi)
+function erf_osc_analysis_glm_erf_tfch(subj, isPilot, freqRange, zeropoint, erfoi, doDSS)
 % linear regression of peak amplitude over time-frequency (with fixed
 % channel) or over frequency-channel (with fixed (avg) time).
 
@@ -44,29 +44,58 @@ if isPilot
 else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
     if strcmp(erfoi, 'reversal')
-        load(sprintf('/project/3011085.02/results/erf/sub-%03d/dss.mat', subj), 'data_dss');
+        if doDSS
+            [data_dss, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
+        else
+            load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+        end
     else
-        [data_dss, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'onset', false)
+        if doDSS
+            [data_dss, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'onset', false);
+        else
+            load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+        end
     end
 end
+%% if no data_dss cleaning is done beforehand, do this
+if ~doDSS
+    data=dataClean;
+    cfg=[];
+    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
+    nTrials = length(idxM);
+    
+    cfg=[];
+    cfg.trials = idxM;
+    cfg.channel = 'MEG';
+    data = ft_selectdata(cfg, data);
+    
+    cfg=[];
+    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    data = ft_redefinetrial(cfg, data);
+    data_dss=data;
+end
+
 fs=data_dss.fsample;
 nTrials = length(data_dss.trial);
 
 %% select p1 window for regression
-
-tlck = ft_timelockanalysis([], data_dss);
+cfg=[];
+cfg.vartrllength=2;
+tlck = ft_timelockanalysis(cfg, data_dss);
+% tlck = ft_timelockanalysis([], data_dss);
 t1p1 = nearest(tlck.time, 0.06);
 t2p1 = nearest(tlck.time, 0.12);
 cfg=[];
+cfg.channel = {'MRO', 'MRP', 'MLO', 'MRO', 'MZO', 'MZP'};
 cfg.latency = [tlck.time(t1p1) tlck.time(t2p1)];
 tlck = ft_selectdata(cfg, tlck);
-
 
 time = tlck.time;
 [~, maxchan] = max(abs(mean(tlck.avg,2))); % find channel with max amplitude
 % calculate mean over every window to find out which window has the maximum
 % mean amplitude (for the maximum channel!). Take the mean amplitude in
 % this latency window as regression weight.
+maxchanid = tlck.label(maxchan);
 halfwindowlength = 8;
 i=1;
 for t = halfwindowlength+1:length(time)-halfwindowlength;
@@ -78,7 +107,9 @@ end
 lat = win(window,:);
 
 %% Regression p1 amplitude over time-frequency-channel
-
+cfg=[];
+cfg.latency = [-1.5 0.65];
+data_dss = ft_selectdata(cfg, data_dss);
 trialdata = cat(3,data_dss.trial{:});
 
 idxtime = [nearest(data_dss.time{1}, lat(1)) : nearest(data_dss.time{1}, lat(2))];
@@ -86,15 +117,15 @@ p1amp = squeeze(mean(trialdata(:,idxtime,:),2));
 
 % baselinecorrect with average baseline over trials
 if strcmp(freqRange, 'high');
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_onset.mat', subj), 'baselineH');
-    baselineH.time = tfaHigh.time;
-    baselineH.dimord = tfaHigh.dimord;
-    baselineH.powspctrm = repmat(baselineH.powspctrm, [1,1,length(baselineH.time), size(tfaHigh.powspctrm, 1)]);
-    baselineH.powspctrm = permute(baselineH.powspctrm, [4,1,2,3]);
-    cfg = [];
-    cfg.parameter = 'powspctrm';
-    cfg.operation = 'subtract';
-    tfaHigh = ft_math(cfg, tfaHigh, baselineH);
+    if strcmp(zeropoint, 'onset')
+        cfg=[];
+        cfg.latency = [-1 1.75]; % shortest baseline window is 1 second
+        tfaHigh = ft_selectdata(cfg, tfaHigh);
+    else
+        cfg=[];
+        cfg.latency = [-1.5 0.5];
+        tfaHigh = ft_selectdata(cfg, tfaHigh);
+    end
     
     for freq=1:19
         for ch=1:length(data_dss.label);
@@ -115,6 +146,12 @@ elseif strcmp(freqRange, 'low')
     cfg.parameter = 'powspctrm';
     cfg.operation = 'subtract';
     tfaLow = ft_math(cfg, tfaLow, baselineL);
+    
+    if strcmp(zeropoint, 'onset')
+        cfg=[];
+        cfg.latency = [-1 1.75]; % shortest baseline window is 1 second
+        tfaLow = ft_selectdata(cfg, tfaLow);
+    end
     
     for freq=1:15
         for ch=1:length(data_dss.label);
@@ -145,18 +182,6 @@ if strcmp(freqRange, 'high')
     cfg.planarmethod    = 'sincos';
     tlhPlanar           = ft_megplanar(cfg, tlh);
     
-    % demeaning/baseline correction not possible on this data structure. Do
-    % manual baseline correction. NOT NECESSARY. DOESN'T CHANGE ANYTHING
-    %{
-t3            = nearest(tlhPlanar.time, -0.6);
-t4            = nearest(tlhPlanar.time, -0.1);
-blcorr        = rmfield(tlhPlanar, 'trial');
-blcorr.trial  = repmat(mean(tlhPlanar.trial(:,:,t3:t4), 3), [1,1,size(tlhPlanar.trial,3)]); % take average of baseline window
-cfg           = [];
-cfg.operation = 'subtract';
-cfg.parameter = 'trial';
-tlhPlanar = ft_math(cfg, tlhPlanar, blcorr);
-    %}
     cfg           = [];
     bhPlanarCmb  = ft_combineplanar(cfg,tlhPlanar);
     
@@ -230,12 +255,12 @@ end
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s2', subj, freqRange, zeropoint, erfoi);
 end
 if strcmp(freqRange, 'high')
-    save(fullfile([filename '.mat']), 'betas_h', 'bhPlanarCmbZ','lat', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_h', 'bhPlanarCmbZ', 'bhPlanarCmb','lat','maxchanid', '-v7.3');
 elseif strcmp(freqRange, 'low')
-    save(fullfile([filename '.mat']), 'betas_l', 'blPlanarCmbZ', 'lat', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_l', 'blPlanarCmbZ','bhPlanarCmb', 'lat','maxchanid', '-v7.3');
 end
 
 ft_diary('off')
