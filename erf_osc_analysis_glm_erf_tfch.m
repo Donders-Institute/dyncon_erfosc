@@ -82,7 +82,7 @@ nTrials = length(data_dss.trial);
 cfg=[];
 cfg.vartrllength=2;
 tlck = ft_timelockanalysis(cfg, data_dss);
-% tlck = ft_timelockanalysis([], data_dss);
+
 t1p1 = nearest(tlck.time, 0.06);
 t2p1 = nearest(tlck.time, 0.12);
 cfg=[];
@@ -137,16 +137,6 @@ if strcmp(freqRange, 'high');
     end
     
 elseif strcmp(freqRange, 'low')
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_onset.mat', subj), 'baselineL');
-    baselineL.time = tfaLow.time;
-    baselineL.dimord = tfaLow.dimord;
-    baselineL.powspctrm = repmat(baselineL.powspctrm, [1,1,length(baselineL.time), size(tfaLow.powspctrm, 1)]);
-    baselineL.powspctrm = permute(baselineL.powspctrm, [4,1,2,3]);
-    cfg = [];
-    cfg.parameter = 'powspctrm';
-    cfg.operation = 'subtract';
-    tfaLow = ft_math(cfg, tfaLow, baselineL);
-    
     if strcmp(zeropoint, 'onset')
         cfg=[];
         cfg.latency = [-1 1.75]; % shortest baseline window is 1 second
@@ -173,8 +163,14 @@ if strcmp(freqRange, 'high')
     tlh.dimord = 'subj_chan_time';
     tlh.label  = tfaHigh.label;
     tlh.grad   = tfaHigh.grad;
-    %
-    % % planar combination
+    
+    % also put betas in a time-freq structure
+    tfh = rmfield(tlh,'avg');
+    tfh.dimord = 'chan_freq_time';
+    tfh.powspctrm = permute(tlh.avg, [2,1,3]);
+    tfh.freq = tfaHigh.freq;
+
+    % planar combination
     cfg                 = [];
     cfg.feedback        = 'no';
     cfg.method          = 'template';
@@ -199,8 +195,14 @@ elseif strcmp(freqRange, 'low')
     tll.dimord = 'subj_chan_time';
     tll.label  = tfaLow.label;
     tll.grad   = tfaLow.grad;
-    %
-    % % planar combination
+    
+    % also put betas in a time-freq structure
+    tfl = rmfield(tll,'avg');
+    tfl.dimord = 'chan_freq_time';
+    tfl.powspctrm = permute(tll.avg, [2,1,3]);
+    tfl.freq = tfaLow.freq;
+    
+    % planar combination
     cfg                 = [];
     cfg.feedback        = 'no';
     cfg.method          = 'template';
@@ -217,50 +219,18 @@ elseif strcmp(freqRange, 'low')
     blPlanarCmb.freq      = tfaLow.freq;
     blPlanarCmb.dimord    = 'chan_freq_time';
 end
-%% Normalize beta weights
-% also doens't change much
-if strcmp(freqRange, 'high')
-    t5              = nearest(bhPlanarCmb.time, -0.6);
-    t6              = nearest(bhPlanarCmb.time, -0.1);
-    muH              = rmfield(bhPlanarCmb, 'powspctrm');
-    muH.powspctrm    = nanmean(bhPlanarCmb.powspctrm(:,:,t5:t6), 3);
-    muH.powspctrm    = repmat(muH.powspctrm, [1, 1, length(bhPlanarCmb.time)]);
-    sigmaH           = rmfield(bhPlanarCmb, 'powspctrm');
-    sigmaH.powspctrm = nanstd(bhPlanarCmb.powspctrm(:,:,t5:t6),[],3);
-    sigmaH.powspctrm = repmat(sigmaH.powspctrm, [1,1, length(bhPlanarCmb.time)]);
-    
-    cfg=[];
-    cfg.parameter = 'powspctrm';
-    cfg.operation = '(x1-x2)./x3';
-    bhPlanarCmbZ = ft_math(cfg, bhPlanarCmb, muH, sigmaH);
-    
-elseif strcmp(freqRange, 'low')
-    % % Do the same for low freq
-    t7              = nearest(blPlanarCmb.time, -0.6);
-    t8              = nearest(blPlanarCmb.time, -0.1);
-    muL              = rmfield(blPlanarCmb, 'powspctrm');
-    muL.powspctrm    = mean(blPlanarCmb.powspctrm(:,:,t7:t8), 3);
-    muL.powspctrm    = repmat(muL.powspctrm, [1, 1, length(blPlanarCmb.time)]);
-    sigmaL           = rmfield(blPlanarCmb, 'powspctrm');
-    sigmaL.powspctrm = std(blPlanarCmb.powspctrm(:,:,t7:t8),[],3);
-    sigmaL.powspctrm = repmat(sigmaL.powspctrm, [1,1, length(blPlanarCmb.time)]);
-    
-    cfg=[];
-    cfg.parameter = 'powspctrm';
-    cfg.operation = '(x1-x2)./x3';
-    blPlanarCmbZ = ft_math(cfg, blPlanarCmb, muL, sigmaL);
-end
+
 %% Save
 
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s2', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s3', subj, freqRange, zeropoint, erfoi);
 end
 if strcmp(freqRange, 'high')
-    save(fullfile([filename '.mat']), 'betas_h', 'bhPlanarCmbZ', 'bhPlanarCmb','lat','maxchanid', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid', '-v7.3');
 elseif strcmp(freqRange, 'low')
-    save(fullfile([filename '.mat']), 'betas_l', 'blPlanarCmbZ','bhPlanarCmb', 'lat','maxchanid', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_l','bhPlanarCmb','tfl', 'lat','maxchanid', '-v7.3');
 end
 
 ft_diary('off')
