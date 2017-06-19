@@ -1,4 +1,4 @@
-function erf_osc_analysis_stat_glm
+function erf_osc_analysis_stat_glm_gamma
 % montecarlo based cluster statistics of the regression weights active vs
 % baseline over all subjects.
 
@@ -10,8 +10,8 @@ function erf_osc_analysis_stat_glm
 erf_osc_datainfo;
 
 for subj=allsubs;
-    w{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time.mat', subj),'tl');
-    w{subj} = w{subj}.tl;
+    w{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time.mat', subj),'tlPlanarCmb');
+    w{subj} = w{subj}.tlPlanarCmb;
 end
 
 % select baseline
@@ -36,8 +36,8 @@ for subj=allsubs
 end
 cfg=[];
 cfg.keepindividual = 'yes';
-actGA = ft_timelockgrandaverage(cfg, act{allsubs});
-blGA = ft_timelockgrandaverage(cfg, bl{allsubs});
+actGA = ft_appendtimelock(cfg, act{allsubs});
+blGA = ft_appendtimelock(cfg, bl{allsubs});
 
 diffGA = ft_timelockgrandaverage([], difference{allsubs});
 
@@ -51,15 +51,16 @@ cfg.feedback    = 'no';
 neighbours      = ft_prepare_neighbours(cfg, actGA); % define neighbouring channels
 
 cfg = [];
-cfg.channel     = 'MEG';
-cfg.neighbours  = neighbours;
-cfg.parameter   = 'individual';
-cfg.method      = 'montecarlo';
-cfg.statistic   = 'ft_statfun_depsamplesT';
-cfg.alpha       = 0.05;
-cfg.correctm    = 'cluster';
-cfg.correcttail = 'prob';
-cfg.numrandomization = 1000;
+cfg.channel          = 'MEG';
+cfg.neighbours       = neighbours;
+cfg.parameter        = 'trial';
+cfg.method           = 'montecarlo';
+cfg.statistic        = 'ft_statfun_depsamplesT';
+cfg.alpha            = 0.05;
+cfg.correctm         = 'cluster';
+cfg.clusteralpha     = 0.05;
+cfg.correcttail      = 'prob';
+cfg.numrandomization = 10000;
 
 % cfg.design
 cfg.design(1,1:2*Nsub)  = [ones(1,Nsub) 2*ones(1,Nsub)];
@@ -69,4 +70,8 @@ cfg.uvar                = 2; % the 2nd row in cfg.design contains the subject nu
 
 stat = ft_timelockstatistics(cfg, actGA, blGA);
 
-% ft_diary('off')
+% save
+filename = '/project/3011085.02/results/stat_glm_gamma_time.mat';
+save(filename, 'stat');
+
+ft_diary('off')
