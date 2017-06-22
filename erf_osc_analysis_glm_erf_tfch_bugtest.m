@@ -88,7 +88,7 @@ tlck = ft_timelockanalysis(cfg, data_dss);
 t1p1 = nearest(tlck.time, 0.06);
 t2p1 = nearest(tlck.time, 0.12);
 cfg=[];
-cfg.channel = {'MRO', 'MRP', 'MLO', 'MRO', 'MZO', 'MZP'};
+% cfg.channel = {'MRO', 'MRP', 'MLO', 'MRO', 'MZO', 'MZP'};
 cfg.latency = [tlck.time(t1p1) tlck.time(t2p1)];
 tlck = ft_selectdata(cfg, tlck);
 
