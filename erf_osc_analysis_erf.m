@@ -20,25 +20,8 @@ if isempty(isPilot);
     isPilot = false;
 end
 
-%% initiate diary
-workSpace = whos;
-diaryname = tempname(fullfile([getenv('HOME'), '/tmp']));
-diary(diaryname) % save command window output
-fname = mfilename('fullpath')
-datetime
-
-fid = fopen(fullfile([fname '.m']));
-tline = fgets(fid); % returns first line of fid
-while ischar(tline) % at the end of the script tline=-1
-    disp(tline) % display tline
-    tline = fgets(fid); % returns the next line of fid
-end
-fclose(fid);
-
-for i = 1:numel(workSpace) % list all workspace variables
-    workSpace(i).name % list the variable name
-    printstruct(eval(workSpace(i).name)) % show its value(s)
-end
+% initiate diary
+ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
@@ -47,7 +30,6 @@ if isPilot
     load(pilotsubjects(subj).logfile);% load log file
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-    load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
 
@@ -77,6 +59,31 @@ cfg.vartrllength = 2;
 cfg.channel = {'MEG'};
 tlShift = ft_timelockanalysis(cfg, data);
 
+cfg=[];
+cfg.latency = [0 0.3];
+tlShift = ft_selectdata(cfg, tlShift);
+
+cfg                 = [];
+cfg.feedback        = 'yes';
+cfg.method          = 'template';
+cfg.neighbours      = ft_prepare_neighbours(cfg, data);
+
+cfg.planarmethod    = 'sincos';
+dataPlanar        = ft_megplanar(cfg, data);
+
+cfg=[];
+cfg.vartrllength = 2;
+cfg.channel = {'MEG'};
+tlShiftPlanar = ft_timelockanalysis(cfg, dataPlanar);
+
+cfg = [];
+tlShiftPlanarCmb = ft_combineplanar(cfg,tlShiftPlanar);
+
+cfg=[];
+cfg.latency = [0 0.3];
+tlShiftPlanarCmb = ft_selectdata(cfg, tlShiftPlanarCmb);
+
+
 
 %% save
 if isPilot
@@ -84,8 +91,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/timelock', subj);
 end
-save(fullfile([filename '.mat']), 'tlShift')
-diary off
-movefile(diaryname, fullfile([filename, '.txt']));
+save(fullfile([filename '.mat']), 'tlShift', 'tlShiftPlanarCmb')
+ft_diary('off')
 
 end
