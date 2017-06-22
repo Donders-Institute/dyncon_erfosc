@@ -59,7 +59,9 @@ pilotsubjects(4).aseo          = [0.048 0.083; 0.083 0.1375; 0.1375 0.4];
 
 
 %% Experiment
-badsubjects = [6, 26, 10]; %5 (dental fillings left temporal),  8 eyesaccades, 10 (corrupt logfile, only 9 blocks completed, many eye blinks)
+badsubjects = [10]; %5 (dental fillings left temporal),  8 eyesaccades, 10 (corrupt logfile, only 9 blocks completed, many eye blinks)
+allsubs = 1:33;
+allsubs(badsubjects) = [];
 
 
 subjects(1).channels           = {'MEG', '-MRT32'};
@@ -72,6 +74,8 @@ subjects(1).ecgcomp            = [5, 11];
 subjects(1).eyecomp            = [3];
 subjects(1).badtrials          = []; 
 subjects(1).aseo               = [0.05167 0.1033; 0.1042 0.1683; 0.1858  0.5475]; 
+subjects(1).gammaband          = [60 70];
+subjects(1).gammapeak           = 66;
 
 subjects(2).channels           = {'MEG', '-MRT32'};
 subjects(2).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-002/ses-meg01/sub02ses01_3011085.02_20161130_01.ds';
@@ -82,6 +86,8 @@ subjects(2).mridir             = '/project/3011085.02/processed/sub-002/ses-mri0
 subjects(2).ecgcomp            = [10, 18];
 subjects(2).eyecomp            = [2, 4];
 subjects(2).badtrials          = [140]; % bad trials were identified with ICA and imagesc. they are removed by adding their sampleinfo data to artfctdef.eyeblink.artifact;
+subjects(2).gammaband          = [34 46; 52 70];
+subjects(2).gammapeak          = [40; 62]; % 62 highest
 
 subjects(3).channels           = {'MEG', '-MRT32'};
 subjects(3).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-003/ses-meg01/sub003ses01_3011085.02_20170220_01.ds';
@@ -92,6 +98,8 @@ subjects(3).mridir             = '/project/3011085.02/processed/sub-003/ses-mri0
 subjects(3).ecgcomp            = [5, 7];
 subjects(3).eyecomp            = [3];
 subjects(3).badtrials          = [];
+subjects(3).gammaband          = [26 34; 42 68];
+subjects(3).gammapeak          = [30; 56]; % 56 highest
 
 subjects(4).channels           = {'MEG', '-MRT32'};
 subjects(4).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-004/ses-meg01/sub04ses01_3011085.02_20170104_01.ds';
@@ -102,6 +110,8 @@ subjects(4).mridir             = '/project/3011085.02/processed/sub-004/ses-mri0
 subjects(4).ecgcomp            = [6, 9];
 subjects(4).eyecomp            = [2];
 subjects(4).badtrials          = [];
+subjects(4).gammaband          = [40 64];
+subjects(4).gammapeak          = 54;
 
 subjects(5).channels           = {'MEG', '-MRT32'};
 subjects(5).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-005/ses-meg01/sub05ses01_3011085.02_20170104_01.ds';
@@ -112,6 +122,8 @@ subjects(5).mridir             = '/project/3011085.02/processed/sub-005/ses-mri0
 subjects(5).ecgcomp            = [9];
 subjects(5).eyecomp            = [6]; % tooth filling left temporal, high noise levels in MLT sensors. mark components 1. CHECK FOR OTHER COMPONENTS. MANY SUSPECTED
 subjects(5).badtrials          = [314, 321]; % bad trials were identified with ICA and imagesc. they are removed by adding their sampleinfo data to artfctdef.eyeblink.artifact;
+subjects(5).gammaband          = [42 60];
+subjects(5).gammapeak          = 54;
 
 subjects(6).channels           = {'MEG', '-MRT32'};
 subjects(6).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-006/ses-meg01/sub06ses01_3011085.02_20170104_01.ds';
@@ -122,6 +134,8 @@ subjects(6).mridir             = '/project/3011085.02/processed/sub-006/ses-mri0
 subjects(6).ecgcomp            = [9, 34];
 subjects(6).eyecomp            = [1];
 subjects(6).badtrials          = [];
+subjects(6).gammaband          = [46 62];  % absent
+subjects(6).gammapeak          = [46];
 
 subjects(7).channels           = {'MEG', '-MRT32', '-MLF23'};
 subjects(7).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-007/ses-meg01/sub07ses01_3011085.02_20170104_01.ds';
@@ -132,6 +146,8 @@ subjects(7).mridir             = '/project/3011085.02/processed/sub-007/ses-mri0
 subjects(7).ecgcomp            = [9, 34];
 subjects(7).eyecomp            = [1, 2, 6, 7];
 subjects(7).badtrials          = [];
+subjects(7).gammaband          = [46 68];
+subjects(7).gammapeak           = 56;
 
 % huge amount of eye blinks
 subjects(8).channels           = {'MEG', '-MRT32'};
@@ -143,6 +159,8 @@ subjects(8).mridir             = '/project/3011085.02/processed/sub-008/ses-mri0
 subjects(8).ecgcomp            = [8, 9];
 subjects(8).eyecomp            = [1];
 subjects(8).badtrials          = [];
+subjects(8).gammaband          = [46 62];
+subjects(8).gammapeak          = 54;
 
 subjects(9).channels           = {'MEG', '-MRT32'};
 subjects(9).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-009/ses-meg01/sub09ses01_3011085.02_20170105_01.ds';
@@ -153,6 +171,8 @@ subjects(9).mridir             = '/project/3011085.02/processed/sub-009/ses-mri0
 subjects(9).ecgcomp            = [9, 34];
 subjects(9).eyecomp            = [1, 2];
 subjects(9).badtrials          = [];
+subjects(9).gammaband          = [50 68];
+subjects(9).gammapeak          = 54;
 
 % subject 10 bad subject: corrupt logfile, could only do 9 blocks; many
 % eyeblinks. Discard subject
@@ -175,6 +195,8 @@ subjects(11).mridir             = '/project/3011085.02/processed/sub-011/ses-mri
 subjects(11).ecgcomp            = [2, 7, 18];
 subjects(11).eyecomp            = [1, 15];
 subjects(11).badtrials          = [];
+subjects(11).gammaband          = [46 70];
+subjects(11).gammapeak          = 56;
 
 subjects(12).channels           = {'MEG', '-MRT32', '-MRC11', '-MZF03'};
 subjects(12).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-012/ses-meg01/sub012ses01_3011085.02_20170222_01.ds';
@@ -185,6 +207,8 @@ subjects(12).mridir             = '/project/3011085.02/processed/sub-012/ses-mri
 subjects(12).ecgcomp            = [4, 15];
 subjects(12).eyecomp            = [1,2];
 subjects(12).badtrials          = [];
+subjects(12).gammaband          = [40 60];
+subjects(12).gammapeak          = 52;
 
 subjects(13).channels           = {'MEG', '-MRT32'};
 subjects(13).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-013/ses-meg01/sub13ses01_3011085.02_20170111_01.ds';
@@ -194,7 +218,9 @@ subjects(13).mri                = '/home/electromag/matves/Data/3011085.02/raw/s
 subjects(13).mridir             = '/project/3011085.02/processed/sub-013/ses-mri01/';
 subjects(13).ecgcomp            = [12, 20];
 subjects(13).eyecomp            = [1,2,3];
-subjects(13).badtrials          = [];
+subjects(13).badtrials          = []; 
+subjects(13).gammaband          = [34 48];
+subjects(13).gammapeak          = 42;
 
 subjects(14).channels           = {'MEG', '-MRT32'};
 subjects(14).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-014/ses-meg01/sub14ses01_3011085.02_20170111_01.ds';
@@ -205,7 +231,8 @@ subjects(14).mridir             = '/project/3011085.02/processed/sub-014/ses-mri
 subjects(14).ecgcomp            = [5, 8, 13];
 subjects(14).eyecomp            = [1];
 subjects(14).badtrials          = [];
-
+subjects(14).gammaband          = [54 74]; 
+subjects(14).gammapeak          = 64;% peakFreq _gamma WRONG??
 
 subjects(15).channels           = {'MEG', '-MRT32'};
 subjects(15).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-015/ses-meg01/sub15ses01_3011085.02_20170111_01.ds';
@@ -215,7 +242,9 @@ subjects(15).mri                = '/home/electromag/matves/Data/3011085.02/raw/s
 subjects(15).mridir             = '/project/3011085.02/processed/sub-015/ses-mri01/';
 subjects(15).ecgcomp            = [3];
 subjects(15).eyecomp            = [2];
-subjects(15).badtrials          = [];
+subjects(15).badtrials          = []; 
+subjects(15).gammaband          = [64 82];% absent
+subjects(15).gammapeak          = [80];
 
 subjects(16).channels           = {'MEG', '-MRT32'};
 subjects(16).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-016/ses-meg01/sub16ses01_3011085.02_20170112_01.ds';
@@ -226,6 +255,8 @@ subjects(16).mridir             = '/project/3011085.02/processed/sub-016/ses-mri
 subjects(16).ecgcomp            = [4, 6, 30];
 subjects(16).eyecomp            = [2];
 subjects(16).badtrials          = [];
+subjects(16).gammaband          = [46 70];
+subjects(16).gammapeak          = 58;
 
 subjects(17).channels           = {'MEG', '-MRT32'};
 subjects(17).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-017/ses-meg01/sub017ses01_3011085.02_20170222_01.ds';
@@ -236,6 +267,8 @@ subjects(17).mridir             = '/project/3011085.02/processed/sub-017/ses-mri
 subjects(17).ecgcomp            = [10, 17];
 subjects(17).eyecomp            = [3];
 subjects(17).badtrials          = [];
+subjects(17).gammaband          = [60 84];
+subjects(17).gammapeak          = 70;
 
 subjects(18).channels           = {'MEG', '-MRT32'};
 subjects(18).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-018/ses-meg01/sub18ses01_3011085.02_20170112_01.ds';
@@ -246,6 +279,8 @@ subjects(18).mridir             = '/project/3011085.02/processed/sub-018/ses-mri
 subjects(18).ecgcomp            = [5, 7];
 subjects(18).eyecomp            = [2, 9];
 subjects(18).badtrials          = [];
+subjects(18).gammaband          = [60 70; 74 96]; % absent?
+subjects(18).gammapeak          = [62; 86];
 
 subjects(19).channels           = {'MEG', '-MRT32'};
 subjects(19).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-019/ses-meg01/sub19ses01_3011085.02_20170116_01.ds';
@@ -256,6 +291,8 @@ subjects(19).mridir             = '/project/3011085.02/processed/sub-019/ses-mri
 subjects(19).ecgcomp            = [1, 4, 13];
 subjects(19).eyecomp            = [2];
 subjects(19).badtrials          = [];
+subjects(19).gammaband          = [50 70];
+subjects(19).gammapeak          = 58;
 
 subjects(20).channels           = {'MEG', '-MRT32', '-MLP31'};
 subjects(20).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-020/ses-meg01/sub20ses01_3011085.02_20170117_01.ds';
@@ -266,6 +303,8 @@ subjects(20).mridir             = '/project/3011085.02/processed/sub-020/ses-mri
 subjects(20).ecgcomp            = [9, 21];
 subjects(20).eyecomp            = [2];
 subjects(20).badtrials          = [299, 300]; % bad trials were identified with ICA and imagesc. they are removed by adding their sampleinfo data to artfctdef.eyeblink.artifact;
+subjects(20).gammaband          = [50 72];
+subjects(20).gammapeak          = 60;
 
 subjects(21).channels           = {'MEG', '-MRT32'};
 subjects(21).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-021/ses-meg01/sub021ses01_3011085.02_20170223_01.ds';
@@ -276,6 +315,8 @@ subjects(21).mridir             = '/project/3011085.02/processed/sub-021/ses-mri
 subjects(21).ecgcomp            = [10, 11];
 subjects(21).eyecomp            = [2];
 subjects(21).badtrials          = [446, 447];
+subjects(21).gammaband          = [50 76];
+subjects(21).gammapeak          = 64;
 
 subjects(22).channels           = {'MEG', '-MRT32'};
 subjects(22).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-022/ses-meg01/sub22ses01_3011085.02_20170118_01.ds';
@@ -286,6 +327,8 @@ subjects(22).mridir             = '/project/3011085.02/processed/sub-022/ses-mri
 subjects(22).ecgcomp            = [1, 2];
 subjects(22).eyecomp            = [3];
 subjects(22).badtrials          = [];
+subjects(22).gammaband          = [46 74];
+subjects(22).gammapeak          = 62;
 
 subjects(23).channels           = {'MEG', '-MRT32'};
 subjects(23).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-023/ses-meg01/sub23ses01_3011085.02_20170118_01.ds';
@@ -296,6 +339,8 @@ subjects(23).mridir             = '/project/3011085.02/processed/sub-023/ses-mri
 subjects(23).ecgcomp            = [6, 20];
 subjects(23).eyecomp            = [1, 5, 8];
 subjects(23).badtrials          = [];
+subjects(23).gammaband          = [56 74];
+subjects(23).gammapeak          = 66;
 
 subjects(24).channels           = {'MEG', '-MRT32'};
 subjects(24).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-024/ses-meg01/sub024ses01_3011085.02_20170302_01.ds';
@@ -306,6 +351,8 @@ subjects(24).mridir             = '/project/3011085.02/processed/sub-024/ses-mri
 subjects(24).ecgcomp            = [4, 5];
 subjects(24).eyecomp            = [1, 2, 11];
 subjects(24).badtrials          = [];
+subjects(24).gammaband          = [40 66];
+subjects(24).gammapeak          = 52;
 
 subjects(25).channels           = {'MEG', '-MRT32'};
 subjects(25).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-025/ses-meg01/sub25ses01_3011085.02_20170118_01.ds';
@@ -316,6 +363,8 @@ subjects(25).mridir             = '/project/3011085.02/processed/sub-025/ses-mri
 subjects(25).ecgcomp            = [2, 6, 14];
 subjects(25).eyecomp            = [1];
 subjects(25).badtrials          = [];
+subjects(25).gammaband          = [34 60];
+subjects(25).gammapeak          = 48;
 
 subjects(26).channels           = {'MEG', '-MRT32'};
 subjects(26).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-026/ses-meg01/sub26ses01_3011085.02_20170118_01.ds';
@@ -326,6 +375,8 @@ subjects(26).mridir             = '/project/3011085.02/processed/sub-026/ses-mri
 subjects(26).ecgcomp            = [2, 6, 11];
 subjects(26).eyecomp            = [1];
 subjects(26).badtrials          = [1, 399];
+subjects(26).gammaband          = [42 52];
+subjects(26).gammapeak          = 48;
 
 subjects(27).channels           = {'MEG', '-MRT32'};
 subjects(27).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-027/ses-meg01/sub027ses01_3011085.02_20170123_01.ds';
@@ -336,6 +387,8 @@ subjects(27).mridir             = '/project/3011085.02/processed/sub-027/ses-mri
 subjects(27).ecgcomp            = [1, 22];
 subjects(27).eyecomp            = [5];
 subjects(27).badtrials          = [];
+subjects(27).gammaband          = [50 78];
+subjects(27).gammapeak          = 66;
 
 subjects(28).channels           = {'MEG', '-MRT32'};
 subjects(28).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-028/ses-meg01/sub028ses01_3011085.02_20170125_01.ds';
@@ -346,6 +399,8 @@ subjects(28).mridir             = '/project/3011085.02/processed/sub-028/ses-mri
 subjects(28).ecgcomp            = [5, 21];
 subjects(28).eyecomp            = [1];
 subjects(28).badtrials          = [190, 453];
+subjects(28).gammaband          = [30 44; 68 86]; 
+subjects(28).gammapeak          = [34; 76]; % 34 strongest. 
 
 subjects(29).channels           = {'MEG', '-MRT32'};
 subjects(29).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-029/ses-meg01/sub029ses01_3011085.02_20170303_01.ds';
@@ -356,6 +411,8 @@ subjects(29).mridir             = '/project/3011085.02/processed/sub-029/ses-mri
 subjects(29).ecgcomp            = [3, 15];
 subjects(29).eyecomp            = [1, 2];
 subjects(29).badtrials          = [];
+subjects(29).gammaband          = [40 72];
+subjects(29).gammapeak          = 58; 
 
 subjects(30).channels           = {'MEG', '-MRT32', '-MRC11', '-MRF61'};
 subjects(30).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-030/ses-meg01/sub030ses01_3011085.02_20170125_01.ds';
@@ -365,7 +422,9 @@ subjects(30).mri                = '/home/electromag/matves/Data/3011085.02/raw/s
 subjects(30).mridir             = '/project/3011085.02/processed/sub-030/ses-mri01/';
 subjects(30).ecgcomp            = [3, 9, 14];
 subjects(30).eyecomp            = [1, 2];
-subjects(30).badtrials          = [];
+subjects(30).badtrials          = []; 
+subjects(30).gammaband          = [48 88];%absent?
+subjects(30).gammapeak          = 74;
 
 subjects(31).channels           = {'MEG', '-MRT32'};
 subjects(31).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-031/ses-meg01/sub031ses01_3011085.02_20170126_01.ds';
@@ -376,6 +435,8 @@ subjects(31).mridir             = '/project/3011085.02/processed/sub-031/ses-mri
 subjects(31).ecgcomp            = [3, 7];
 subjects(31).eyecomp            = [2, 10];
 subjects(31).badtrials          = [];
+subjects(31).gammaband          = [46 70];
+subjects(31).gammapeak          = 58;
 
 subjects(32).channels           = {'MEG', '-MRT32'};
 subjects(32).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-032/ses-meg01/sub031ses01_3011085.02_20170126_02.ds';
@@ -386,6 +447,8 @@ subjects(32).mridir             = '/project/3011085.02/processed/sub-032/ses-mri
 subjects(32).ecgcomp            = [3, 20, 24];
 subjects(32).eyecomp            = [1, 13];
 subjects(32).badtrials          = [];
+subjects(32).gammaband          = [34 64];
+subjects(32).gammapeak          = 52;
 
 subjects(33).channels           = {'MEG', '-MRT32', '-MLF12'};
 subjects(33).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-033/ses-meg01/sub033ses01_3011085.02_20170126_01.ds';
@@ -396,3 +459,5 @@ subjects(33).mridir             = '/project/3011085.02/processed/sub-033/ses-mri
 subjects(33).ecgcomp            = [2, 6];
 subjects(33).eyecomp            = [1];
 subjects(33).badtrials          = [12, 27, 181, 207];
+subjects(33).gammaband          = [54 68];
+subjects(33).gammapeak          = 60;
