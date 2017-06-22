@@ -19,7 +19,7 @@ if isempty(erfoi)
     erfoi = 'onset';
 end
 
-initiate diary
+% initiate diary
 ft_diary('on')
 
 %% load data
@@ -68,23 +68,17 @@ end
 % baseline correct
 cfg           = [];
 cfg.parameter = 'powspctrm';
-cfg.operation = 'subtract';
+cfg.operation = '(x1-x2)./x2'; %relative change
 for subj=allsubs
     diffBetasPlCmb{subj} = ft_math(cfg, betasPlCmb_act{subj}, betasPlCmb_bl{subj});
 end
 
-% get grand average; keep individual
-cfg                = [];
-cfg.keepindividual = 'yes';
-betasPlCmbAvg_bl   = ft_freqgrandaverage(cfg, betasPlCmb_bl{allsubs});
-betasPlCmbAvg_act  = ft_freqgrandaverage(cfg, betasPlCmb_act{allsubs});
-diffBetasPlCmbAvg  = ft_freqgrandaverage([], diffBetasPlCmb{allsubs});
-
-% cfg               = [];
-% cfg.appenddim     = 'rpt';
-% betasPlCmbAvg_bl  = ft_appendfreq(cfg, betasPlCmb_bl{allsubs});
-% betasPlCmbAvg_act = ft_appendfreq(cfg, betasPlCmb_act{allsubs});
-% diffBetasPlCmbAvg = ft_appendfreq(cfg, diffBetasPlCmb{allsubs});
+% get grand average
+cfg               = [];
+cfg.appenddim     = 'rpt';
+betasPlCmbAvg_bl  = ft_appendfreq(cfg, betasPlCmb_bl{allsubs});
+betasPlCmbAvg_act = ft_appendfreq(cfg, betasPlCmb_act{allsubs});
+diffBetasPlCmbAvg = ft_appendfreq(cfg, diffBetasPlCmb{allsubs});
 
 
 %% Do statistics
@@ -101,7 +95,7 @@ cfg.channel          = 'MEG';
 cfg.neighbours       = neighbours;
 cfg.parameter        = 'powspctrm';
 cfg.method           = 'montecarlo';
-cfg.statistic        = 'ft_statfun_actvsblT';
+cfg.statistic        = 'ft_statfun_depsamplesT';
 cfg.alpha            = 0.05;
 cfg.correctm         = 'cluster';
 cfg.clusteralpha     = 0.05;
@@ -119,7 +113,7 @@ stat = ft_freqstatistics(cfg, betasPlCmbAvg_act, betasPlCmbAvg_bl);
 
 % save
 filename = sprintf('/project/3011085.02/results/stat_glm_tf_%s_%s_erf_%s.mat', freqRange, zeropoint, erfoi);
-save(filename, 'stat');
+save(filename, 'stat', 'diffBetasPlCmbAvg');
 
 ft_diary('off')
 
