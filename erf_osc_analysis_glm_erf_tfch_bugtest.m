@@ -231,6 +231,20 @@ elseif strcmp(freqRange, 'low')
     blPlanarCmb.dimord    = 'chan_freq_time';
 end
 
+t5               = nearest(bhPlanarCmb.time, -0.6);
+t6               = nearest(bhPlanarCmb.time, -0.1);
+muH              = rmfield(bhPlanarCmb, 'powspctrm');
+muH.powspctrm    = nanmean(bhPlanarCmb.powspctrm(:,:,t5:t6), 3);
+muH.powspctrm    = repmat(muH.powspctrm, [1, 1, length(bhPlanarCmb.time)]);
+sigmaH           = rmfield(bhPlanarCmb, 'powspctrm');
+sigmaH.powspctrm = nanstd(bhPlanarCmb.powspctrm(:,:,t5:t6),[],3);
+sigmaH.powspctrm = repmat(sigmaH.powspctrm, [1,1, length(bhPlanarCmb.time)]);
+
+cfg=[];
+cfg.parameter = 'powspctrm';
+cfg.operation = '(x1-x2)./x3';
+bhPlanarCmbZ = ft_math(cfg, bhPlanarCmb, muH, sigmaH);
+
 %% Save
 
 if isPilot
@@ -239,7 +253,7 @@ else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s_bugtest', subj, freqRange, zeropoint, erfoi);
 end
 if strcmp(freqRange, 'high')
-    save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','bhPlanarCmbZ','tfh','lat','maxchanid', '-v7.3');
 elseif strcmp(freqRange, 'low')
     save(fullfile([filename '.mat']), 'betas_l','bhPlanarCmb','tfl', 'lat','maxchanid', '-v7.3');
 end
