@@ -26,7 +26,7 @@ if isempty(doSave)
 end
 
 % Initiate Diary
-ft_diary('on')
+% ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
@@ -55,7 +55,7 @@ if strcmp(zeropoint, 'reversal')
 end
 
 cfg=[];
-cfg.latency = [-2.5 0.65]; % this will ensure the betas have the same size for all subjects
+cfg.latency = [-1 0.65]; % this will ensure the betas have the same size for all subjects
 data = ft_selectdata(cfg, data);
 
 
@@ -119,5 +119,5 @@ if doSave
         filename = sprintf('/project/3011085.02/results/erf/sub-%03d/dss', subj);
     end
     save(fullfile([filename '.mat']), 'data_dss', 'nComp_keep', '-v7.3');
-    ft_diary('off')
+%     ft_diary('off')
 end
