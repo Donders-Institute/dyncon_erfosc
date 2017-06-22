@@ -82,11 +82,16 @@ cfg=[];
 cfg.parameter = 'powspctrm';
 cfg.operation = 'x1./x2';
 powRatio      = ft_math(cfg, powAct, powBl);
-cfg.operation = 'subtract';
-powDiff       = ft_math(cfg, powAct, powBl);
+% cfg.operation = 'subtract';
+% powDiff       = ft_math(cfg, powAct, powBl);
+gamRange = [find(powRatio.freq==30) find(powRatio.freq==90)];
+gammaAvg       = mean(powRatio.powspctrm,1);
+[maxP maxIdx]  = max(gammaAvg(gamRange(1):gamRange(2)));
+freqs = powRatio.freq(gamRange(1):gamRange(2));
+peakFreq_gamma = freqs(maxIdx);
 
 cfg=[];
-cfg.frequency = [40 74];
+cfg.frequency = [30 90];
 cfg.avgoverfreq = 'yes';
 cfg.avgoverchan = 'yes';
 gamRatio        = ft_selectdata(cfg, powRatio);
@@ -98,7 +103,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/pow', subj);
 end
-save(fullfile([filename '.mat']), 'powRatio', 'powDiff');
+save(fullfile([filename '.mat']), 'powRatio', 'gamRatio', 'peakFreq_gamma');
 ft_diary('off')
 
 end
