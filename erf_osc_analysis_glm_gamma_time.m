@@ -26,15 +26,13 @@ if isPilot
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
 else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
-    load(sprintf('/project/3011085.02/results/erf/sub-%03d/dss.mat', subj), 'data_dss');
-    %     load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock.mat', subj));
+    [data_dss, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
 end
 fs=data_dss.fsample;
 for i=1:length(gammaChan.trial)
     gammaPow(i) = log(gammaChan.trial(i).pow);
-%     gammaPow2(i) = (gammaChan.trial(i).pow);
 end
-gammaPow = gammaPow-mean(gammaPow);
+gammaPow = (gammaPow-mean(gammaPow))/std(gammaPow);
 nTrials = length(data_dss.trial);
 
 [~, idxMax] = sort(gammaPow, 2, 'descend');
@@ -79,19 +77,19 @@ tlPlanarCmb         = ft_combineplanar(cfg,tlPlanar);
 
 %% Normalize beta weights
 % zscore manually based on baseline window
-t1        = nearest(tl.time, -0.25);
-t2        = nearest(tl.time, 0);
-mu        = rmfield(tl, 'avg');
-mu.avg    = mean(tl.avg(:,t1:t2), 2);
-mu.avg    = repmat(mu.avg, [1, length(tl.time)]);
-sigma     = rmfield(tl, 'avg');
-sigma.avg = std(tl.avg(:,t1:t2),[],2);
-sigma.avg = repmat(sigma.avg, [1, length(tl.time)]);
+t1        = nearest(tlPlanarCmb.time, -0.25);
+t2        = nearest(tlPlanarCmb.time, 0);
+mu        = rmfield(tlPlanarCmb, 'avg');
+mu.avg    = mean(tlPlanarCmb.avg(:,t1:t2), 2);
+mu.avg    = repmat(mu.avg, [1, length(tlPlanarCmb.time)]);
+sigma     = rmfield(tlPlanarCmb, 'avg');
+sigma.avg = std(tlPlanarCmb.avg(:,t1:t2),[],2);
+sigma.avg = repmat(sigma.avg, [1, length(tlPlanarCmb.time)]);
 
 cfg=[];
 cfg.parameter = 'avg';
 cfg.operation = '(x1-x2)./x3';
-tlPlanarCmbZ = ft_math(cfg, tl, mu, sigma);
+tlPlanarCmbZ = ft_math(cfg, tlPlanarCmb, mu, sigma);
 
 %% Save
 if isPilot
@@ -99,6 +97,6 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time', subj);
 end
-save(fullfile([filename '.mat']), 'betas', 'tlPlanarCmbZ', '-v7.3');
+save(fullfile([filename '.mat']), 'betas', 'tlPlanarCmb','tlPlanarCmbZ','tl', '-v7.3');
 ft_diary('off')
 
