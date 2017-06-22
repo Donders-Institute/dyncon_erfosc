@@ -95,6 +95,7 @@ if ~existArtifact
     for i=1:size(dataRejVis.cfg.artfctdef.summary.artifact,1)
         trlind(i)=find(data.sampleinfo(:,1)==dataRejVis.cfg.artfctdef.summary.artifact(i,1));
     end;
+    trlind = [trlind, subjects(subj).badtrials];
     if trlind
         disp(trlind);
         data.badtrials = trlind;
@@ -295,6 +296,15 @@ cfg.artfctdef.reject = 'complete'; % remove complete trials
 cfg.artfctdef.crittoilim = [-1 3.75];
 dataNoArtfct = ft_rejectartifact(cfg, data);
 
+% reject extra channels if needed
+if ~isempty(subjects(subj).channels) 
+    cfg=[];
+    cfg.channel = subjects(subj).channels;
+    dataNoArtfct = ft_selectdata(cfg, dataNoArtfct);
+end
+    
+    
+
 %% Compute ICA
 if ~existArtifact
     % resample
@@ -443,6 +453,7 @@ else
     filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata', subj);
 end
 save(fullfile([filename '.mat']), 'dataClean','nTrialsPreClean','nTrialsPostClean','nTrialsValid', '-v7.3');
+
 ft_diary('off')
 
 end
