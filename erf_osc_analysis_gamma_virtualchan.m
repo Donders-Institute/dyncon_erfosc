@@ -32,7 +32,7 @@ if isPilot
 else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(fullfile([subjects(subj).mridir, 'preproc/headmodel.mat']));
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak', subj), 'peakFreq_gamma');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj), 'peakFreq_gamma');
     if strcmp(sourcemodel, '2d')
         load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel2d.mat']));
     else
@@ -66,7 +66,6 @@ cfg         = [];
 cfg.latency = [-0.25+1/fs 0];
 dataPre     = ft_selectdata(cfg, data);
 % take second preceding shift (NOTE: is it confounding if this includes
-% grating onset, which has higher gamma peak freq?)
 dataPost    = ft_selectdata(cfg, dataShift);
 dataAll     = ft_appenddata([], dataPost, dataPre);
 
@@ -159,10 +158,11 @@ cfg                 = [];
 cfg.method          = 'lcmv';
 cfg.headmodel       = headmodel;
 cfg.grid.pos        = sourcemodel.pos(maxpowindx,:);
+cfg.grid.inside     = sourcemodel.inside(maxpowindx);
 cfg.grid.unit       = sourcemodel.unit;
 cfg.lcmv.keepfilter = 'yes';
-cfg.projectmom      = 'yes';
-cfg.fixedori        = 'yes';
+cfg.lcmv.projectmom = 'yes';
+cfg.lcmv.fixedori   = 'yes';
 source_idx          = ft_sourceanalysis(cfg, tlock);
 
 gammaFilter = source_idx.avg.filter;
