@@ -132,6 +132,12 @@ if strcmp(freqRange, 'high');
       baselineH.time = tfaHigh.time;
       baselineH.dimord = tfaHigh.dimord;
       baselineH.powspctrm = repmat(baselineH.powspctrm, [1,1,length(baselineH.time), size(tfaHigh.powspctrm, 1)]);
+      baselineH.powspctrm = permute(baselineH.powspctrm, [4, 1, 2, 3]);
+      cfg=[];
+      cfg.parameter = 'powspctrm';
+      cfg.operation = 'subtract';
+      tfaHigh = ft_math(cfg, tfaHigh, baselineH);
+      
     for freq=1:19
         for ch=1:length(data_dss.label);
             design = [ones(size(p1amp(ch,:))); p1amp(ch,:)];
