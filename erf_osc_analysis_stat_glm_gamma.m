@@ -4,7 +4,7 @@ function erf_osc_analysis_stat_glm_gamma
 
 
 % inititate diary
-% ft_diary('on')
+ft_diary('on')
 
 % load data
 erf_osc_datainfo;
@@ -16,7 +16,7 @@ end
 
 % select baseline
 cfg1=[];
-cfg1.avgovertime='no';
+cfg1.avgovertime='yes';
 cfg1.latency = [-0.5 0];
 
 % select active
@@ -25,21 +25,21 @@ cfg2.latency = [0 0.5];
 
 cfg3=[];
 cfg3.parameter = 'avg';
-cfg3.operation = 'subtract';
+cfg3.operation = '(x1-x2)./x2'; % relative change
 
 for subj=allsubs
     bl{subj} = ft_selectdata(cfg1, w{subj});
     act{subj} = ft_selectdata(cfg2, w{subj});
     bl{subj}.time = act{subj}.time;
-%     bl{subj}.avg = repmat(bl{subj}.avg, [1, length(bl{subj}.time)]);
+    bl{subj}.avg = repmat(bl{subj}.avg, [1, length(bl{subj}.time)]);
     difference{subj} = ft_math(cfg3, act{subj}, bl{subj});
 end
-cfg=[];
-cfg.keepindividual = 'yes';
-actGA = ft_appendtimelock(cfg, act{allsubs});
-blGA = ft_appendtimelock(cfg, bl{allsubs});
 
-diffGA = ft_timelockgrandaverage([], difference{allsubs});
+cfg           = [];
+cfg.appenddim = 'rpt';
+actGA         = ft_appendtimelock(cfg, act{allsubs});
+blGA          = ft_appendtimelock(cfg, bl{allsubs});
+diffGA        = ft_appendtimelock([], difference{allsubs});
 
 
 %% statistics
@@ -58,7 +58,7 @@ cfg.method           = 'montecarlo';
 cfg.statistic        = 'ft_statfun_depsamplesT';
 cfg.alpha            = 0.05;
 cfg.correctm         = 'cluster';
-cfg.clusteralpha     = 0.05;
+cfg.clusteralpha     = 0.05; 
 cfg.correcttail      = 'prob';
 cfg.numrandomization = 10000;
 
@@ -72,6 +72,6 @@ stat = ft_timelockstatistics(cfg, actGA, blGA);
 
 % save
 filename = '/project/3011085.02/results/stat_glm_gamma_time.mat';
-save(filename, 'stat');
+save(filename, 'stat', 'diffGA');
 
 ft_diary('off')
