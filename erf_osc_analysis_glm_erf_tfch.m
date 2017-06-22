@@ -69,9 +69,11 @@ if ~doDSS
     cfg.channel = 'MEG';
     data = ft_selectdata(cfg, data);
     
-    cfg=[];
-    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-    data = ft_redefinetrial(cfg, data);
+    if strcmp(erfoi, 'reversal')
+        cfg=[];
+        cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+        data = ft_redefinetrial(cfg, data);
+    end
     data_dss=data;
 end
 
@@ -169,7 +171,7 @@ if strcmp(freqRange, 'high')
     tfh.dimord = 'chan_freq_time';
     tfh.powspctrm = permute(tlh.avg, [2,1,3]);
     tfh.freq = tfaHigh.freq;
-
+    
     % planar combination
     cfg                 = [];
     cfg.feedback        = 'no';
@@ -225,7 +227,7 @@ end
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s3', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
 if strcmp(freqRange, 'high')
     save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid', '-v7.3');
