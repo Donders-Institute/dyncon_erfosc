@@ -47,7 +47,7 @@ cfg.latency  = [0.4+1/fs 1.75]; % take active time window after first erfs
 dataActive   = ft_selectdata(cfg, data);
 
 cfg            = [];
-cfg.foi        = 30:1:100;
+cfg.foi        = 30:1:90;
 cfg.method     = 'mtmfft';
 cfg.output     = 'pow';
 cfg.tapsmofrq  = 1;
@@ -58,14 +58,14 @@ powActive      = ft_freqanalysis(cfg, dataActive);
 powBaseline    = ft_freqanalysis(cfg, dataBaseline);
 
 cfg           = [];
-cfg.operation = '(x1-x2)./x2';
+cfg.operation = 'x1./x2';
 cfg.parameter = 'powspctrm';
-powDiff       = ft_math(cfg, powActive, powBaseline);
+powRatio       = ft_math(cfg, powActive, powBaseline);
 
 % average over channels, take the freq with max gamma pow diff
-gammaAvg       = mean(powDiff.powspctrm,1);
+gammaAvg       = mean(powRatio.powspctrm,1);
 [maxP maxIdx]  = max(gammaAvg);
-peakFreq_gamma = powDiff.freq(maxIdx);
+peakFreq_gamma = powRatio.freq(maxIdx);
 
 
 %% save
