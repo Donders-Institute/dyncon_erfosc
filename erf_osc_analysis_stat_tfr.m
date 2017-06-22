@@ -37,17 +37,16 @@ end
 
 cfg=[];
 cfg.parameter = 'powspctrm';
-cfg.operation = 'subtract';
+cfg.operation = '(x1-x2)./x2';
 for subj=allsubs
     diff{subj} = ft_math(cfg, tfr{subj}, bl{subj});
 end
 
-diffAvg = ft_freqgrandaverage([], diff{allsubs});
-cfg=[];
-cfg.keepindividual = 'yes';
-tfrAvg = ft_freqgrandaverage(cfg, tfr{allsubs});
-blAvg = ft_freqgrandaverage(cfg, tfr{allsubs});
-
+cfg = [];
+cfg.appenddim = 'rpt';
+tfrAvg        = ft_appendfreq(cfg, tfr{allsubs});
+blAvg         = ft_appendfreq(cfg, bl{allsubs});
+diffAvg       = ft_appendfreq(cfg, diff{allsubs});
 
 %% statistics
 
@@ -63,7 +62,7 @@ cfg.channel          = 'MEG';
 cfg.neighbours       = neighbours;
 cfg.parameter        = 'powspctrm';
 cfg.method           = 'montecarlo';
-cfg.statistic        = 'ft_statfun_actvsblT';
+cfg.statistic        = 'ft_statfun_depsamplesT';
 cfg.alpha            = 0.05;
 cfg.correctm         = 'cluster';
 cfg.clusteralpha     = 0.05;
@@ -80,8 +79,8 @@ stat = ft_freqstatistics(cfg, tfrAvg, blAvg);
 
 
 % save
-filename = '/project/3011085.02/results/stat_tfr.mat';
-save(filename, 'stat');
+filename = sprintf('/project/3011085.02/results/stat_tfr_%s.mat', zeropoint);
+save(filename, 'stat', 'diffAvg');
 
 ft_diary('off')
 
