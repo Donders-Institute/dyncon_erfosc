@@ -143,6 +143,10 @@ elseif strcmp(freqRange, 'low')
         cfg=[];
         cfg.latency = [-1 1.75]; % shortest baseline window is 1 second
         tfaLow = ft_selectdata(cfg, tfaLow);
+    else
+        cfg=[];
+        cfg.latency = [-1.5 0.5];
+        tfaLow = ft_selectdata(cfg, tfaLow);
     end
     
     for freq=1:15
@@ -180,6 +184,15 @@ if strcmp(freqRange, 'high')
     cfg.planarmethod    = 'sincos';
     tlhPlanar           = ft_megplanar(cfg, tlh);
     
+    if strcmp(zeropoint, 'onset')
+        cfg = [];
+        cfg.latency = [-1 -0.25];
+        cfg.avgovertime = 'yes';
+        blhPlanar = ft_selectdata(cfg, tlhPlanar);
+    else
+        blhPlanar = [];
+    end
+    
     cfg           = [];
     bhPlanarCmb  = ft_combineplanar(cfg,tlhPlanar);
     
@@ -212,6 +225,15 @@ elseif strcmp(freqRange, 'low')
     cfg.planarmethod    = 'sincos';
     tllPlanar           = ft_megplanar(cfg, tll);
     
+    if strcmp(zeropoint, 'onset')
+        cfg = [];
+        cfg.latency = [-1 -0.25];
+        cfg.avgovertime = 'yes';
+        bllPlanar = ft_selectdata(cfg, tllPlanar);
+    else
+        bllPlanar = [];
+    end
+    
     cfg           = [];
     blPlanarCmb  = ft_combineplanar(cfg,tllPlanar);
     
@@ -230,9 +252,9 @@ else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
 if strcmp(freqRange, 'high')
-    save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid','blhPlanar', '-v7.3');
 elseif strcmp(freqRange, 'low')
-    save(fullfile([filename '.mat']), 'betas_l','bhPlanarCmb','tfl', 'lat','maxchanid', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_l','blPlanarCmb','tfl', 'lat','maxchanid','tllPlanar', '-v7.3');
 end
 
 ft_diary('off')
