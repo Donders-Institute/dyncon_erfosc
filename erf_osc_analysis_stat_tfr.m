@@ -80,7 +80,7 @@ stat = ft_freqstatistics(cfg, tfrAvg, blAvg);
 
 % save
 filename = sprintf('/project/3011085.02/results/stat_tfr_%s.mat', zeropoint);
-save(filename, 'stat', 'diffAvg');
+save(filename, 'stat', 'diffAvg', '-v7.3');
 
 ft_diary('off')
 
