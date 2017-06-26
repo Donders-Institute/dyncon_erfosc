@@ -28,14 +28,29 @@ erf_osc_datainfo;
 for subj=allsubs
     tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s.mat', subj, freqRange, zeropoint, erfoi));
     if strcmp(zeropoint, 'reversal')
-        bl{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_onset_erf_%s.mat', subj, freqRange, erfoi));
-        bl{subj} = bl{subj}.bhPlanarCmb;
+        if strcmp(freqRange, 'high')
+            betasPlCmb_bl{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_onset_erf_%s.mat', subj, freqRange, erfoi), 'blhPlanarCmb');
+            betasPlCmb_bl{subj} = betasPlCmb_bl{subj}.blhPlanarCmb;
+        else
+            betasPlCmb_bl{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_onset_erf_%s.mat', subj, freqRange, erfoi), 'bllPlanarCmb');
+            betasPlCmb_bl{subj} = betasPlCmb_bl{subj}.bllPlanarCmb;
+        end
+    else
+        if strcmp(freqRange, 'high')
+            betasPlCmb_bl{subj} = tmp{subj}.blhPlanarCmb;
+        else
+            betasPlCmb_bl{subj} = tmp{subj}.bllPlanarCmb;
+        end
     end
 end
 
 %% Baseline correct
 for subj=allsubs
-    betasPlCmb{subj} = ft_freqdescriptives([], tmp{subj}.bhPlanarCmb);
+    if strcmp(freqRange, 'high')
+        betasPlCmb{subj} = ft_freqdescriptives([], tmp{subj}.bhPlanarCmb);
+    else
+        betasPlCmb{subj} = ft_freqdescriptives([], tmp{subj}.blPlanarCmb);
+    end
 end
 
 % get active period
@@ -51,19 +66,13 @@ end
 
 % get baseline
 % for data timelocked to stimulus reversal, take baseline in data locked to stimulus onset 
-cfg             = [];
-cfg.avgovertime = 'yes';
-cfg.latency     = [-1 -0.2];
-
 for subj=allsubs
-    if strcmp(zeropoint, 'onset');
-        betasPlCmb_bl{subj} = ft_selectdata(cfg, betasPlCmb{subj});
-    else
-        betasPlCmb_bl{subj} = ft_selectdata(cfg, bl{subj});
-    end
     betasPlCmb_bl{subj}.time = betasPlCmb_act{subj}.time;
-    betasPlCmb_bl{subj}.powspctrm = repmat(betasPlCmb_bl{subj}.powspctrm, [1, 1, length(betasPlCmb_bl{subj}.time)]);
+    betasPlCmb_bl{subj}.powspctrm = repmat(betasPlCmb_bl{subj}.powspctrm, [1,1, length(betasPlCmb_bl{subj}.time)]);
+    betasPlCmb_bl{subj}.powspctrm = permute(betasPlCmb_bl{subj}.powspctrm, [2,1,3]);
+    betasPlCmb_bl{subj}.dimord = betasPlCmb_act{subj}.dimord;
 end
+
 
 % baseline correct
 cfg           = [];
@@ -86,7 +95,7 @@ diffBetasPlCmbAvg = ft_appendfreq(cfg, diffBetasPlCmb{allsubs});
 Nsub = length(allsubs);
 
 cfg             = [];
-cfg.method      = 'template'; % try 'distance' as well
+cfg.method      = 'template'; 
 cfg.feedback    = 'no';
 neighbours      = ft_prepare_neighbours(cfg, betasPlCmbAvg_act); % define neighbouring channels
 

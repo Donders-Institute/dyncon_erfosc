@@ -184,13 +184,18 @@ if strcmp(freqRange, 'high')
     cfg.planarmethod    = 'sincos';
     tlhPlanar           = ft_megplanar(cfg, tlh);
     
-    if strcmp(zeropoint, 'onset')
+    if strcmp(zeropoint, 'onset') % baseline
         cfg = [];
         cfg.latency = [-1 -0.25];
         cfg.avgovertime = 'yes';
         blhPlanar = ft_selectdata(cfg, tlhPlanar);
+        blhPlanar.powspctrm = blhPlanar.trial;
+        blhPlanar = rmfield(blhPlanar, 'trial');
+        blhPlanar.dimord = 'freq_chan';
+        blhPlanar.freq = tfaHigh.freq;
+        blhPlanarCmb = ft_combineplanar([], blhPlanar);
     else
-        blhPlanar = [];
+        blhPlanarCmb = {'see zeropoint = onset'};
     end
     
     cfg           = [];
@@ -205,7 +210,7 @@ if strcmp(freqRange, 'high')
 elseif strcmp(freqRange, 'low')
     % Do the same for low frequencies.
     tll=[];
-    tll.avg    = betas_l;
+    tll.avg    = squeeze(betas_l(:,:,2,:));
     tll.time   = tfaLow.time;
     tll.dimord = 'subj_chan_time';
     tll.label  = tfaLow.label;
@@ -230,8 +235,13 @@ elseif strcmp(freqRange, 'low')
         cfg.latency = [-1 -0.25];
         cfg.avgovertime = 'yes';
         bllPlanar = ft_selectdata(cfg, tllPlanar);
+        bllPlanar.powspctrm = bllPlanar.trial;
+        bllPlanar = rmfield(bllPlanar, 'trial');
+        bllPlanar.dimord = 'freq_chan';
+        bllPlanar.freq = tfaLow.freq;
+        bllPlanarCmb = ft_combineplanar([], bllPlanar);
     else
-        bllPlanar = [];
+        bllPlanarCmb = {'see zeropoint = onset'};
     end
     
     cfg           = [];
@@ -252,9 +262,9 @@ else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
 if strcmp(freqRange, 'high')
-    save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid','blhPlanar', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid','blhPlanarCmb', '-v7.3');
 elseif strcmp(freqRange, 'low')
-    save(fullfile([filename '.mat']), 'betas_l','blPlanarCmb','tfl', 'lat','maxchanid','tllPlanar', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas_l','blPlanarCmb','tfl', 'lat','maxchanid','bllPlanarCmb', '-v7.3');
 end
 
 ft_diary('off')
