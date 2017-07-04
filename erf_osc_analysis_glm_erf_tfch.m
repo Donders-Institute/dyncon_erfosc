@@ -164,7 +164,7 @@ end
 % applied to (that's why dimord is strange)
 if strcmp(freqRange, 'high')
     tlh=[];
-    tlh.avg    = squeeze(betas_h(:,:,2,:));
+    tlh.avg    = squeeze(betas_h(:,:,1,:));
     tlh.time   = tfaHigh.time;
     tlh.dimord = 'subj_chan_time';
     tlh.label  = tfaHigh.label;
@@ -259,7 +259,7 @@ end
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s_constantbeta', subj, freqRange, zeropoint, erfoi);
 end
 if strcmp(freqRange, 'high')
     save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid','blhPlanarCmb', '-v7.3');
