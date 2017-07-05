@@ -46,7 +46,9 @@ cfg = [];
 cfg.appenddim = 'rpt';
 tfrAvg        = ft_appendfreq(cfg, tfr{allsubs});
 blAvg         = ft_appendfreq(cfg, bl{allsubs});
-diffAvg       = ft_appendfreq(cfg, diff{allsubs});
+
+cfg=[];
+diffAvg       = ft_freqgrandaverage(cfg, diff{allsubs});
 
 %% statistics
 
@@ -65,8 +67,9 @@ cfg.method           = 'montecarlo';
 cfg.statistic        = 'ft_statfun_depsamplesT';
 cfg.alpha            = 0.05;
 cfg.correctm         = 'cluster';
-cfg.clusteralpha     = 0.05;
+cfg.clusteralpha     = 0.01;
 cfg.correcttail      = 'prob';
+cfg.minnbchan        = 2;
 cfg.numrandomization = 10000;
 
 % cfg.design
