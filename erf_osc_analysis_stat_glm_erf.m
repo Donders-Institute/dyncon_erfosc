@@ -29,17 +29,17 @@ for subj=allsubs
     tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s.mat', subj, freqRange, zeropoint, erfoi));
     if strcmp(zeropoint, 'reversal')
         if strcmp(freqRange, 'high')
-            betasPlCmb_bl{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_onset_erf_%s.mat', subj, freqRange, erfoi), 'blhPlanarCmb');
-            betasPlCmb_bl{subj} = betasPlCmb_bl{subj}.blhPlanarCmb;
+            betasPlCmb_bl{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_onset_erf_%s.mat', subj, freqRange, erfoi), 'bhPlanarCmb');
+            betasPlCmb_bl{subj} = betasPlCmb_bl{subj}.bhPlanarCmb;
         else
-            betasPlCmb_bl{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_onset_erf_%s.mat', subj, freqRange, erfoi), 'bllPlanarCmb');
-            betasPlCmb_bl{subj} = betasPlCmb_bl{subj}.bllPlanarCmb;
+            betasPlCmb_bl{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_onset_erf_%s.mat', subj, freqRange, erfoi), 'blPlanarCmb');
+            betasPlCmb_bl{subj} = betasPlCmb_bl{subj}.blPlanarCmb;
         end
     else
         if strcmp(freqRange, 'high')
-            betasPlCmb_bl{subj} = tmp{subj}.blhPlanarCmb;
+            betasPlCmb_bl{subj} = tmp{subj}.bhPlanarCmb;
         else
-            betasPlCmb_bl{subj} = tmp{subj}.bllPlanarCmb;
+            betasPlCmb_bl{subj} = tmp{subj}.blPlanarCmb;
         end
     end
 end
@@ -66,11 +66,13 @@ end
 
 % get baseline
 % for data timelocked to stimulus reversal, take baseline in data locked to stimulus onset 
+cfg=[];
+cfg.latency = [-1 -0.25];
+cfg.avgovertime = 'yes';
 for subj=allsubs
+    betasPlCmb_bl{subj} = ft_selectdata(cfg, betasPlCmb_bl{subj});
     betasPlCmb_bl{subj}.time = betasPlCmb_act{subj}.time;
     betasPlCmb_bl{subj}.powspctrm = repmat(betasPlCmb_bl{subj}.powspctrm, [1,1, length(betasPlCmb_bl{subj}.time)]);
-    betasPlCmb_bl{subj}.powspctrm = permute(betasPlCmb_bl{subj}.powspctrm, [2,1,3]);
-    betasPlCmb_bl{subj}.dimord = betasPlCmb_act{subj}.dimord;
 end
 
 
@@ -107,7 +109,8 @@ cfg.method           = 'montecarlo';
 cfg.statistic        = 'ft_statfun_depsamplesT';
 cfg.alpha            = 0.05;
 cfg.correctm         = 'cluster';
-cfg.clusteralpha     = 0.05;
+cfg.clusteralpha     = 0.01;
+cfg.minnbchan        = 2;
 cfg.correcttail      = 'prob';
 cfg.numrandomization = 10000;
 
