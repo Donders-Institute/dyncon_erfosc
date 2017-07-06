@@ -76,7 +76,6 @@ cfg.toi          = -1.75:0.05:1.75;                  % time window "slides" from
 cfg.keeptrials   = 'yes';
 tfaLow = ft_freqanalysis(cfg, data);
 
-
 %% TFA, high frequencies
 
 cfg              = [];

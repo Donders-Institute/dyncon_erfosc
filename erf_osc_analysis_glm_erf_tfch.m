@@ -108,6 +108,16 @@ end
 [~, window] = max(abs(avg));
 lat = win(window,:);
 
+%% Log transform TFR
+cfg=[];
+cfg.parameter = 'powspctrm';
+cfg.operation = 'log(x1)';
+if strcmp(freqRange, 'low')
+    tfaLow = ft_math(cfg, tfaLow);
+elseif strcmp(freqRange, 'high');
+    tfaHigh = ft_math(cfg, tfaHigh);
+end
+
 %% Regression p1 amplitude over time-frequency-channel
 cfg=[];
 cfg.latency = [-1.5 0.65];
@@ -164,7 +174,7 @@ end
 % applied to (that's why dimord is strange)
 if strcmp(freqRange, 'high')
     tlh=[];
-    tlh.avg    = squeeze(betas_h(:,:,1,:));
+    tlh.avg    = squeeze(betas_h(:,:,2,:));
     tlh.time   = tfaHigh.time;
     tlh.dimord = 'subj_chan_time';
     tlh.label  = tfaHigh.label;
@@ -259,7 +269,7 @@ end
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s_constantbeta', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
 if strcmp(freqRange, 'high')
     save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid','blhPlanarCmb', '-v7.3');
