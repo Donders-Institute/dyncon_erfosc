@@ -27,6 +27,7 @@ cfg3=[];
 cfg3.parameter = 'avg';
 cfg3.operation = '(x1-x2)./x2'; % relative change
 
+
 for subj=allsubs
     bl{subj} = ft_selectdata(cfg1, w{subj});
     act{subj} = ft_selectdata(cfg2, w{subj});
@@ -39,7 +40,7 @@ cfg           = [];
 cfg.appenddim = 'rpt';
 actGA         = ft_appendtimelock(cfg, act{allsubs});
 blGA          = ft_appendtimelock(cfg, bl{allsubs});
-diffGA        = ft_appendtimelock([], difference{allsubs});
+diffGA        = ft_appendtimelock(cfg, difference{allsubs});
 
 
 %% statistics
