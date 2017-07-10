@@ -50,6 +50,7 @@ blAvg         = ft_appendfreq(cfg, bl{allsubs});
 cfg=[];
 diffAvg       = ft_freqgrandaverage(cfg, diff{allsubs});
 
+
 %% statistics
 
 Nsub = length(allsubs);
