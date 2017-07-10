@@ -100,23 +100,23 @@ time = tlck.time;
 maxchanid = tlck.label(maxchan);
 halfwindowlength = 8;
 i=1;
-for t = halfwindowlength+1:length(time)-halfwindowlength;
-    win(i,:) = [time(t-8), time(t+8)];
-    avg(i,1) = mean(tlck.avg(maxchan,t-8:t+8),2);
+for ntrl = halfwindowlength+1:length(time)-halfwindowlength;
+    win(i,:) = [time(ntrl-8), time(ntrl+8)];
+    avg(i,1) = mean(tlck.avg(maxchan,ntrl-8:ntrl+8),2);
     i=i+1;
 end
 [~, window] = max(abs(avg));
 lat = win(window,:);
 
 %% Log transform TFR
-cfg=[];
-cfg.parameter = 'powspctrm';
-cfg.operation = 'log(x1)';
-if strcmp(freqRange, 'low')
-    tfaLow = ft_math(cfg, tfaLow);
-elseif strcmp(freqRange, 'high');
-    tfaHigh = ft_math(cfg, tfaHigh);
-end
+% cfg=[];
+% cfg.parameter = 'powspctrm';
+% cfg.operation = 'log10';
+% if strcmp(freqRange, 'low')
+%     tfaLow = ft_math(cfg, tfaLow);
+% elseif strcmp(freqRange, 'high');
+%     tfaHigh = ft_math(cfg, tfaHigh);
+% end
 
 %% Regression p1 amplitude over time-frequency-channel
 cfg=[];
@@ -131,31 +131,57 @@ p1amp = squeeze(mean(trialdata(:,idxtime,:),2));
 if strcmp(freqRange, 'high');
     if strcmp(zeropoint, 'onset')
         cfg=[];
-        cfg.latency = [-1 1.75]; % shortest baseline window is 1 second
+        cfg.latency = [-1 1]; % shortest baseline window is 1 second, shortest reversal 1 second as well
         tfaHigh = ft_selectdata(cfg, tfaHigh);
     else
         cfg=[];
-        cfg.latency = [-1.5 0.5];
+        cfg.latency = [-1.5 0];
         tfaHigh = ft_selectdata(cfg, tfaHigh);
     end
-    
+       
     for freq=1:19
         for ch=1:length(data_dss.label);
             design = [ones(size(p1amp(ch,:))); p1amp(ch,:)];
             design(2,:) = (design(2,:)-mean(design(2,:)))./std(design(2,:));
             Y_h = squeeze(squeeze(tfaHigh.powspctrm(:,ch,freq,:)));
-            betas_h(freq,ch,:,:) = design'\Y_h;
+            betas(freq,ch,:,:) = design'\Y_h;
+        end
+    end
+    
+    nchan = size(tfaHigh.powspctrm, 2);
+    nfreq = size(tfaHigh.powspctrm, 3);
+    ntime = size(tfaHigh.powspctrm, 4);
+    ntrl = size(p1amp,2);
+    design_bias = ones(1, ntrl);
+    p1amp_norm = (p1amp - repmat(mean(p1amp,2), [1 ntrl]))./repmat(std(p1amp, [], 2), [1, ntrl]);
+    
+    numShuffles=1000;
+    avg_shuffles = zeros(nfreq, nchan, ntime);
+    std_shuffles = zeros(nfreq, nchan, ntime);
+    for freq=1:19
+        Y1 = squeeze(tfaHigh.powspctrm(:,:,freq,:));
+        for ch=1:nchan;
+            Y2 = squeeze(Y1(:,ch,:));
+            design = [design_bias; p1amp_norm(ch,:)];
+            betas_shuffles=zeros(numShuffles, ntime);
+            for iShuffle=1:numShuffles
+                design2 = design(:,randperm(ntrl));
+                tmp = design2'\Y2;
+                betas_shuffles(iShuffle, :) = tmp(2,:);
+            end
+        avg_shuffles(ch, freq, :) = mean(betas_shuffles,1);
+        std_shuffles(ch, freq, :) = std(betas_shuffles,[],1);
         end
     end
     
 elseif strcmp(freqRange, 'low')
     if strcmp(zeropoint, 'onset')
         cfg=[];
-        cfg.latency = [-1 1.75]; % shortest baseline window is 1 second
+        cfg.latency = [-1 1]; % shortest baseline window is 1 second
         tfaLow = ft_selectdata(cfg, tfaLow);
     else
         cfg=[];
-        cfg.latency = [-1.5 0.5];
+        cfg.latency = [-1.5 0];
         tfaLow = ft_selectdata(cfg, tfaLow);
     end
     
@@ -164,7 +190,33 @@ elseif strcmp(freqRange, 'low')
             design = [ones(size(p1amp(ch,:))); p1amp(ch,:)];
             design(2,:) = (design(2,:)-mean(design(2,:)))./std(design(2,:));
             Y_l = squeeze(squeeze(tfaLow.powspctrm(:,ch,freq,:)));
-            betas_l(freq,ch,:,:) = design'\Y_l;
+            betas(freq,ch,:,:) = design'\Y_l;
+        end
+    end
+    
+    nchan = size(tfaLow.powspctrm, 2);
+    nfreq = size(tfaLow.powspctrm, 3);
+    ntime = size(tfaLow.powspctrm, 4);
+    ntrl = size(p1amp,2);
+    design_bias = ones(1, ntrl);
+    p1amp_norm = (p1amp - repmat(mean(p1amp,2), [1 ntrl]))./repmat(std(p1amp, [], 2), [1, ntrl]);
+    
+    numShuffles=1000;
+    avg_shuffles = zeros(nfreq, nchan, ntime);
+    std_shuffles = zeros(nfreq, nchan, ntime);
+    for freq=1:nfreq
+        Y1 = squeeze(tfaLow.powspctrm(:,:,freq,:));
+        for ch=1:nchan;
+            Y2 = squeeze(Y1(:,ch,:));
+            design = [design_bias; p1amp_norm(ch,:)];
+            betas_shuffles=zeros(numShuffles, ntime);
+            for iShuffle=1:numShuffles
+                design2 = design(:,randperm(ntrl));
+                tmp = design2'\Y2;
+                betas_shuffles(iShuffle, :) = tmp(2,:);
+            end
+        avg_shuffles(ch, freq, :) = mean(betas_shuffles,1);
+        std_shuffles(ch, freq, :) = std(betas_shuffles,[],1);
         end
     end
 end
@@ -174,7 +226,7 @@ end
 % applied to (that's why dimord is strange)
 if strcmp(freqRange, 'high')
     tlh=[];
-    tlh.avg    = squeeze(betas_h(:,:,2,:));
+    tlh.avg    = squeeze(betas(:,:,2,:));
     tlh.time   = tfaHigh.time;
     tlh.dimord = 'subj_chan_time';
     tlh.label  = tfaHigh.label;
@@ -217,10 +269,15 @@ if strcmp(freqRange, 'high')
     bhPlanarCmb.freq      = tfaHigh.freq;
     bhPlanarCmb.dimord    = 'chan_freq_time';
     
+    avg_shuffles_struct = rmfield(bhPlanarCmb, 'powspctrm');
+    avg_shuffles_struct.powspctrm = avg_shuffles;
+    std_shuffles_struct = rmfield(bhPlanarCmb, 'powspctrm');
+    std_shuffles_struct.powspctrm = std_shuffles;
+    
 elseif strcmp(freqRange, 'low')
     % Do the same for low frequencies.
     tll=[];
-    tll.avg    = squeeze(betas_l(:,:,2,:));
+    tll.avg    = squeeze(betas(:,:,2,:));
     tll.time   = tfaLow.time;
     tll.dimord = 'subj_chan_time';
     tll.label  = tfaLow.label;
@@ -262,6 +319,11 @@ elseif strcmp(freqRange, 'low')
     blPlanarCmb           = rmfield(blPlanarCmb, 'trial');
     blPlanarCmb.freq      = tfaLow.freq;
     blPlanarCmb.dimord    = 'chan_freq_time';
+    
+    avg_shuffles_struct = rmfield(bhPlanarCmb, 'powspctrm');
+    avg_shuffles_struct.powspctrm = avg_shuffles;
+    std_shuffles_struct = rmfield(bhPlanarCmb, 'powspctrm');
+    std_shuffles_struct.powspctrm = std_shuffles;
 end
 
 %% Save
@@ -272,9 +334,9 @@ else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
 if strcmp(freqRange, 'high')
-    save(fullfile([filename '.mat']), 'betas_h','bhPlanarCmb','tfh','lat','maxchanid','blhPlanarCmb', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas','bhPlanarCmb','tfh','lat','maxchanid','blhPlanarCmb','avg_shuffles_struct', 'std_shuffles_struct', 'p1amp', '-v7.3');
 elseif strcmp(freqRange, 'low')
-    save(fullfile([filename '.mat']), 'betas_l','blPlanarCmb','tfl', 'lat','maxchanid','bllPlanarCmb', '-v7.3');
+    save(fullfile([filename '.mat']), 'betas','blPlanarCmb','tfl', 'lat','maxchanid','bllPlanarCmb','avg_shuffles_struct', 'std_shuffles_struct', 'p1amp', '-v7.3');
 end
 
 ft_diary('off')
