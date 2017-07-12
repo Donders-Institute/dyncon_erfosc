@@ -45,13 +45,13 @@ else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
     if strcmp(erfoi, 'reversal')
         if doDSS
-            [data_dss, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
+            [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
         else
             load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
         end
     else
         if doDSS
-            [data_dss, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'onset', false);
+            [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'onset', false);
         else
             load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
         end
@@ -74,16 +74,18 @@ if ~doDSS
         cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
         data = ft_redefinetrial(cfg, data);
     end
-    data_dss=data;
+else
+    data=data_dss;
 end
 
-fs=data_dss.fsample;
-nTrials = length(data_dss.trial);
+fs=data.fsample;
+nTrials = length(data.trial);
+
 
 %% select p1 window for regression
 cfg=[];
 cfg.vartrllength=2;
-tlck = ft_timelockanalysis(cfg, data_dss);
+tlck = ft_timelockanalysis(cfg, data);
 
 t1p1 = nearest(tlck.time, 0.06);
 t2p1 = nearest(tlck.time, 0.12);
@@ -98,6 +100,7 @@ time = tlck.time;
 % mean amplitude (for the maximum channel!). Take the mean amplitude in
 % this latency window as regression weight.
 maxchanid = tlck.label(maxchan);
+maxchanidx = find(strcmp(maxchanid, data.label));
 halfwindowlength = 8;
 i=1;
 for ntrl = halfwindowlength+1:length(time)-halfwindowlength;
@@ -108,23 +111,14 @@ end
 [~, window] = max(abs(avg));
 lat = win(window,:);
 
-%% Log transform TFR
-% cfg=[];
-% cfg.parameter = 'powspctrm';
-% cfg.operation = 'log10';
-% if strcmp(freqRange, 'low')
-%     tfaLow = ft_math(cfg, tfaLow);
-% elseif strcmp(freqRange, 'high');
-%     tfaHigh = ft_math(cfg, tfaHigh);
-% end
 
 %% Regression p1 amplitude over time-frequency-channel
 cfg=[];
 cfg.latency = [-1.5 0.65];
-data_dss = ft_selectdata(cfg, data_dss);
-trialdata = cat(3,data_dss.trial{:});
+data = ft_selectdata(cfg, data);
+trialdata = cat(3,data.trial{:});
 
-idxtime = [nearest(data_dss.time{1}, lat(1)) : nearest(data_dss.time{1}, lat(2))];
+idxtime = [nearest(data.time{1}, lat(1)) : nearest(data.time{1}, lat(2))];
 p1amp = squeeze(mean(trialdata(:,idxtime,:),2));
 
 % baselinecorrect with average baseline over trials
@@ -138,9 +132,9 @@ if strcmp(freqRange, 'high');
         cfg.latency = [-1.5 0];
         tfaHigh = ft_selectdata(cfg, tfaHigh);
     end
-       
+    
     for freq=1:19
-        for ch=1:length(data_dss.label);
+        for ch=1:length(data.label);
             design = [ones(size(p1amp(ch,:))); p1amp(ch,:)];
             design(2,:) = (design(2,:)-mean(design(2,:)))./std(design(2,:));
             Y_h = squeeze(squeeze(tfaHigh.powspctrm(:,ch,freq,:)));
@@ -156,8 +150,8 @@ if strcmp(freqRange, 'high');
     p1amp_norm = (p1amp - repmat(mean(p1amp,2), [1 ntrl]))./repmat(std(p1amp, [], 2), [1, ntrl]);
     
     numShuffles=1000;
-    avg_shuffles = zeros(nfreq, nchan, ntime);
-    std_shuffles = zeros(nfreq, nchan, ntime);
+    avg_shuffles = zeros(nchan, nfreq, ntime);
+    std_shuffles = zeros(nchan, nfreq, ntime);
     for freq=1:19
         Y1 = squeeze(tfaHigh.powspctrm(:,:,freq,:));
         for ch=1:nchan;
@@ -169,8 +163,8 @@ if strcmp(freqRange, 'high');
                 tmp = design2'\Y2;
                 betas_shuffles(iShuffle, :) = tmp(2,:);
             end
-        avg_shuffles(ch, freq, :) = mean(betas_shuffles,1);
-        std_shuffles(ch, freq, :) = std(betas_shuffles,[],1);
+            avg_shuffles(ch, freq, :) = mean(betas_shuffles,1);
+            std_shuffles(ch, freq, :) = std(betas_shuffles,[],1);
         end
     end
     
@@ -186,7 +180,7 @@ elseif strcmp(freqRange, 'low')
     end
     
     for freq=1:15
-        for ch=1:length(data_dss.label);
+        for ch=1:length(data.label);
             design = [ones(size(p1amp(ch,:))); p1amp(ch,:)];
             design(2,:) = (design(2,:)-mean(design(2,:)))./std(design(2,:));
             Y_l = squeeze(squeeze(tfaLow.powspctrm(:,ch,freq,:)));
@@ -215,115 +209,122 @@ elseif strcmp(freqRange, 'low')
                 tmp = design2'\Y2;
                 betas_shuffles(iShuffle, :) = tmp(2,:);
             end
-        avg_shuffles(ch, freq, :) = mean(betas_shuffles,1);
-        std_shuffles(ch, freq, :) = std(betas_shuffles,[],1);
+            avg_shuffles(ch, freq, :) = mean(betas_shuffles,1);
+            std_shuffles(ch, freq, :) = std(betas_shuffles,[],1);
         end
     end
 end
+
 
 %% planar gradiant transformation of beta weights
 % make timelocked structure where planar gradient transformation can be
 % applied to (that's why dimord is strange)
 if strcmp(freqRange, 'high')
-    tlh=[];
-    tlh.avg    = squeeze(betas(:,:,2,:));
-    tlh.time   = tfaHigh.time;
-    tlh.dimord = 'subj_chan_time';
-    tlh.label  = tfaHigh.label;
-    tlh.grad   = tfaHigh.grad;
+    tl=[];
+    tl.avg    = squeeze(betas(:,:,2,:));
+    tl.time   = tfaHigh.time;
+    tl.dimord = 'subj_chan_time';
+    tl.label  = tfaHigh.label;
+    tl.grad   = tfaHigh.grad;
     
     % also put betas in a time-freq structure
-    tfh = rmfield(tlh,'avg');
-    tfh.dimord = 'chan_freq_time';
-    tfh.powspctrm = permute(tlh.avg, [2,1,3]);
-    tfh.freq = tfaHigh.freq;
+    tf = rmfield(tl,'avg');
+    tf.dimord = 'chan_freq_time';
+    tf.powspctrm = permute(tl.avg, [2,1,3]);
+    tf.freq = tfaHigh.freq;
     
     % planar combination
     cfg                 = [];
     cfg.feedback        = 'no';
     cfg.method          = 'template';
-    cfg.neighbours      = ft_prepare_neighbours(cfg, tlh);
+    cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
     cfg.planarmethod    = 'sincos';
-    tlhPlanar           = ft_megplanar(cfg, tlh);
-    
-    if strcmp(zeropoint, 'onset') % baseline
-        cfg = [];
-        cfg.latency = [-1 -0.25];
-        cfg.avgovertime = 'yes';
-        blhPlanar = ft_selectdata(cfg, tlhPlanar);
-        blhPlanar.powspctrm = blhPlanar.trial;
-        blhPlanar = rmfield(blhPlanar, 'trial');
-        blhPlanar.dimord = 'freq_chan';
-        blhPlanar.freq = tfaHigh.freq;
-        blhPlanarCmb = ft_combineplanar([], blhPlanar);
-    else
-        blhPlanarCmb = {'see zeropoint = onset'};
-    end
+    tlPlanar           = ft_megplanar(cfg, tl);
     
     cfg           = [];
-    bhPlanarCmb  = ft_combineplanar(cfg,tlhPlanar);
+    bPlanarCmb  = ft_combineplanar(cfg,tlPlanar);
     
     % put it back in a freq-data structure
-    bhPlanarCmb.powspctrm = permute(bhPlanarCmb.trial, [2,1,3]);
-    bhPlanarCmb           = rmfield(bhPlanarCmb, 'trial');
-    bhPlanarCmb.freq      = tfaHigh.freq;
-    bhPlanarCmb.dimord    = 'chan_freq_time';
+    bPlanarCmb.powspctrm = permute(bPlanarCmb.trial, [2,1,3]);
+    bPlanarCmb           = rmfield(bPlanarCmb, 'trial');
+    bPlanarCmb.freq      = tfaHigh.freq;
+    bPlanarCmb.dimord    = 'chan_freq_time';
     
-    avg_shuffles_struct = rmfield(bhPlanarCmb, 'powspctrm');
-    avg_shuffles_struct.powspctrm = avg_shuffles;
-    std_shuffles_struct = rmfield(bhPlanarCmb, 'powspctrm');
-    std_shuffles_struct.powspctrm = std_shuffles;
+    tl_shuffle_avg      = rmfield(tl, 'avg');
+    tl_shuffle_avg.avg  = permute(avg_shuffles, [2,1,3]);
+    tl_shuffle_std      = rmfield(tl, 'avg');
+    tl_shuffle_std.avg  = permute(std_shuffles,[2,1,3]);
+    
+    cfg                 = [];
+    cfg.feedback        = 'no';
+    cfg.method          = 'template';
+    cfg.neighbours      = ft_prepare_neighbours(cfg, tl_shuffle_avg);
+    cfg.planarmethod    = 'sincos';
+    tl_shuffle_avgPlanar= ft_megplanar(cfg, tl_shuffle_avg);
+    tl_shuffle_stdPlanar= ft_megplanar(cfg, tl_shuffle_std);
+    
+    cfg                      = [];
+    tl_shuffle_avgCmbPlanar  = ft_combineplanar(cfg,tl_shuffle_avgPlanar);
+    tl_shuffle_stdCmbPlanar  = ft_combineplanar(cfg,tl_shuffle_stdPlanar);
+    
+    shuffle_avgCmbPl = rmfield(bPlanarCmb, 'powspctrm');
+    shuffle_avgCmbPl.powspctrm = permute(tl_shuffle_avgCmbPlanar.trial, [2,1,3]);
+    shuffle_stdCmbPl = rmfield(bPlanarCmb, 'powspctrm');
+    shuffle_stdCmbPl.powspctrm = permute(tl_shuffle_stdCmbPlanar.trial, [2,1,3]);
     
 elseif strcmp(freqRange, 'low')
     % Do the same for low frequencies.
-    tll=[];
-    tll.avg    = squeeze(betas(:,:,2,:));
-    tll.time   = tfaLow.time;
-    tll.dimord = 'subj_chan_time';
-    tll.label  = tfaLow.label;
-    tll.grad   = tfaLow.grad;
+    tl=[];
+    tl.avg    = squeeze(betas(:,:,2,:));
+    tl.time   = tfaLow.time;
+    tl.dimord = 'subj_chan_time';
+    tl.label  = tfaLow.label;
+    tl.grad   = tfaLow.grad;
     
     % also put betas in a time-freq structure
-    tfl = rmfield(tll,'avg');
-    tfl.dimord = 'chan_freq_time';
-    tfl.powspctrm = permute(tll.avg, [2,1,3]);
-    tfl.freq = tfaLow.freq;
+    tf = rmfield(tl,'avg');
+    tf.dimord = 'chan_freq_time';
+    tf.powspctrm = permute(tl.avg, [2,1,3]);
+    tf.freq = tfaLow.freq;
     
     % planar combination
     cfg                 = [];
     cfg.feedback        = 'no';
     cfg.method          = 'template';
-    cfg.neighbours      = ft_prepare_neighbours(cfg, tll);
+    cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
     cfg.planarmethod    = 'sincos';
-    tllPlanar           = ft_megplanar(cfg, tll);
-    
-    if strcmp(zeropoint, 'onset')
-        cfg = [];
-        cfg.latency = [-1 -0.25];
-        cfg.avgovertime = 'yes';
-        bllPlanar = ft_selectdata(cfg, tllPlanar);
-        bllPlanar.powspctrm = bllPlanar.trial;
-        bllPlanar = rmfield(bllPlanar, 'trial');
-        bllPlanar.dimord = 'freq_chan';
-        bllPlanar.freq = tfaLow.freq;
-        bllPlanarCmb = ft_combineplanar([], bllPlanar);
-    else
-        bllPlanarCmb = {'see zeropoint = onset'};
-    end
+    tlPlanar           = ft_megplanar(cfg, tl);
     
     cfg           = [];
-    blPlanarCmb  = ft_combineplanar(cfg,tllPlanar);
+    bPlanarCmb  = ft_combineplanar(cfg,tlPlanar);
     
     % put it back in a freq-data structure
-    blPlanarCmb.powspctrm = permute(blPlanarCmb.trial, [2,1,3]);
-    blPlanarCmb           = rmfield(blPlanarCmb, 'trial');
-    blPlanarCmb.freq      = tfaLow.freq;
-    blPlanarCmb.dimord    = 'chan_freq_time';
+    bPlanarCmb.powspctrm = permute(bPlanarCmb.trial, [2,1,3]);
+    bPlanarCmb           = rmfield(bPlanarCmb, 'trial');
+    bPlanarCmb.freq      = tfaLow.freq;
+    bPlanarCmb.dimord    = 'chan_freq_time';
     
-    avg_shuffles_struct = rmfield(bhPlanarCmb, 'powspctrm');
-    avg_shuffles_struct.powspctrm = avg_shuffles;
-    std_shuffles_struct = rmfield(bhPlanarCmb, 'powspctrm');
-    std_shuffles_struct.powspctrm = std_shuffles;
+    tl_shuffle_avg      = rmfield(tl, 'avg');
+    tl_shuffle_avg.avg  = permute(avg_shuffles, [2,1,3]);
+    tl_shuffle_std      = rmfield(tl, 'avg');
+    tl_shuffle_std.avg  = permute(std_shuffles,[2,1,3]);
+    
+    cfg                 = [];
+    cfg.feedback        = 'no';
+    cfg.method          = 'template';
+    cfg.neighbours      = ft_prepare_neighbours(cfg, tl_shuffle_avg);
+    cfg.planarmethod    = 'sincos';
+    tl_shuffle_avgPlanar= ft_megplanar(cfg, tl_shuffle_avg);
+    tl_shuffle_stdPlanar= ft_megplanar(cfg, tl_shuffle_std);
+    
+    cfg                      = [];
+    tl_shuffle_avgCmbPlanar  = ft_combineplanar(cfg,tl_shuffle_avgPlanar);
+    tl_shuffle_stdCmbPlanar  = ft_combineplanar(cfg,tl_shuffle_stdPlanar);
+    
+    shuffle_avgCmbPl = rmfield(bPlanarCmb, 'powspctrm');
+    shuffle_avgCmbPl.powspctrm = permute(tl_shuffle_avgCmbPlanar.trial, [2,1,3]);
+    shuffle_stdCmbPl = rmfield(bPlanarCmb, 'powspctrm');
+    shuffle_stdCmbPl.powspctrm = permute(tl_shuffle_stdCmbPlanar.trial, [2,1,3]);
 end
 
 %% Save
@@ -333,11 +334,10 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
-if strcmp(freqRange, 'high')
-    save(fullfile([filename '.mat']), 'betas','bhPlanarCmb','tfh','lat','maxchanid','blhPlanarCmb','avg_shuffles_struct', 'std_shuffles_struct', 'p1amp', '-v7.3');
-elseif strcmp(freqRange, 'low')
-    save(fullfile([filename '.mat']), 'betas','blPlanarCmb','tfl', 'lat','maxchanid','bllPlanarCmb','avg_shuffles_struct', 'std_shuffles_struct', 'p1amp', '-v7.3');
-end
+
+save(fullfile([filename '.mat']), 'betas','bPlanarCmb','tf','lat','maxchanid','maxchanidx', 'shuffle_avgCmbPl', 'shuffle_stdCmbPl', 'p1amp', '-v7.3');
+
+
 
 ft_diary('off')
 
