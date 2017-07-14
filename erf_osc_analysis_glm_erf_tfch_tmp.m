@@ -71,10 +71,11 @@ fs=data.fsample;
 nTrials = length(data.trial);
 
 
-%% select p1 window for regression
+%% select p1 amplitude for regression
 cfg=[];
 cfg.vartrllength=2;
 tlck = ft_timelockanalysis(cfg, data);
+allchans = tlck.label;
 
 t1p1 = nearest(tlck.time, 0.06);
 t2p1 = nearest(tlck.time, 0.12);
@@ -101,12 +102,26 @@ end
 lat = win(window,:);
 
 
-%% Regression p1 amplitude over time-frequency-channel
 cfg=[];
 cfg.latency = lat;
 cfg.avgovertime = 'yes';
+cfg.channel = {'MRO', 'MRP', 'MLO', 'MLP', 'MZO', 'MZP'};
 data = ft_selectdata(cfg, data);
-p1amp = cat(2,data.trial{:});
+
+p1amp_all = cat(2,data.trial{:}); % posterior channels only
+p1amp_avgtrl = mean(p1amp_all,2); % average p1 amp over trials
+multiplier = sign(p1amp_avgtrl); % get the sign of the average
+% find a few representative posterior channels that have highest absolute mean amplitude over trials
+[~, idx] = sort(multiplier.*p1amp_avgtrl, 'descend'); 
+num_p1chans = 4;
+p1chans = idx(1:num_p1chans);
+p1chans_id = data.label(p1chans);
+% representative p1 amplitude is the mean of the *absolute* value of
+% representative channels. (Note that absolute here means sign-flipped if
+% a channel's average < 0);
+p1amp = multiplier(p1chans)'*p1amp_all(p1chans,:);
+
+%% Regression p1 amplitude over time-frequency-channel
 
 % load TFA data
 if isPilot
@@ -140,25 +155,14 @@ nchan = size(tfa.powspctrm, 2);
 nfreq = size(tfa.powspctrm, 3);
 ntime = size(tfa.powspctrm, 4);
 ntrl = size(p1amp,2);
+
+design = [ones(size(p1amp)); ((p1amp-mean(p1amp))./std(p1amp))];
 for freq=1:nfreq
     for ch=1:nchan
-        %JM: hier ben ik toch niet zo blij mee. D.w.z. de kanaalspecifieke
-        %p1amp. Voor kanalen zonder een duidelijke ERF zal dit gewoon ruis
-        %worden, en daardoor niet informatief (en logisch dat de betas rond
-        %0 gaan zijn. Ik wil graag dat je een versie van de resultaten
-        %maakt, waarbij je als p1amp een verdedigbaar groepje kanalen
-        %averaged, waarbij het groepje kanalen genomen is uit de subset die
-        %je boven gebruikt voor de latency bepaling. (bijvoorbeeld het
-        %gemiddelde van de top 5%).
-        design = [ones(size(p1amp(ch,:))); p1amp(ch,:)];
-        design(2,:) = (design(2,:)-mean(design(2,:)))./std(design(2,:));
         Y_h = squeeze(squeeze(tfa.powspctrm(:,ch,freq,:)));
         betas(freq,ch,:,:) = design'\Y_h;
     end
 end
-
-design_bias = ones(1, ntrl);
-p1amp_norm = (p1amp - repmat(mean(p1amp,2), [1 ntrl]))./repmat(std(p1amp, [], 2), [1, ntrl]);
 
 numShuffles=100;
 all_shuffles = zeros(nchan, nfreq, ntime, numShuffles);
@@ -182,7 +186,7 @@ for iShuffle = 1:numShuffles
   shufvec = randperm(ntrl);  
   betas_shuf = zeros(nchan, nfreq*ntime); % store betas for this shuffle across channels
   for ch = 1:nchan
-    design_shuf = [design_bias; p1amp_norm(ch,:)];
+    design_shuf = design;
     design_shuf = design_shuf(:,shufvec);
     Y1  = reshape(tfa.powspctrm(:,ch,:,:),[],nfreq*ntime);
     tmp = design_shuf'\Y1;
@@ -201,9 +205,9 @@ std_shuffles = std(all_shuffles,[],4);
 betasPlCmb           = rmfield(tfa, 'powspctrm');
 betasPlCmb.powspctrm = permute(tlPlCmb.trial, [2,1,3]);
 betasPlCmb.dimord    = 'chan_freq_time';
-shufflesAvgPlCmb     = rmfield(betasPlCmb, 'powspctrm');
+shufflesAvgPlCmb     = rmfield(betasPlCmb, {'powspctrm', 'cfg'});
 shufflesAvgPlCmb.powspctrm = avg_shuffles;
-shufflesStdPlCmb     = rmfield(betasPlCmb, 'powspctrm');
+shufflesStdPlCmb     = rmfield(betasPlCmb, {'powspctrm', 'cfg'});
 shufflesStdPlCmb.powspctrm = std_shuffles;
 
 %% Save
@@ -213,7 +217,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
-save(fullfile([filename '.mat']), 'betas','betasPlCmb', 'all_shuffles', 'shufflesAvgPlCmb', 'shufflesStdPlCmb', 'lat', 'p1amp', 'maxchanid','maxchanidx', '-v7.3');
+save(fullfile([filename '.mat']), 'betas','betasPlCmb', 'all_shuffles', 'shufflesAvgPlCmb', 'shufflesStdPlCmb', 'lat', 'p1amp', 'maxchanid','p1chans_id', '-v7.3');
 
 ft_diary('off')
 
