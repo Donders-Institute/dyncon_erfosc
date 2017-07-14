@@ -1,4 +1,4 @@
-function erf_osc_analysis_glm_erf_tfch(subj, isPilot, freqRange, zeropoint, erfoi, doDSS)
+function erf_osc_analysis_glm_erf_tfch_tmp(subj, isPilot, freqRange, zeropoint, erfoi, doDSS)
 % linear regression of peak amplitude over time-frequency (with fixed
 % channel) or over frequency-channel (with fixed (avg) time).
 
@@ -22,7 +22,7 @@ if nargin<6 || isempty(doDSS)
 end
 
 % Initiate Diary
-%ft_diary('on')
+ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
@@ -79,7 +79,7 @@ tlck = ft_timelockanalysis(cfg, data);
 t1p1 = nearest(tlck.time, 0.06);
 t2p1 = nearest(tlck.time, 0.12);
 cfg=[];
-cfg.channel = {'MRO', 'MRP', 'MLO', 'MRO', 'MZO', 'MZP'};
+cfg.channel = {'MRO', 'MRP', 'MLO', 'MLP', 'MZO', 'MZP'};
 cfg.latency = [tlck.time(t1p1) tlck.time(t2p1)];
 tlck = ft_selectdata(cfg, tlck);
 
@@ -103,19 +103,12 @@ lat = win(window,:);
 
 %% Regression p1 amplitude over time-frequency-channel
 cfg=[];
-cfg.latency = lat;%[-1.5 0.65]; -> JM: dit bespaart je een hoop geheugen, toch? Zeker als je zo een cat(3, ...) doet
+cfg.latency = lat;
 cfg.avgovertime = 'yes';
 data = ft_selectdata(cfg, data);
 p1amp = cat(2,data.trial{:});
 
-%cfg=[];
-%cfg.latency = [-1.5 0.65];
-%trialdata = cat(3,data.trial{:});
-
-%idxtime = [nearest(data.time{1}, lat(1)) : nearest(data.time{1}, lat(2))];
-%p1amp = squeeze(mean(trialdata(:,idxtime,:),2));
-
-% baselinecorrect with average baseline over trials
+% load TFA data
 if isPilot
   load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
 else
@@ -123,29 +116,23 @@ else
 end
 if strcmp(freqRange, 'high')
   tfa = tfaHigh;
-  clear tfaHigh tfaLow; % JM this step only renames the variables, but I think this should be done.
-  % it prevents code from being duplicated in the subsequent step, just do
-  % to a difference in variable name. for the next time I would solve this
-  % by storing the low and high ranges in a separate file. Note: in the
-  % current situation you could consider to read selectively the variable
-  % of interest, (as per the loading line above load(filename, 'tfaHigh');
-  % or so. 
+  clear tfaHigh tfaLow; 
 elseif strcmp(freqRange, 'low')
   tfa = tfaLow;
   clear tfaLow tfaHigh;
 else
-  %throw an informative error
+  error('freqRange should be specified as *low* (2-30Hz) or *high* (28-100 Hz)')
   keyboard
 end
 
-
+% select active window of TFA
 if strcmp(zeropoint, 'onset')
     cfg=[];
     cfg.latency = [-1 1]; % shortest baseline window is 1 second, shortest reversal 1 second as well
     tfa = ft_selectdata(cfg, tfa);
 else
     cfg=[];
-    cfg.latency = [-1.5 0];
+    cfg.latency = [-1 0];
     tfa = ft_selectdata(cfg, tfa);
 end
 
@@ -189,13 +176,10 @@ cfg.feedback        = 'no';
 cfg.method          = 'template';
 cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
 cfg.planarmethod    = 'sincos';
-
+tlPlCmb             = ft_combineplanar([], ft_megplanar(cfg, tl));
 
 for iShuffle = 1:numShuffles
-  shufvec = randperm(ntrl); % JM:probably it's best to do the randomization the same
-  % for all channels/times/frequencies, this requires the shuffles to be in
-  % the outer loop
-  
+  shufvec = randperm(ntrl);  
   betas_shuf = zeros(nchan, nfreq*ntime); % store betas for this shuffle across channels
   for ch = 1:nchan
     design_shuf = [design_bias; p1amp_norm(ch,:)];
@@ -213,63 +197,14 @@ end
 avg_shuffles = mean(all_shuffles,4);
 std_shuffles = std(all_shuffles,[],4);
 
-% JM weet niet zeker of the all_shuffles ook ge saved moeten worden, nu de
-% avg er mogelijk wat gezonder uit gaat zien.
-
-%% planar gradient transformation of beta weights
-% make timelocked structure where planar gradient transformation can be
-% applied to (that's why dimord is strange)
-tl=[];
-tl.avg    = squeeze(betas(:,:,2,:));
-tl.time   = tfa.time;
-tl.dimord = 'rpt_chan_time';
-tl.label  = tfa.label;
-tl.grad   = tfa.grad;
-
-% also put betas in a time-freq structure
-tf = rmfield(tl,'avg');
-tf.dimord = 'chan_freq_time';
-tf.powspctrm = permute(tl.avg, [2,1,3]);
-tf.freq = tfa.freq;
-
-% planar combination
-cfg                 = [];
-cfg.feedback        = 'no';
-cfg.method          = 'template';
-cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
-cfg.planarmethod    = 'sincos';
-tlPlanar            = ft_megplanar(cfg, tl);
-
-cfg           = [];
-bPlanarCmb  = ft_combineplanar(cfg,tlPlanar);
-
-% put it back in a freq-data structure
-bPlanarCmb.powspctrm = permute(bPlanarCmb.trial, [2,1,3]);
-bPlanarCmb           = rmfield(bPlanarCmb, 'trial');
-bPlanarCmb.freq      = tfa.freq;
-bPlanarCmb.dimord    = 'chan_freq_time';
-
-tl_shuffle_avg      = rmfield(tl, 'avg');
-tl_shuffle_avg.avg  = permute(avg_shuffles, [2,1,3]);
-tl_shuffle_std      = rmfield(tl, 'avg');
-tl_shuffle_std.avg  = permute(std_shuffles,[2,1,3]);
-
-cfg                 = [];
-cfg.feedback        = 'no';
-cfg.method          = 'template';
-cfg.neighbours      = ft_prepare_neighbours(cfg, tl_shuffle_avg);
-cfg.planarmethod    = 'sincos';
-tl_shuffle_avgPlanar= ft_megplanar(cfg, tl_shuffle_avg);
-tl_shuffle_stdPlanar= ft_megplanar(cfg, tl_shuffle_std);
-
-cfg                      = [];
-tl_shuffle_avgCmbPlanar  = ft_combineplanar(cfg,tl_shuffle_avgPlanar);
-tl_shuffle_stdCmbPlanar  = ft_combineplanar(cfg,tl_shuffle_stdPlanar);
-
-shuffle_avgCmbPl = rmfield(bPlanarCmb, 'powspctrm');
-shuffle_avgCmbPl.powspctrm = permute(tl_shuffle_avgCmbPlanar.trial, [2,1,3]);
-shuffle_stdCmbPl = rmfield(bPlanarCmb, 'powspctrm');
-shuffle_stdCmbPl.powspctrm = permute(tl_shuffle_stdCmbPlanar.trial, [2,1,3]);
+%% Put betas and shuffles in freq-structure
+betasPlCmb           = rmfield(tfa, 'powspctrm');
+betasPlCmb.powspctrm = permute(tlPlCmb.trial, [2,1,3]);
+betasPlCmb.dimord    = 'chan_freq_time';
+shufflesAvgPlCmb     = rmfield(betasPlCmb, 'powspctrm');
+shufflesAvgPlCmb.powspctrm = avg_shuffles;
+shufflesStdPlCmb     = rmfield(betasPlCmb, 'powspctrm');
+shufflesStdPlCmb.powspctrm = std_shuffles;
 
 %% Save
 
@@ -278,10 +213,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
-
-save(fullfile([filename '.mat']), 'betas','bPlanarCmb','tf','lat','maxchanid','maxchanidx', 'shuffle_avgCmbPl', 'shuffle_stdCmbPl', 'p1amp', '-v7.3');
-
-
+save(fullfile([filename '.mat']), 'betas','betasPlCmb', 'all_shuffles', 'shufflesAvgPlCmb', 'shufflesStdPlCmb', 'lat', 'p1amp', 'maxchanid','maxchanidx', '-v7.3');
 
 ft_diary('off')
 
