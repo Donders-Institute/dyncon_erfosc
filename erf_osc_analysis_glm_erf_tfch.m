@@ -119,26 +119,15 @@ p1chans_id = data.label(p1chans);
 % representative p1 amplitude is the mean of the *absolute* value of
 % representative channels. (Note that absolute here means sign-flipped if
 % a channel's average < 0);
-p1amp = multiplier(p1chans)'*p1amp_all(p1chans,:);
+p1amp = multiplier(p1chans)'*p1amp_all(p1chans,:)/num_p1chans;
 
 %% Regression p1 amplitude over time-frequency-channel
 
 % load TFA data
-if isPilot
-  load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
-else
-  load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
-end
-if strcmp(freqRange, 'high')
-  tfa = tfaHigh;
-  clear tfaHigh tfaLow; 
-elseif strcmp(freqRange, 'low')
-  tfa = tfaLow;
-  clear tfaLow tfaHigh;
-else
-  error('freqRange should be specified as *low* (2-30Hz) or *high* (28-100 Hz)')
-  keyboard
-end
+% load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, zeropoint));
+load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
+tfa=tfaHigh;
+clear tfaHigh tfaLow;
 
 % select active window of TFA
 if strcmp(zeropoint, 'onset')
@@ -160,28 +149,12 @@ design = [ones(size(p1amp)); ((p1amp-mean(p1amp))./std(p1amp))];
 for freq=1:nfreq
     for ch=1:nchan
         Y_h = squeeze(squeeze(tfa.powspctrm(:,ch,freq,:)));
-        betas(freq,ch,:,:) = design'\Y_h;
+        betas_tmp(freq,ch,:,:) = design'\Y_h;
     end
 end
 
 numShuffles=100;
 all_shuffles = zeros(nchan, nfreq, ntime, numShuffles);
-
-% prepare a data object and cfg for the planar transform
-tl=[];
-tl.avg    = squeeze(betas(:,:,2,:));
-tl.time   = tfa.time;
-tl.dimord = 'rpt_chan_time';
-tl.label  = tfa.label;
-tl.grad   = tfa.grad;
-
-cfg                 = [];
-cfg.feedback        = 'no';
-cfg.method          = 'template';
-cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
-cfg.planarmethod    = 'sincos';
-tlPlCmb             = ft_combineplanar([], ft_megplanar(cfg, tl));
-
 for iShuffle = 1:numShuffles
   shufvec = randperm(ntrl);  
   betas_shuf = zeros(nchan, nfreq*ntime); % store betas for this shuffle across channels
@@ -192,23 +165,19 @@ for iShuffle = 1:numShuffles
     tmp = design_shuf'\Y1;
     betas_shuf(ch,:) = tmp(2,:);
   end
-  tl.time = 1:nfreq*ntime;
-  tl.avg  = betas_shuf;
-  tmp     = ft_combineplanar([], ft_megplanar(cfg, tl));
-  betas_shuf = tmp.avg;
   all_shuffles(:,:,:,iShuffle) = reshape(betas_shuf, [nchan nfreq ntime]);
 end
 avg_shuffles = mean(all_shuffles,4);
 std_shuffles = std(all_shuffles,[],4);
 
 %% Put betas and shuffles in freq-structure
-betasPlCmb           = rmfield(tfa, 'powspctrm');
-betasPlCmb.powspctrm = permute(tlPlCmb.trial, [2,1,3]);
-betasPlCmb.dimord    = 'chan_freq_time';
-shufflesAvgPlCmb     = rmfield(betasPlCmb, {'powspctrm', 'cfg'});
-shufflesAvgPlCmb.powspctrm = avg_shuffles;
-shufflesStdPlCmb     = rmfield(betasPlCmb, {'powspctrm', 'cfg'});
-shufflesStdPlCmb.powspctrm = std_shuffles;
+betas = rmfield(tfa, {'powspctrm', 'cfg'});
+betas.powspctrm = permute(squeeze(betas_tmp(:,:,2,:)), [2,1,3]);
+betas.dimord = 'chan_freq_time';
+shufflesAvg     = rmfield(betas, 'powspctrm');
+shufflesAvg.powspctrm = avg_shuffles;
+shufflesStd     = rmfield(betas, 'powspctrm');
+shufflesStd.powspctrm = std_shuffles;
 
 %% Save
 
@@ -217,7 +186,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
-save(fullfile([filename '.mat']), 'betas','betasPlCmb', 'all_shuffles', 'shufflesAvgPlCmb', 'shufflesStdPlCmb', 'lat', 'p1amp', 'maxchanid','p1chans_id', '-v7.3');
+save(fullfile([filename '.mat']), 'betas', 'all_shuffles', 'shufflesAvg', 'shufflesStd', 'lat', 'p1amp', 'maxchanid','p1chans_id', '-v7.3');
 
 ft_diary('off')
 
