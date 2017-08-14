@@ -99,8 +99,6 @@ tfa                  = ft_combineplanar(cfg,tfa_planar);
 if strcmp(zeropoint, 'onset')
     cfg=[];
     cfg.latency = [-1 -0.25];
-    cfg.avgoverrpt = 'yes';
-    cfg.avgovertime = 'yes';
     baseline = ft_selectdata(cfg, tfa);
 end
 
