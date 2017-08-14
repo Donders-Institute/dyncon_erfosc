@@ -27,9 +27,9 @@ erf_osc_datainfo;
 
 for subj=allsubs
     tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s.mat', subj, freqRange, zeropoint, erfoi));
-    avg_shuffles{subj} = tmp{subj}.shufflesAvgPlCmb;
-    std_shuffles{subj} = tmp{subj}.shufflesStdPlCmb;
-    betasPlCmb{subj} = tmp{subj}.betasPlCmb;
+    avg_shuffles{subj} = tmp{subj}.shufflesAvg;
+    std_shuffles{subj} = tmp{subj}.shufflesStd;
+    betas{subj} = tmp{subj}.betas;
 end
 
 %% Baseline correct
@@ -38,14 +38,14 @@ cfg           = [];
 cfg.parameter = 'powspctrm';
 cfg.operation = 'subtract'; %relative change
 for subj=allsubs
-    diffBetasPlCmb{subj} = ft_math(cfg, betasPlCmb{subj}, avg_shuffles{subj});
+    diffBetas{subj} = ft_math(cfg, betas{subj}, avg_shuffles{subj});
 end
 
 % get grand average
 cfg               = [];
 cfg.appenddim     = 'rpt';
-diffBetasPlCmbAvg = ft_appendfreq(cfg, diffBetasPlCmb{allsubs});
-avg_betas_GA = ft_appendfreq(cfg, betasPlCmb{allsubs});
+diffBetasAvg = ft_appendfreq(cfg, diffBetas{allsubs});
+avg_betas_GA = ft_appendfreq(cfg, betas{allsubs});
 avg_shuffles_GA = ft_appendfreq(cfg, avg_shuffles{allsubs});
 
 
@@ -82,7 +82,7 @@ stat = ft_freqstatistics(cfg, avg_betas_GA, avg_shuffles_GA);
 
 % save
 filename = sprintf('/project/3011085.02/results/stat_glm_tf_%s_%s_erf_%s.mat', freqRange, zeropoint, erfoi);
-save(filename, 'stat', 'diffBetasPlCmbAvg');
+save(filename, 'stat', 'diffBetasAvg');
 
 ft_diary('off')
 

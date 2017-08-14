@@ -124,10 +124,7 @@ p1amp = multiplier(p1chans)'*p1amp_all(p1chans,:)/num_p1chans;
 %% Regression p1 amplitude over time-frequency-channel
 
 % load TFA data
-% load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, zeropoint));
-load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
-tfa=tfaHigh;
-clear tfaHigh tfaLow;
+load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, zeropoint));
 
 % select active window of TFA
 if strcmp(zeropoint, 'onset')
