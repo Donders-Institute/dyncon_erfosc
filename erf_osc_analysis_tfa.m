@@ -74,13 +74,13 @@ cfg.keeptrials       = 'yes';
 if strcmp(freqRange, 'low')
     cfg.taper        = 'hanning';
     cfg.pad          = 6;
-    cfg.foi          = 2:2:6%30;% analysis 2 to 30 Hz in steps of 2 Hz
+    cfg.foi          = 2:2:30;% analysis 2 to 30 Hz in steps of 2 Hz
     cfg.t_ftimwin    = ones(length(cfg.foi),1).*0.5;   % length of time window = 0.5 sec
     
 elseif strcmp(freqRange, 'high')
     cfg.taper        = 'dpss';
     cfg.tapsmofrq    = 8; % 8 Hz freq smoothing on both sides
-    cfg.foi          = 28:4:36%100;
+    cfg.foi          = 28:4:100;
     cfg.pad          = 6;
     cfg.t_ftimwin    = ones(length(cfg.foi),1).*(1/4);
     
