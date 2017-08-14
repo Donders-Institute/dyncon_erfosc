@@ -33,6 +33,25 @@ end
 %     printstruct(eval(workSpace(i).name)) % show its value(s)
 % end
 
+%% gamma power RT
+erf_osc_datainfo
+for subj=allsubs
+load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
+load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan'); % load gamma power
+%     load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj)); % load ERF
+%     load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+% load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_angle', subj)); % load gamma phase
+rt{subj} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load gamma power
+for i=1:length(gammaChan.trial)
+gammaPow_tmp(i) = log(gammaChan.trial(i).pow);
+end
+gammaPow{subj} = gammaPow_tmp-mean(gammaPow_tmp);
+clear gammaChan gammaPow_tmp
+rt{subj} = rt{subj}.rt;
+[r(subj) p(subj)] = corr(gammaPow{subj}', rt{subj}, 'type', 'spearman');
+end
+
+
 %% load data
 % load gamma peak freq
 if isPilot
@@ -43,9 +62,10 @@ if isPilot
 else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan'); % load gamma power
-    load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj)); % load ERF
+%     load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj)); % load ERF
 %     load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
     % load(sprintf('/project/3011085.02/results/freq/subj-0%d/gamma_angle', subj)); % load gamma phase
+    load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load gamma power
 end
 
 % peakFreq_gamma = 2*round(peakFreq_gamma/2);
