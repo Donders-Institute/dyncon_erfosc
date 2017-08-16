@@ -178,6 +178,7 @@ betas.dimord = 'chan_freq_time';
 if strcmp(zeropoint, 'onset')
     betas_baseline = rmfield(betas, 'powspctrm');
     betas_baseline.powspctrm = permute(squeeze(betas_bl_tmp(:,:,2,:)), [2,1,3]);
+    betas_baseline.time = betas_baseline.time(1:size(betas_baseline.powspctrm, 3));
 else
     betas_baseline = 'see zeropoint=onset';
 end
