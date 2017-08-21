@@ -14,29 +14,17 @@ function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact, visDegOffF
 % existArtifact, true if artficats were already selected and saved (default
 % = false)
 
-if nargin<1
+if nargin<1 || isempty(subj)
     subj = 1;
 end
-if isempty(subj)
-    subj = 1;
-end
-if nargin<2
+if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
-if isempty(isPilot);
-    isPilot = false;
-end
-if nargin<3
+if nargin<3 || isempty(existArtifact)
     existArtifact = false;
 end
-if isempty(existArtifact)
-    existArtifact = false;
-end
-if nargin<4
-    visDegOffFixation = 1;
-end
-if isempty(visDegOffFixation)
-    visDegOffFixation = 1;
+if nargin<4 || isempty(visDegOffFixation)
+    visDegOffFixation = 5;
 end
 
 % initiate diary
@@ -436,6 +424,13 @@ cfg.artfctdef.reject = 'complete'; % remove complete trials
 cfg.artfctdef.crittoilim = [-1 3.75];
 dataClean = ft_rejectartifact(cfg, dataNoIca);
 
+cfg=[];
+cfg.channel = 'HLC*';
+headmotion = ft_selectdata(cfg, dataClean);
+
+cfg=[];
+cfg.channel = 'MEG';
+dataClean = ft_selectdata(cfg, dataClean);
 % cfg=[];
 % cfg.detrend = 'no';
 % cfg.demean = 'no';
@@ -453,7 +448,7 @@ else
     filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata', subj);
 end
 save(fullfile([filename '.mat']), 'dataClean','nTrialsPreClean','nTrialsPostClean','nTrialsValid', '-v7.3');
-
+save(fullfile([filename(1:end-9), 'headmotion', '.mat']), 'headmotion');
 ft_diary('off')
 
 end
