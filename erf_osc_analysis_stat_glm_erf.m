@@ -116,7 +116,7 @@ stat = ft_freqstatistics(cfg, betas_GA, betas_baseline_GA);
 
 
 % save
-filename = sprintf('/project/3011085.02/results/stat_glm_tf_%s_%s_erf_%s_2.mat', freqRange, zeropoint, erfoi);
+filename = sprintf('/project/3011085.02/results/stat_glm_tf_%s_%s_erf_%s.mat', freqRange, zeropoint, erfoi);
 save(filename, 'stat', 'diffBetasAvg', 'betas_GA', 'betas_baseline_GA', 'betas_baseline_no_avg_GA', 'betas_short_GA');
 
 ft_diary('off')
