@@ -136,6 +136,10 @@ else
     cfg.latency = [-1 0];
     tfa = ft_selectdata(cfg, tfa);
 end
+cfg=[];
+cfg.parameter = 'powspctrm';
+cfg.operation = 'log10';
+tfa = ft_math(cfg, tfa);
 
 nchan = size(tfa.powspctrm, 2);
 nfreq = size(tfa.powspctrm, 3);
