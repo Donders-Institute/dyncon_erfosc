@@ -140,6 +140,9 @@ cfg=[];
 cfg.parameter = 'powspctrm';
 cfg.operation = 'log10';
 tfa = ft_math(cfg, tfa);
+if strcmp(zeropoint, 'onset');
+    baseline = ft_math(cfg, baseline);
+end
 
 nchan = size(tfa.powspctrm, 2);
 nfreq = size(tfa.powspctrm, 3);
