@@ -48,9 +48,7 @@ cfg=[];
 % of previous use of ft_selectdata?). This results in NaNs in the data. 
 % Thus, don't use the samplenumber provided by trialinfo, but calculate on 
 % the spot based on time axis.
-sec = -ones(length(data.trial),1);
-% cfg.trl = [data.trialinfo(:,4)+blonset*fs, data.trialinfo(:,4)];
-cfg.trl = [data.trialinfo(:,4)+sec*fs, data.trialinfo(:,4)];
+cfg.trl = [data.trialinfo(:,4)+blonset*fs, data.trialinfo(:,4)];
 cfg.trl = [cfg.trl, cfg.trl(:,1)-cfg.trl(:,2)];
 dataBl = ft_redefinetrial(cfg, data);
 
