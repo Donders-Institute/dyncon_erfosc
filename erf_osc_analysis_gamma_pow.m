@@ -43,12 +43,14 @@ end
 cfg=[];
 % baseline window
 % cfg.trl = [data.trialinfo(:,3), data.trialinfo(:,4) data.trialinfo(:,3)-data.trialinfo(:,4)];
-% the first column represents the start of the baseline period. It's sample
+% the first column represents the start of the baseline period. Its sample
 % number is inaccurate w.r.t. the time axis in the data (possibly because
 % of previous use of ft_selectdata?). This results in NaNs in the data. 
 % Thus, don't use the samplenumber provided by trialinfo, but calculate on 
 % the spot based on time axis.
-cfg.trl = [data.trialinfo(:,4)+blonset*fs, data.trialinfo(:,4)];
+sec = -ones(length(data.trial),1);
+% cfg.trl = [data.trialinfo(:,4)+blonset*fs, data.trialinfo(:,4)];
+cfg.trl = [data.trialinfo(:,4)+sec*fs, data.trialinfo(:,4)];
 cfg.trl = [cfg.trl, cfg.trl(:,1)-cfg.trl(:,2)];
 dataBl = ft_redefinetrial(cfg, data);
 
@@ -99,9 +101,9 @@ gamRatio        = gamRatio.powspctrm;
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/pow', subj);
+    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/pow2', subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/pow', subj);
+    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/pow2', subj);
 end
 save(fullfile([filename '.mat']), 'powRatio', 'gamRatio', 'peakFreq_gamma');
 ft_diary('off')
