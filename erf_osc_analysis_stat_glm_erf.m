@@ -56,11 +56,11 @@ end
 cfg               = [];
 cfg.appenddim     = 'rpt';
 diffBetasAvg = ft_appendfreq(cfg, diffBetas{allsubs});
-diffBetasAvg2 = ft_appendfreq(cfg, diffBetas_no_avg{allsubs});
+% diffBetasAvg2 = ft_appendfreq(cfg, diffBetas_no_avg{allsubs});
 betas_GA = ft_appendfreq(cfg, betas{allsubs});
-betas_short_GA = ft_appendfreq(cfg, betas_short{allsubs});
+% betas_short_GA = ft_appendfreq(cfg, betas_short{allsubs});
 betas_baseline_GA = ft_appendfreq(cfg, betas_baseline{allsubs});
-betas_baseline_no_avg_GA = ft_appendfreq(cfg, betas_baseline_no_avg{allsubs});
+% betas_baseline_no_avg_GA = ft_appendfreq(cfg, betas_baseline_no_avg{allsubs});
 
 %%%%%%%%%%%%%%%%%%%%%%%
 % ACTIVE VS. SHUFFLES %
