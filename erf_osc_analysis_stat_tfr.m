@@ -18,34 +18,28 @@ erf_osc_datainfo;
 
 % load data
 for subj=allsubs
-    if strcmp(freqRange, 'high')
-        tfr{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint), 'tfaHigh');
-        tfr{subj} = tfr{subj}.tfaHigh;
+    tfa{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj,freqRange, zeropoint));
+    if strcmp(zeropoint, 'reversal')
+        baseline{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_onset.mat', subj, freqRange), 'baseline');
+        baseline{subj} = baseline{subj}.baseline;
     else
-        tfr{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint), 'tfaLow');
-        tfr{subj} = tfr{subj}.tfaLow;
+        baseline{subj} = tfa{subj}.baseline;
     end
-    bl{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_onset.mat', subj), 'baselineH');
-    bl{subj} = bl{subj}.baselineH;
+    tfa{subj} = tfa{subj}.tfa;
 end
 
 for subj=allsubs
-    tfr{subj} = ft_freqdescriptives([], tfr{subj});
-    bl{subj}.time = tfr{subj}.time;
-    bl{subj}.powspctrm = repmat(bl{subj}.powspctrm, [1,1,length(bl{subj}.time)]);
+    tfa{subj} = ft_freqdescriptives([], tfa{subj});
+    baseline{subj}.time = tfa{subj}.time;
+    baseline{subj}.powspctrm = repmat(baseline{subj}.powspctrm, [1,1,length(baseline{subj}.time)]);
 end
 
 cfg=[];
 cfg.parameter = 'powspctrm';
 cfg.operation = '(x1-x2)./x2';
 for subj=allsubs
-    diff{subj} = ft_math(cfg, tfr{subj}, bl{subj});
+    diff{subj} = ft_math(cfg, tfa{subj}, baseline{subj});
 end
-
-cfg = [];
-cfg.appenddim = 'rpt';
-tfrAvg        = ft_appendfreq(cfg, tfr{allsubs});
-blAvg         = ft_appendfreq(cfg, bl{allsubs});
 
 cfg=[];
 diffAvg       = ft_freqgrandaverage(cfg, diff{allsubs});
@@ -84,7 +78,7 @@ stat = ft_freqstatistics(cfg, tfrAvg, blAvg);
 
 % save
 filename = sprintf('/project/3011085.02/results/stat_tfr_%s.mat', zeropoint);
-save(filename, 'stat', 'diffAvg', '-v7.3');
+save(filename, 'stat', 'diffAvg','tfrAvg', 'blAvg', '-v7.3');
 
 ft_diary('off')
 
