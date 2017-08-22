@@ -64,7 +64,7 @@ allsubs = 1:33;
 allsubs(badsubjects) = [];
 
 
-subjects(1).channels           = {'MEG', '-MRT32'};
+subjects(1).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(1).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-001/ses-meg01/sub01ses01_3011085.02_20161130_01.ds';
 subjects(1).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-001/ses-beh01/sub01ses01.mat';
 subjects(1).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-001/polhemus_erfosc_sub-001.pos';
@@ -77,7 +77,7 @@ subjects(1).aseo               = [0.05167 0.1033; 0.1042 0.1683; 0.1858  0.5475]
 subjects(1).gammaband          = [60 70];
 subjects(1).gammapeak           = 66;
 
-subjects(2).channels           = {'MEG', '-MRT32'};
+subjects(2).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(2).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-002/ses-meg01/sub02ses01_3011085.02_20161130_01.ds';
 subjects(2).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-002/ses-beh01/sub02ses01.mat';
 subjects(2).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-002/polhemus_erfosc_sub-002.pos';
@@ -89,7 +89,7 @@ subjects(2).badtrials          = [140]; % bad trials were identified with ICA an
 subjects(2).gammaband          = [34 46; 52 70];
 subjects(2).gammapeak          = [40; 62]; % 62 highest
 
-subjects(3).channels           = {'MEG', '-MRT32'};
+subjects(3).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(3).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-003/ses-meg01/sub003ses01_3011085.02_20170220_01.ds';
 subjects(3).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-003/ses-beh01/sub03ses01.mat';
 subjects(3).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-003/polhemus_erfosc_sub-003.pos';
@@ -101,7 +101,7 @@ subjects(3).badtrials          = [];
 subjects(3).gammaband          = [26 34; 42 68];
 subjects(3).gammapeak          = [30; 56]; % 56 highest
 
-subjects(4).channels           = {'MEG', '-MRT32'};
+subjects(4).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(4).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-004/ses-meg01/sub04ses01_3011085.02_20170104_01.ds';
 subjects(4).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-004/ses-beh01/sub04ses01.mat';
 subjects(4).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-004/polhemus_erfosc_sub-004.pos';
@@ -113,7 +113,7 @@ subjects(4).badtrials          = [];
 subjects(4).gammaband          = [40 64];
 subjects(4).gammapeak          = 54;
 
-subjects(5).channels           = {'MEG', '-MRT32'};
+subjects(5).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(5).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-005/ses-meg01/sub05ses01_3011085.02_20170104_01.ds';
 subjects(5).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-005/ses-beh01/sub05ses01.mat';
 subjects(5).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-005/polhemus_erfosc_sub-005.pos';
@@ -125,7 +125,7 @@ subjects(5).badtrials          = [314, 321]; % bad trials were identified with I
 subjects(5).gammaband          = [42 60];
 subjects(5).gammapeak          = 54;
 
-subjects(6).channels           = {'MEG', '-MRT32'};
+subjects(6).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(6).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-006/ses-meg01/sub06ses01_3011085.02_20170104_01.ds';
 subjects(6).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-006/ses-beh01/sub06ses01.mat';
 subjects(6).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-006/polhemus_erfosc_sub-006.pos';
@@ -137,7 +137,7 @@ subjects(6).badtrials          = [];
 subjects(6).gammaband          = [46 62];  % absent
 subjects(6).gammapeak          = [46];
 
-subjects(7).channels           = {'MEG', '-MRT32', '-MLF23'};
+subjects(7).channels           = {'MEG', '-MRT32','-MLF23','HLC*'};
 subjects(7).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-007/ses-meg01/sub07ses01_3011085.02_20170104_01.ds';
 subjects(7).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-007/ses-beh01/sub07ses01.mat';
 subjects(7).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-007/polhemus_erfosc_sub-007.pos';
@@ -150,7 +150,7 @@ subjects(7).gammaband          = [46 68];
 subjects(7).gammapeak           = 56;
 
 % huge amount of eye blinks
-subjects(8).channels           = {'MEG', '-MRT32'};
+subjects(8).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(8).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-008/ses-meg01/sub08ses01_3011085.02_20170104_01.ds';
 subjects(8).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-008/ses-beh01/sub08ses01.mat';
 subjects(8).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-008/polhemus_erfosc_sub-008.pos';
@@ -162,7 +162,7 @@ subjects(8).badtrials          = [];
 subjects(8).gammaband          = [46 62];
 subjects(8).gammapeak          = 54;
 
-subjects(9).channels           = {'MEG', '-MRT32'};
+subjects(9).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(9).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-009/ses-meg01/sub09ses01_3011085.02_20170105_01.ds';
 subjects(9).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-009/ses-beh01/sub09ses01.mat';
 subjects(9).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-009/polhemus_erfosc_sub-009.pos';
@@ -176,7 +176,7 @@ subjects(9).gammapeak          = 54;
 
 % subject 10 bad subject: corrupt logfile, could only do 9 blocks; many
 % eyeblinks. Discard subject
-subjects(10).channels           = {'MEG', '-MRT32'};
+subjects(10).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(10).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-010/ses-meg01/sub10ses01_3011085.02_20170105_01.ds';
 subjects(10).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-010/ses-beh01/sub10ses01.mat';
 subjects(10).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-010/polhemus_erfosc_sub-010.pos';
@@ -186,7 +186,7 @@ subjects(10).ecgcomp            = [];
 subjects(10).eyecomp            = [];
 subjects(10).badtrials          = [];
 
-subjects(11).channels           = {'MEG', '-MRT32'};
+subjects(11).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(11).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-011/ses-meg01/sub11ses01_3011085.02_20170109_01.ds';
 subjects(11).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-011/ses-beh01/sub11ses01.mat';
 subjects(11).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-011/polhemus_erfosc_sub-011.pos';
@@ -198,7 +198,7 @@ subjects(11).badtrials          = [];
 subjects(11).gammaband          = [46 70];
 subjects(11).gammapeak          = 56;
 
-subjects(12).channels           = {'MEG', '-MRT32', '-MRC11', '-MZF03'};
+subjects(12).channels           = {'MEG', '-MRT32', '-MRC11', '-MZF03', 'HLC*'};
 subjects(12).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-012/ses-meg01/sub012ses01_3011085.02_20170222_01.ds';
 subjects(12).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-012/ses-beh01/sub12ses01.mat';
 subjects(12).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-012/polhemus_erfosc_sub-012.pos';
@@ -210,7 +210,7 @@ subjects(12).badtrials          = [];
 subjects(12).gammaband          = [40 60];
 subjects(12).gammapeak          = 52;
 
-subjects(13).channels           = {'MEG', '-MRT32'};
+subjects(13).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(13).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-013/ses-meg01/sub13ses01_3011085.02_20170111_01.ds';
 subjects(13).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-013/ses-beh01/sub13ses01.mat';
 subjects(13).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-013/polhemus_erfosc_sub-013.pos';
@@ -222,7 +222,7 @@ subjects(13).badtrials          = [];
 subjects(13).gammaband          = [34 48];
 subjects(13).gammapeak          = 42;
 
-subjects(14).channels           = {'MEG', '-MRT32'};
+subjects(14).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(14).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-014/ses-meg01/sub14ses01_3011085.02_20170111_01.ds';
 subjects(14).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-014/ses-beh01/sub14ses01.mat';
 subjects(14).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-014/polhemus_erfosc_sub-014.pos';
@@ -234,7 +234,7 @@ subjects(14).badtrials          = [];
 subjects(14).gammaband          = [54 74]; 
 subjects(14).gammapeak          = 64;% peakFreq _gamma WRONG??
 
-subjects(15).channels           = {'MEG', '-MRT32'};
+subjects(15).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(15).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-015/ses-meg01/sub15ses01_3011085.02_20170111_01.ds';
 subjects(15).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-015/ses-beh01/sub15ses01.mat';
 subjects(15).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-015/polhemus_erfosc_sub-015.pos';
@@ -246,7 +246,7 @@ subjects(15).badtrials          = [];
 subjects(15).gammaband          = [64 82];% absent
 subjects(15).gammapeak          = [80];
 
-subjects(16).channels           = {'MEG', '-MRT32'};
+subjects(16).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(16).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-016/ses-meg01/sub16ses01_3011085.02_20170112_01.ds';
 subjects(16).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-016/ses-beh01/sub16ses01.mat';
 subjects(16).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-016/polhemus_erfosc_sub-016.pos';
@@ -258,7 +258,7 @@ subjects(16).badtrials          = [];
 subjects(16).gammaband          = [46 70];
 subjects(16).gammapeak          = 58;
 
-subjects(17).channels           = {'MEG', '-MRT32'};
+subjects(17).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(17).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-017/ses-meg01/sub017ses01_3011085.02_20170222_01.ds';
 subjects(17).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-017/ses-beh01/sub17ses01.mat';
 subjects(17).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-017/polhemus_erfosc_sub-017.pos';
@@ -270,7 +270,7 @@ subjects(17).badtrials          = [];
 subjects(17).gammaband          = [60 84];
 subjects(17).gammapeak          = 70;
 
-subjects(18).channels           = {'MEG', '-MRT32'};
+subjects(18).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(18).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-018/ses-meg01/sub18ses01_3011085.02_20170112_01.ds';
 subjects(18).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-018/ses-beh01/sub18ses01.mat';
 subjects(18).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-018/polhemus_erfosc_sub-018.pos';
@@ -282,7 +282,7 @@ subjects(18).badtrials          = [];
 subjects(18).gammaband          = [60 70; 74 96]; % absent?
 subjects(18).gammapeak          = [62; 86];
 
-subjects(19).channels           = {'MEG', '-MRT32'};
+subjects(19).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(19).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-019/ses-meg01/sub19ses01_3011085.02_20170116_01.ds';
 subjects(19).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-019/ses-beh01/sub19ses01.mat';
 subjects(19).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-019/polhemus_erfosc_sub-019.pos';
@@ -294,7 +294,7 @@ subjects(19).badtrials          = [];
 subjects(19).gammaband          = [50 70];
 subjects(19).gammapeak          = 58;
 
-subjects(20).channels           = {'MEG', '-MRT32', '-MLP31'};
+subjects(20).channels           = {'MEG', '-MRT32', '-MLP31', 'HLC*'};
 subjects(20).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-020/ses-meg01/sub20ses01_3011085.02_20170117_01.ds';
 subjects(20).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-020/ses-beh01/sub20ses01.mat';
 subjects(20).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-020/polhemus_erfosc_sub-020.pos';
@@ -306,7 +306,7 @@ subjects(20).badtrials          = [299, 300]; % bad trials were identified with 
 subjects(20).gammaband          = [50 72];
 subjects(20).gammapeak          = 60;
 
-subjects(21).channels           = {'MEG', '-MRT32'};
+subjects(21).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(21).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-021/ses-meg01/sub021ses01_3011085.02_20170223_01.ds';
 subjects(21).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-021/ses-beh01/sub21ses01.mat';
 subjects(21).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-021/polhemus_erfosc_sub-021.pos';
@@ -318,7 +318,7 @@ subjects(21).badtrials          = [446, 447];
 subjects(21).gammaband          = [50 76];
 subjects(21).gammapeak          = 64;
 
-subjects(22).channels           = {'MEG', '-MRT32'};
+subjects(22).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(22).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-022/ses-meg01/sub22ses01_3011085.02_20170118_01.ds';
 subjects(22).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-022/ses-beh01/sub22ses01.mat';
 subjects(22).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-022/polhemus_erfosc_sub-022.pos';
@@ -330,7 +330,7 @@ subjects(22).badtrials          = [];
 subjects(22).gammaband          = [46 74];
 subjects(22).gammapeak          = 62;
 
-subjects(23).channels           = {'MEG', '-MRT32'};
+subjects(23).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(23).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-023/ses-meg01/sub23ses01_3011085.02_20170118_01.ds';
 subjects(23).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-023/ses-beh01/sub23ses01.mat';
 subjects(23).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-023/polhemus_erfosc_sub-023.pos';
@@ -342,7 +342,7 @@ subjects(23).badtrials          = [];
 subjects(23).gammaband          = [56 74];
 subjects(23).gammapeak          = 66;
 
-subjects(24).channels           = {'MEG', '-MRT32'};
+subjects(24).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(24).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-024/ses-meg01/sub024ses01_3011085.02_20170302_01.ds';
 subjects(24).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-024/ses-beh01/sub24ses01.mat';
 subjects(24).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-024/polhemus_erfosc_sub-024.pos';
@@ -354,7 +354,7 @@ subjects(24).badtrials          = [];
 subjects(24).gammaband          = [40 66];
 subjects(24).gammapeak          = 52;
 
-subjects(25).channels           = {'MEG', '-MRT32'};
+subjects(25).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(25).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-025/ses-meg01/sub25ses01_3011085.02_20170118_01.ds';
 subjects(25).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-025/ses-beh01/sub25ses01.mat';
 subjects(25).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-025/polhemus_erfosc_sub-025.pos';
@@ -366,7 +366,7 @@ subjects(25).badtrials          = [];
 subjects(25).gammaband          = [34 60];
 subjects(25).gammapeak          = 48;
 
-subjects(26).channels           = {'MEG', '-MRT32'};
+subjects(26).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(26).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-026/ses-meg01/sub26ses01_3011085.02_20170118_01.ds';
 subjects(26).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-026/ses-beh01/sub26ses01.mat';
 subjects(26).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-026/polhemus_erfosc_sub-026.pos';
@@ -378,7 +378,7 @@ subjects(26).badtrials          = [1, 399];
 subjects(26).gammaband          = [42 52];
 subjects(26).gammapeak          = 48;
 
-subjects(27).channels           = {'MEG', '-MRT32'};
+subjects(27).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(27).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-027/ses-meg01/sub027ses01_3011085.02_20170123_01.ds';
 subjects(27).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-027/ses-beh01/sub27ses01.mat';
 subjects(27).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-027/polhemus_erfosc_sub-027.pos';
@@ -390,7 +390,7 @@ subjects(27).badtrials          = [];
 subjects(27).gammaband          = [50 78];
 subjects(27).gammapeak          = 66;
 
-subjects(28).channels           = {'MEG', '-MRT32'};
+subjects(28).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(28).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-028/ses-meg01/sub028ses01_3011085.02_20170125_01.ds';
 subjects(28).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-028/ses-beh01/sub28ses01.mat';
 subjects(28).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-028/polhemus_erfosc_sub-028.pos';
@@ -402,7 +402,7 @@ subjects(28).badtrials          = [190, 453];
 subjects(28).gammaband          = [30 44; 68 86]; 
 subjects(28).gammapeak          = [34; 76]; % 34 strongest. 
 
-subjects(29).channels           = {'MEG', '-MRT32'};
+subjects(29).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(29).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-029/ses-meg01/sub029ses01_3011085.02_20170303_01.ds';
 subjects(29).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-029/ses-beh01/sub29ses01.mat';
 subjects(29).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-029/polhemus_erfosc_sub-029.pos';
@@ -414,7 +414,7 @@ subjects(29).badtrials          = [];
 subjects(29).gammaband          = [40 72];
 subjects(29).gammapeak          = 58; 
 
-subjects(30).channels           = {'MEG', '-MRT32', '-MRC11', '-MRF61'};
+subjects(30).channels           = {'MEG', '-MRT32', 'HLC*', '-MRC11', '-MRF61'};
 subjects(30).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-030/ses-meg01/sub030ses01_3011085.02_20170125_01.ds';
 subjects(30).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-030/ses-beh01/sub30ses01.mat';
 subjects(30).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-030/polhemus_erfosc_sub-030.pos';
@@ -426,7 +426,7 @@ subjects(30).badtrials          = [];
 subjects(30).gammaband          = [48 88];%absent?
 subjects(30).gammapeak          = 74;
 
-subjects(31).channels           = {'MEG', '-MRT32'};
+subjects(31).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(31).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-031/ses-meg01/sub031ses01_3011085.02_20170126_01.ds';
 subjects(31).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-031/ses-beh01/sub31ses01.mat';
 subjects(31).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-031/polhemus_erfosc_sub-031.pos';
@@ -438,7 +438,7 @@ subjects(31).badtrials          = [];
 subjects(31).gammaband          = [46 70];
 subjects(31).gammapeak          = 58;
 
-subjects(32).channels           = {'MEG', '-MRT32'};
+subjects(32).channels           = {'MEG', '-MRT32', 'HLC*'};
 subjects(32).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-032/ses-meg01/sub031ses01_3011085.02_20170126_02.ds';
 subjects(32).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-032/ses-beh01/sub32ses01.mat';
 subjects(32).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-032/polhemus_erfosc_sub-032.pos';
@@ -450,7 +450,7 @@ subjects(32).badtrials          = [];
 subjects(32).gammaband          = [34 64];
 subjects(32).gammapeak          = 52;
 
-subjects(33).channels           = {'MEG', '-MRT32', '-MLF12'};
+subjects(33).channels           = {'MEG', '-MRT32', '-MLF12', 'HLC*'};
 subjects(33).dataset            = '/home/electromag/matves/Data/3011085.02/raw/sub-033/ses-meg01/sub033ses01_3011085.02_20170126_01.ds';
 subjects(33).logfile            = '/home/electromag/matves/Data/3011085.02/raw/sub-033/ses-beh01/sub33ses01.mat';
 subjects(33).headshape          = '/home/electromag/matves/Data/3011085.02/raw/sub-033/polhemus_erfosc_sub-033.pos';
