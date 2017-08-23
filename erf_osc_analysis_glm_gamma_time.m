@@ -1,19 +1,11 @@
 function erf_osc_analysis_glm_gamma_time(subj, isPilot)
 % do a linear regression of pre-change gamma power over time.
-if nargin<1
+if nargin<1 || isempty(subj)
     subj = 1;
 end
-if isempty(subj)
-    subj = 1;
-end
-if nargin<2
+if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
-if isempty(isPilot);
-    isPilot = false;
-end
-
-% close all
 
 % Initiate Diary
 ft_diary('on')
