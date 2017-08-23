@@ -1,10 +1,13 @@
-function erf_osc_analysis_glm_gamma_time(subj, isPilot)
+function erf_osc_analysis_glm_gamma_time(subj, isPilot, doDSS)
 % do a linear regression of pre-change gamma power over time.
 if nargin<1 || isempty(subj)
     subj = 1;
 end
 if nargin<2 || isempty(isPilot)
     isPilot = false;
+end
+if nargin<3 || isempty(doDSS)
+    doDSS = false;
 end
 
 % Initiate Diary
@@ -18,31 +21,36 @@ if isPilot
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
 else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
-    [data_dss, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
+    if doDSS
+        [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
+    else    
+        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+        data = dataClean;
+        clear dataClean
+    end
 end
-fs=data_dss.fsample;
+fs=data.fsample;
 for i=1:length(gammaChan.trial)
     gammaPow(i) = log(gammaChan.trial(i).pow);
 end
 gammaPow = (gammaPow-mean(gammaPow))/std(gammaPow);
-nTrials = length(data_dss.trial);
+nTrials = length(data.trial);
 
 [~, idxMax] = sort(gammaPow, 2, 'descend');
 
 %% GLM on all trials
 design = [ones(size(gammaPow)); gammaPow];
-data=data_dss;
 cfg=[];
 cfg.lpifilter = 'yes';
 cfg.lpfilttype = 'firws';
 cfg.lpfreq = 40;
-data = ft_preprocessing(cfg, data);
-data.trial = cat(3,data.trial{:});
-data.trial = permute(data.trial, [3,1,2]);
-data.time = data.time{1};
+data2 = ft_preprocessing(cfg, data);
+data2.trial = cat(3,data2.trial{:});
+data2.trial = permute(data2.trial, [3,1,2]);
+data2.time = data2.time{1};
 
-for k=1:length(data.label)
-    Y = squeeze(data.trial(:,k,:));
+for k=1:length(data2.label)
+    Y = squeeze(data2.trial(:,k,:));
     betas(:,:,k) = design'\Y;
 end
 
@@ -50,10 +58,10 @@ end
 % put beta weights in timelock structure
 tl=[];
 tl.avg    = squeeze(betas(2,:,:))';
-tl.time   = data_dss.time{1};
+tl.time   = data.time{1};
 tl.dimord = 'chan_time';
-tl.label  = data_dss.label;
-tl.grad   = data_dss.grad;
+tl.label  = data.label;
+tl.grad   = data.grad;
 
 % planar combination
 cfg                 = [];
