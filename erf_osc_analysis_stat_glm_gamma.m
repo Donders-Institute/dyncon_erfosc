@@ -1,57 +1,47 @@
-function erf_osc_analysis_stat_glm_gamma
-% montecarlo based cluster statistics of the regression weights active vs
-% baseline over all subjects.
+function erf_osc_analysis_stat_glm_gamma(erfoi)
+
+if nargin<1 || isempty(erfoi)
+    erfoi = 'reversal';
+end
 
 
-% inititate diary
+% initiate diary
 ft_diary('on')
 
-% load data
+%% load data
 erf_osc_datainfo;
 
-for subj=allsubs;
-    w{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time.mat', subj),'tlPlanarCmb');
-    w{subj} = w{subj}.tlPlanarCmb;
-end
-
-% select baseline
-cfg1=[];
-cfg1.avgovertime='yes';
-cfg1.latency = [-0.5 0];
-
-% select active
-cfg2=[];
-cfg2.latency = [0 0.5];
-
-cfg3=[];
-cfg3.parameter = 'avg';
-cfg3.operation = '(x1-x2)./x2'; % relative change
-
-
 for subj=allsubs
-    bl{subj} = ft_selectdata(cfg1, w{subj});
-    act{subj} = ft_selectdata(cfg2, w{subj});
-    bl{subj}.time = act{subj}.time;
-    bl{subj}.avg = repmat(bl{subj}.avg, [1, length(bl{subj}.time)]);
-    difference{subj} = ft_math(cfg3, act{subj}, bl{subj});
+    tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time.mat', subj));
+    tstat1{subj} = tmp{subj}.tstat1;
+    tstat1_plCmb{subj} = tmp{subj}.tstat1_plCmb;
 end
+clear tmp
 
-cfg           = [];
-cfg.appenddim = 'rpt';
-actGA         = ft_appendtimelock(cfg, act{allsubs});
-blGA          = ft_appendtimelock(cfg, bl{allsubs});
-diffGA        = ft_appendtimelock(cfg, difference{allsubs});
+%% prepare for statistics
 
+% get grand average
+cfg               = [];
+cfg.appenddim     = 'rpt';
+tstat1_GA = ft_appendtimelock(cfg, tstat1{allsubs});
+tstat1_plCmb_GA = ft_appendtimelock(cfg, tstat1_plCmb{allsubs});
 
-%% statistics
+% create zero distribution
+cfg = [];
+cfg.parameter = 'trial';
+cfg.operation = 'x1*0';
+zero_distribution = ft_math(cfg, tstat1_GA);
+
+%% Do statistics
+
 Nsub = length(allsubs);
 
-cfg = [];
-cfg.method      = 'template'; % try 'distance' as well
-cfg.feedback    = 'no';
-neighbours      = ft_prepare_neighbours(cfg, actGA); % define neighbouring channels
+cfg                  = [];
+cfg.method           = 'template'; 
+cfg.feedback         = 'no';
+neighbours           = ft_prepare_neighbours(cfg, tstat1_GA); % define neighbouring channels
 
-cfg = [];
+cfg                  = [];
 cfg.channel          = 'MEG';
 cfg.neighbours       = neighbours;
 cfg.parameter        = 'trial';
@@ -59,20 +49,25 @@ cfg.method           = 'montecarlo';
 cfg.statistic        = 'ft_statfun_depsamplesT';
 cfg.alpha            = 0.05;
 cfg.correctm         = 'cluster';
-cfg.clusteralpha     = 0.05; 
+cfg.clusteralpha     = 0.05;
+cfg.minnbchan        = 2;
 cfg.correcttail      = 'prob';
 cfg.numrandomization = 10000;
 
-% cfg.design
+
 cfg.design(1,1:2*Nsub)  = [ones(1,Nsub) 2*ones(1,Nsub)];
 cfg.design(2,1:2*Nsub)  = [1:Nsub 1:Nsub];
 cfg.ivar                = 1; % the 1st row in cfg.design contains the independent variable
 cfg.uvar                = 2; % the 2nd row in cfg.design contains the subject number
 
-stat = ft_timelockstatistics(cfg, actGA, blGA);
+tstat2 = ft_timelockstatistics(cfg, tstat1_plCmb_GA, zero_distribution);
+
 
 % save
-filename = '/project/3011085.02/results/stat_glm_gamma_time.mat';
-save(filename, 'stat', 'diffGA');
+filename = sprintf('/project/3011085.02/results/stat_glm_gamma_time_%s.mat', erfoi);
+save(filename, 'tstat2', 'tstat1_GA');
 
 ft_diary('off')
+
+
+

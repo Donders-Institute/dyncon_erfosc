@@ -58,8 +58,33 @@ nTrials = length(data.trial);
 
 [~, idxMax] = sort(gammaPow, 2, 'descend');
 
+%% regress out headmotion
+load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/headmotion.mat', subj));
+cfg=[];
+cfg.channel                 = {'HLC0011','HLC0012','HLC0013', ...
+                              'HLC0021','HLC0022','HLC0023', ...
+                              'HLC0031','HLC0032','HLC0033'};
+headmotion = ft_selectdata(cfg, headmotion);
+
+% calculate the mean coil position per trial
+for trl = 1:nTrials
+coil1(:,trl) = [mean(headmotion.trial{1,trl}(1,:)); mean(headmotion.trial{1,trl}(2,:)); mean(headmotion.trial{1,trl}(3,:))];
+coil2(:,trl) = [mean(headmotion.trial{1,trl}(4,:)); mean(headmotion.trial{1,trl}(5,:)); mean(headmotion.trial{1,trl}(6,:))];
+coil3(:,trl) = [mean(headmotion.trial{1,trl}(7,:)); mean(headmotion.trial{1,trl}(8,:)); mean(headmotion.trial{1,trl}(9,:))];
+end
+ 
+% calculate the headposition and orientation per trial (for function see bottom page) 
+cc = circumcenter(coil1, coil2, coil3);
+
+% demean to obtain translations and rotations from the average position and orientation
+cc_dem = [cc - repmat(mean(cc,2),1,size(cc,2))]';
+
+
+% add head movements to the regressorlist. also add the constant (at the end; column 7)
+confound = [cc_dem ones(size(cc_dem,1),1)];
+
 %% GLM on all trials
-design = [ones(size(gammaPow)); gammaPow];
+
 cfg=[];
 cfg.lpfilter = 'yes';
 cfg.lpfilttype = 'firws';
@@ -74,32 +99,45 @@ data_conc = data;
 data_conc.trial = cat(3,data_conc.trial{:});
 data_conc.trial = permute(data_conc.trial, [3,1,2]);
 data_conc.time = data_conc.time{1};
+cfg=[];
+cfg.latency = [-0.5 0];
+baseline = ft_selectdata(cfg, data_conc);
+cfg.latency = [0 0.5];
+active = ft_selectdata(cfg, data_conc);
+
+
+design = [gammaPow zeros(size(gammaPow)); zeros(size(gammaPow)) gammaPow; ones(size(gammaPow)) ones(size(gammaPow)); ...
+    0.5*ones(size(gammaPow)) -0.5*ones(size(gammaPow)); cc_dem' cc_dem'];
+contrast = [1 -1 0 0 0 0 0 0 0 0];
+
+cfg=[];
+cfg.glm.contrast = contrast;
+cfg.glm.statistic = 'T';
 
 for k=1:length(data_conc.label)
-    Y = squeeze(data_conc.trial(:,k,:));
-    betas(:,:,k) = design'\Y;
+    dat = [squeeze(active.trial(:,k,:)); squeeze(baseline.trial(:,k,:))]';
+    dat = (dat - repmat(mean(dat,2),[1 length(data.trialinfo)*2]))./(repmat(std(dat,[],2),[1 length(data.trialinfo)*2]));
+    tmp = statfun_glm(cfg, dat, design);
+    tstat1_tmp(k,:) = tmp.stat;
 end
 
 %% planar gradiant transformation of beta weights
 % put beta weights in timelock structure
-tl=[];
-tl.avg    = squeeze(betas(2,:,:))';
-tl.time   = data.time{1};
-tl.dimord = 'chan_time';
-tl.label  = data.label;
-tl.grad   = data.grad;
+tstat1        = rmfield(data,{'trial', 'cfg'});
+tstat1.avg    = tstat1_tmp;
+tstat1.time   = active.time;
+tstat1.dimord = 'chan_time';
 
 % planar combination
 cfg                 = [];
 cfg.feedback        = 'no';
 cfg.method          = 'template';
-cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
+cfg.neighbours      = ft_prepare_neighbours(cfg, tstat1);
 cfg.planarmethod    = 'sincos';
-tlPlanar            = ft_megplanar(cfg, tl);
+tstat1_planar            = ft_megplanar(cfg, tstat1);
 cfg                 = [];
-cfg.demean          = 'yes';
-cfg.baselinewindow  = [-0.25 0];
-tlPlanarCmb         = ft_combineplanar(cfg,tlPlanar);
+cfg.demean          = 'no';
+tstat1_plCmb        = ft_combineplanar(cfg,tstat1_planar);
 
 
 %% Save
@@ -108,6 +146,6 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time', subj);
 end
-save(fullfile([filename '.mat']), 'betas', 'tlPlanarCmb','tl', '-v7.3');
+save(fullfile([filename '.mat']), 'tstat1', 'tstat1_plCmb', '-v7.3');
 ft_diary('off')
 
