@@ -118,6 +118,12 @@ cfg.reject                  = [1:6]; % keeping the constant (nr 7)
 tlck = ft_regressconfound(cfg, tlck);
 
 cfg=[];
+cfg.lpfilter = 'yes';
+cfg.lpfilttype = 'firws';
+cfg.lpfreq = 30;
+tlck = ft_preprocessing(cfg, tlck);
+
+cfg=[];
 cfg.avgoverrpt = 'yes';
 tlck = ft_selectdata(cfg, tlck);
 
