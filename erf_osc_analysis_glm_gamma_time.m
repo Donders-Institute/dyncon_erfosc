@@ -1,4 +1,4 @@
-function erf_osc_analysis_glm_gamma_time(subj, isPilot, doDSS)
+function erf_osc_analysis_glm_gamma_time(subj, isPilot, erfoi, doDSS)
 % do a linear regression of pre-change gamma power over time.
 if nargin<1 || isempty(subj)
     subj = 1;
@@ -6,9 +6,13 @@ end
 if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
-if nargin<3 || isempty(doDSS)
+if nargin<3 || isempty(erfoi)
+    erfoi = 'reversal';
+end
+if nargin<4 || isempty(doDSS)
     doDSS = false;
 end
+
 
 % Initiate Diary
 ft_diary('on')
@@ -30,6 +34,22 @@ else
     end
 end
 fs=data.fsample;
+if ~doDSS
+    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
+    nTrials = length(idxM);
+    
+    cfg=[];
+    cfg.trials = idxM;
+    cfg.channel = 'MEG';
+    data = ft_selectdata(cfg, data);
+    
+    if strcmp(erfoi, 'reversal')
+        cfg=[];
+        cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+        data = ft_redefinetrial(cfg, data);
+    end
+end
+
 for i=1:length(gammaChan.trial)
     gammaPow(i) = log(gammaChan.trial(i).pow);
 end
@@ -41,16 +61,22 @@ nTrials = length(data.trial);
 %% GLM on all trials
 design = [ones(size(gammaPow)); gammaPow];
 cfg=[];
-cfg.lpifilter = 'yes';
+cfg.lpfilter = 'yes';
 cfg.lpfilttype = 'firws';
-cfg.lpfreq = 40;
-data2 = ft_preprocessing(cfg, data);
-data2.trial = cat(3,data2.trial{:});
-data2.trial = permute(data2.trial, [3,1,2]);
-data2.time = data2.time{1};
+cfg.lpfreq = 30;
+data = ft_preprocessing(cfg, data);
+if ~doDSS
+    cfg=[];
+    cfg.latency = [-1 0.65];
+    data = ft_selectdata(cfg, data);
+end
+data_conc = data;
+data_conc.trial = cat(3,data_conc.trial{:});
+data_conc.trial = permute(data_conc.trial, [3,1,2]);
+data_conc.time = data_conc.time{1};
 
-for k=1:length(data2.label)
-    Y = squeeze(data2.trial(:,k,:));
+for k=1:length(data_conc.label)
+    Y = squeeze(data_conc.trial(:,k,:));
     betas(:,:,k) = design'\Y;
 end
 
