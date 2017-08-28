@@ -58,31 +58,6 @@ nTrials = length(data.trial);
 
 [~, idxMax] = sort(gammaPow, 2, 'descend');
 
-%% regress out headmotion
-load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/headmotion.mat', subj));
-cfg=[];
-cfg.channel                 = {'HLC0011','HLC0012','HLC0013', ...
-                              'HLC0021','HLC0022','HLC0023', ...
-                              'HLC0031','HLC0032','HLC0033'};
-headmotion = ft_selectdata(cfg, headmotion);
-
-% calculate the mean coil position per trial
-for trl = 1:nTrials
-coil1(:,trl) = [mean(headmotion.trial{1,trl}(1,:)); mean(headmotion.trial{1,trl}(2,:)); mean(headmotion.trial{1,trl}(3,:))];
-coil2(:,trl) = [mean(headmotion.trial{1,trl}(4,:)); mean(headmotion.trial{1,trl}(5,:)); mean(headmotion.trial{1,trl}(6,:))];
-coil3(:,trl) = [mean(headmotion.trial{1,trl}(7,:)); mean(headmotion.trial{1,trl}(8,:)); mean(headmotion.trial{1,trl}(9,:))];
-end
- 
-% calculate the headposition and orientation per trial (for function see bottom page) 
-cc = circumcenter(coil1, coil2, coil3);
-
-% demean to obtain translations and rotations from the average position and orientation
-cc_dem = [cc - repmat(mean(cc,2),1,size(cc,2))]';
-
-
-% add head movements to the regressorlist. also add the constant (at the end; column 7)
-confound = [cc_dem ones(size(cc_dem,1),1)];
-
 %% GLM on all trials
 
 cfg=[];
@@ -107,8 +82,8 @@ active = ft_selectdata(cfg, data_conc);
 
 
 design = [gammaPow zeros(size(gammaPow)); zeros(size(gammaPow)) gammaPow; ones(size(gammaPow)) ones(size(gammaPow)); ...
-    0.5*ones(size(gammaPow)) -0.5*ones(size(gammaPow)); cc_dem' cc_dem'];
-contrast = [1 -1 0 0 0 0 0 0 0 0];
+    0.5*ones(size(gammaPow)) -0.5*ones(size(gammaPow))];
+contrast = [1 -1 0 0];
 
 cfg=[];
 cfg.glm.contrast = contrast;
