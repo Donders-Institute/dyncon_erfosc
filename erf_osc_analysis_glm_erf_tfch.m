@@ -70,10 +70,37 @@ end
 fs=data.fsample;
 nTrials = length(data.trial);
 
+%% regress out headmotion
+load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/headmotion.mat', subj));
+cfg=[];
+cfg.channel                 = {'HLC0011','HLC0012','HLC0013', ...
+                              'HLC0021','HLC0022','HLC0023', ...
+                              'HLC0031','HLC0032','HLC0033'};
+headmotion = ft_selectdata(cfg, headmotion);
+
+% calculate the mean coil position per trial
+for trl = 1:nTrials
+coil1(:,trl) = [mean(headmotion.trial{1,trl}(1,:)); mean(headmotion.trial{1,trl}(2,:)); mean(headmotion.trial{1,trl}(3,:))];
+coil2(:,trl) = [mean(headmotion.trial{1,trl}(4,:)); mean(headmotion.trial{1,trl}(5,:)); mean(headmotion.trial{1,trl}(6,:))];
+coil3(:,trl) = [mean(headmotion.trial{1,trl}(7,:)); mean(headmotion.trial{1,trl}(8,:)); mean(headmotion.trial{1,trl}(9,:))];
+end
+ 
+% calculate the headposition and orientation per trial (for function see bottom page) 
+cc = circumcenter(coil1, coil2, coil3);
+
+% demean to obtain translations and rotations from the average position and orientation
+cc_dem = [cc - repmat(mean(cc,2),1,size(cc,2))]';
+
+
+% add head movements to the regressorlist. also add the constant (at the end; column 7)
+confound = [cc_dem ones(size(cc_dem,1),1)];
+ 
+
 
 %% select p1 amplitude for regression
 cfg=[];
 cfg.vartrllength=2;
+cfg.keeptrials = 'yes';
 tlck = ft_timelockanalysis(cfg, data);
 allchans = tlck.label;
 
@@ -84,8 +111,18 @@ cfg.channel = {'MRO', 'MRP', 'MLO', 'MLP', 'MZO', 'MZP'};
 cfg.latency = [tlck.time(t1p1) tlck.time(t2p1)];
 tlck = ft_selectdata(cfg, tlck);
 
+% regress out headposition confounds
+cfg                         = [];
+cfg.confound                = confound;
+cfg.reject                  = [1:6]; % keeping the constant (nr 7)
+tlck = ft_regressconfound(cfg, tlck);
+
+cfg=[];
+cfg.avgoverrpt = 'yes';
+tlck = ft_selectdata(cfg, tlck);
+
 time = tlck.time;
-[~, maxchan] = max(abs(mean(tlck.avg,2))); % find channel with max amplitude
+[~, maxchan] = max(abs(mean(tlck.trial,2))); % find channel with max amplitude
 % calculate mean over every window to find out which window has the maximum
 % mean amplitude (for the maximum channel!). Take the mean amplitude in
 % this latency window as regression weight.
@@ -95,12 +132,11 @@ halfwindowlength = 8;
 i=1;
 for ntrl = halfwindowlength+1:length(time)-halfwindowlength
     win(i,:) = [time(ntrl-8), time(ntrl+8)];
-    avg(i,1) = mean(tlck.avg(maxchan,ntrl-8:ntrl+8),2);
+    avg(i,1) = mean(tlck.trial(maxchan,ntrl-8:ntrl+8),2);
     i=i+1;
 end
 [~, window] = max(abs(avg));
 lat = win(window,:);
-
 
 cfg=[];
 cfg.latency = lat;
@@ -124,84 +160,64 @@ p1amp = multiplier(p1chans)'*p1amp_all(p1chans,:)/num_p1chans;
 %% Regression p1 amplitude over time-frequency-channel
 
 % load TFA data
-load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, zeropoint));
+load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, zeropoint), 'tfa');
+load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, 'onset'), 'baseline');
 
 % select active window of TFA
 if strcmp(zeropoint, 'onset')
     cfg=[];
-    cfg.latency = [-1 1]; % shortest baseline window is 1 second, shortest reversal 1 second as well
+    cfg.latency = [0.125 0.75]; % shortest baseline window is 1 second, shortest reversal 1 second as well
     tfa = ft_selectdata(cfg, tfa);
 else
     cfg=[];
-    cfg.latency = [-1 0];
+    cfg.latency = [-0.75 -0.125];
     tfa = ft_selectdata(cfg, tfa);
+    cfg.latency = [-0.9 0.25];
+    baseline = ft_selectdata(cfg, baseline);
 end
 cfg=[];
 cfg.parameter = 'powspctrm';
 cfg.operation = 'log10';
 tfa = ft_math(cfg, tfa);
-if strcmp(zeropoint, 'onset');
-    baseline = ft_math(cfg, baseline);
-end
+baseline = ft_math(cfg, baseline);
+
 
 nchan = size(tfa.powspctrm, 2);
 nfreq = size(tfa.powspctrm, 3);
 ntime = size(tfa.powspctrm, 4);
 ntrl = size(p1amp,2);
 
-design = [ones(size(p1amp)); ((p1amp-mean(p1amp))./std(p1amp))];
-for freq=1:nfreq
-    for ch=1:nchan
-        Y = squeeze(squeeze(tfa.powspctrm(:,ch,freq,:)));
-        betas_tmp(freq,ch,:,:) = design'\Y;
-        if strcmp(zeropoint, 'onset')
-            Y_bl = squeeze(squeeze(baseline.powspctrm(:,ch,freq,:)));
-            betas_bl_tmp(freq,ch,:,:) = design'\Y_bl;
-        end
+design = [((p1amp-mean(p1amp))./std(p1amp)) zeros(1,ntrl); zeros(1,ntrl) ((p1amp-mean(p1amp))./std(p1amp));...
+    ones(1,ntrl*2); zeros(1,ntrl) ones(1,ntrl); cc_dem' cc_dem'];
+contrast = [1 -1 0 0 0 0 0 0 0 0];
+
+cfg=[];
+cfg.glm.contrast = contrast;
+cfg.glm.statistic = 'T';
+
+
+for freq = 1:nfreq
+    for ch = 1:nchan
+        dat = [squeeze(squeeze(tfa.powspctrm(:,ch,freq,:))); squeeze(squeeze(baseline.powspctrm(:,ch,freq,:)))]';
+        dat = (dat - repmat(mean(dat,2),[1 length(tfa.trialinfo)*2]))./(repmat(std(dat,[],2),[1 length(tfa.trialinfo)*2]));
+        tmp = statfun_glm(cfg, dat, design);
+        tstat_tmp(freq,ch,:,:) = tmp.stat;
     end
 end
 
-numShuffles=100;
-all_shuffles = zeros(nchan, nfreq, ntime, numShuffles);
-for iShuffle = 1:numShuffles
-  shufvec = randperm(ntrl);  
-  betas_shuf = zeros(nchan, nfreq*ntime); % store betas for this shuffle across channels
-  for ch = 1:nchan
-    design_shuf = design;
-    design_shuf = design_shuf(:,shufvec);
-    Y1  = reshape(tfa.powspctrm(:,ch,:,:),[],nfreq*ntime);
-    tmp = design_shuf'\Y1;
-    betas_shuf(ch,:) = tmp(2,:);
-  end
-  all_shuffles(:,:,:,iShuffle) = reshape(betas_shuf, [nchan nfreq ntime]);
-end
-avg_shuffles = mean(all_shuffles,4);
-std_shuffles = std(all_shuffles,[],4);
-
 %% Put betas and shuffles in freq-structure
-betas = rmfield(tfa, {'powspctrm', 'cfg'});
-betas.powspctrm = permute(squeeze(betas_tmp(:,:,2,:)), [2,1,3]);
-betas.dimord = 'chan_freq_time';
-if strcmp(zeropoint, 'onset')
-    betas_baseline = rmfield(betas, 'powspctrm');
-    betas_baseline.powspctrm = permute(squeeze(betas_bl_tmp(:,:,2,:)), [2,1,3]);
-    betas_baseline.time = betas_baseline.time(1:size(betas_baseline.powspctrm, 3));
-else
-    betas_baseline = 'see zeropoint=onset';
-end
-shufflesAvg     = rmfield(betas, 'powspctrm');
-shufflesAvg.powspctrm = avg_shuffles;
-shufflesStd     = rmfield(betas, 'powspctrm');
-shufflesStd.powspctrm = std_shuffles;
+tstat1 = rmfield(tfa, {'powspctrm', 'cfg'});
+tstat1.powspctrm = permute(tstat_tmp, [2,1,3]);
+tstat1.dimord = 'chan_freq_time';
 
 %% Save
 
 if isPilot
-    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tstat_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tstat_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
-save(fullfile([filename '.mat']), 'betas','betas_baseline', 'all_shuffles', 'shufflesAvg', 'shufflesStd', 'lat', 'p1amp', 'maxchanid','p1chans_id', '-v7.3');
+save(fullfile([filename '.mat']), 'tstat1', 'lat', 'p1amp', 'maxchanid','p1chans_id', '-v7.3');
 
 ft_diary('off')
 

@@ -17,72 +17,23 @@ ft_diary('on')
 erf_osc_datainfo;
 
 for subj=allsubs
-    tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s.mat', subj, freqRange, zeropoint, erfoi));
-    avg_shuffles{subj} = tmp{subj}.shufflesAvg;
-    std_shuffles{subj} = tmp{subj}.shufflesStd;
-    betas{subj} = tmp{subj}.betas;
-    betas_baseline{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_onset_erf_%s.mat',subj, freqRange, erfoi),'betas_baseline');
-    betas_baseline{subj} = betas_baseline{subj}.betas_baseline;
-    betas_baseline_no_avg = betas_baseline;
+    tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tstat_%s_%s_erf_%s.mat', subj, freqRange, zeropoint, erfoi));
+    tstat1{subj} = tmp{subj}.betas;
 end
 clear tmp
-%%%%%%%%%%%%%%%%%%%%%%%
-% ACTIVE VS. BASELINE %
-%%%%%%%%%%%%%%%%%%%%%%%
-%% Baseline correct
-% average baseline over time and repeat over time
 
-for subj = allsubs
-    cfg=[];
-    cfg.avgovertime = 'yes';
-    betas_baseline{subj} = ft_selectdata(cfg, betas_baseline{subj});
-    betas_baseline{subj}.powspctrm = repmat(betas_baseline{subj}.powspctrm, [1,1, length(betas{1}.time)]);
-    betas_baseline{subj}.time = betas{subj}.time;
-    cfg=[];
-    cfg.latency=[betas{1}.time(end-15) betas{1}.time(end)];
-    betas_short{subj} = ft_selectdata(cfg, betas{subj});
-    betas_baseline_no_avg{subj}.time = betas_short{subj}.time;
-end
-
-cfg           = [];
-cfg.parameter = 'powspctrm';
-cfg.operation = 'subtract'; %relative change
-for subj=allsubs
-    diffBetas{subj} = ft_math(cfg, betas{subj}, betas_baseline{subj});
-    diffBetas_no_avg{subj} = ft_math(cfg, betas_short{subj}, betas_baseline_no_avg{subj});
-end
+%% prepare for statistics
 
 % get grand average
 cfg               = [];
 cfg.appenddim     = 'rpt';
-diffBetasAvg = ft_appendfreq(cfg, diffBetas{allsubs});
-% diffBetasAvg2 = ft_appendfreq(cfg, diffBetas_no_avg{allsubs});
-betas_GA = ft_appendfreq(cfg, betas{allsubs});
-% betas_short_GA = ft_appendfreq(cfg, betas_short{allsubs});
-betas_baseline_GA = ft_appendfreq(cfg, betas_baseline{allsubs});
-% betas_baseline_no_avg_GA = ft_appendfreq(cfg, betas_baseline_no_avg{allsubs});
+tstat1_GA = ft_appendfreq(cfg, tstat1{allsubs});
 
-%%%%%%%%%%%%%%%%%%%%%%%
-% ACTIVE VS. SHUFFLES %
-%%%%%%%%%%%%%%%%%%%%%%%
-%{
-%% Baseline correct
-
-cfg           = [];
+% create zero distribution
+cfg = [];
 cfg.parameter = 'powspctrm';
-cfg.operation = 'subtract'; %relative change
-for subj=allsubs
-    diffBetas{subj} = ft_math(cfg, betas{subj}, avg_shuffles{subj});
-end
-
-% get grand average
-cfg               = [];
-cfg.appenddim     = 'rpt';
-diffBetasAvg = ft_appendfreq(cfg, diffBetas{allsubs});
-avg_betas_GA = ft_appendfreq(cfg, betas{allsubs});
-avg_shuffles_GA = ft_appendfreq(cfg, avg_shuffles{allsubs});
-
-%}
+cfg.operation = 'x1*0';
+zero_distribution = ft_math(cfg, tstat1_GA);
 
 %% Do statistics
 
@@ -91,7 +42,7 @@ Nsub = length(allsubs);
 cfg                  = [];
 cfg.method           = 'template'; 
 cfg.feedback         = 'no';
-neighbours           = ft_prepare_neighbours(cfg, betas_GA); % define neighbouring channels
+neighbours           = ft_prepare_neighbours(cfg, tstat1_GA); % define neighbouring channels
 
 cfg                  = [];
 cfg.channel          = 'MEG';
@@ -112,12 +63,12 @@ cfg.design(2,1:2*Nsub)  = [1:Nsub 1:Nsub];
 cfg.ivar                = 1; % the 1st row in cfg.design contains the independent variable
 cfg.uvar                = 2; % the 2nd row in cfg.design contains the subject number
 
-stat = ft_freqstatistics(cfg, betas_GA, betas_baseline_GA);
+tstat2 = ft_freqstatistics(cfg, tstat1_GA, zero_distribution);
 
 
 % save
-filename = sprintf('/project/3011085.02/results/stat_glm_tf_%s_%s_erf_%s.mat', freqRange, zeropoint, erfoi);
-save(filename, 'stat', 'diffBetasAvg', 'betas_GA', 'betas_baseline_GA', 'betas_baseline_no_avg_GA', 'betas_short_GA');
+filename = sprintf('/project/3011085.02/results/stat_glm_tstat_%s_%s_erf_%s.mat', freqRange, zeropoint, erfoi);
+save(filename, 'tstat2', 'tstat1_GA');
 
 ft_diary('off')
 
