@@ -101,21 +101,6 @@ cfg.demean          = 'yes';
 cfg.baselinewindow  = [-0.25 0];
 tlPlanarCmb         = ft_combineplanar(cfg,tlPlanar);
 
-%% Normalize beta weights
-% zscore manually based on baseline window
-t1        = nearest(tlPlanarCmb.time, -0.25);
-t2        = nearest(tlPlanarCmb.time, 0);
-mu        = rmfield(tlPlanarCmb, 'avg');
-mu.avg    = mean(tlPlanarCmb.avg(:,t1:t2), 2);
-mu.avg    = repmat(mu.avg, [1, length(tlPlanarCmb.time)]);
-sigma     = rmfield(tlPlanarCmb, 'avg');
-sigma.avg = std(tlPlanarCmb.avg(:,t1:t2),[],2);
-sigma.avg = repmat(sigma.avg, [1, length(tlPlanarCmb.time)]);
-
-cfg=[];
-cfg.parameter = 'avg';
-cfg.operation = '(x1-x2)./x3';
-tlPlanarCmbZ = ft_math(cfg, tlPlanarCmb, mu, sigma);
 
 %% Save
 if isPilot
@@ -123,6 +108,6 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time', subj);
 end
-save(fullfile([filename '.mat']), 'betas', 'tlPlanarCmb','tlPlanarCmbZ','tl', '-v7.3');
+save(fullfile([filename '.mat']), 'betas', 'tlPlanarCmb','tl', '-v7.3');
 ft_diary('off')
 
