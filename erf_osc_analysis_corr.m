@@ -31,16 +31,23 @@ erf_osc_datainfo;
 % gamma power - reaction time %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if strcmp(correlation, 'gamma_rt');
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan'); % load gamma power
-    load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load gamma power
+    for subj=allsubs
+        load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
+        load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan'); % load gamma power
+        rt{subj} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load gamma power
+        rt{subj} = rt{subj}.rt;
+        
+        for i=1:length(gammaChan.trial)
+            gammaPow_tmp(i) = log(gammaChan.trial(i).pow);
+        end
+        gammaPow{subj} = gammaPow_tmp-mean(gammaPow_tmp);
+        clear gammaChan gammaPow_tmp
+        [r(subj) p(subj)] = corr(gammaPow{subj}', rt{subj}, 'type', 'spearman');
+    end 
     
-    for i=1:length(gammaChan.trial)
-        gammaPow_tmp(i) = log(gammaChan.trial(i).pow);
-    end
-    gammaPow = gammaPow_tmp-mean(gammaPow_tmp);
-    clear gammaChan gammaPow_tmp
-    [r p] = corr(gammaPow', rt, 'type', 'spearman');
+    % statistics
+    stat=[];
+    [stat.h stat.p]= ttest(r);
     
 elseif strcmp(correlation, 'amp_tfr')
     %%%%%%%%%%%%%%%%%%%%%%
@@ -165,7 +172,7 @@ elseif strcmp(correlation, 'amp_tfr')
     cfg.operation = 'log10';
     tfa = ft_math(cfg, tfa);
     baseline = ft_math(cfg, baseline);
-        
+    
     nchan = size(tfa.powspctrm, 2);
     nfreq = size(tfa.powspctrm, 3);
     ntime = size(tfa.powspctrm, 4);
@@ -184,7 +191,7 @@ elseif strcmp(correlation, 'amp_tfr')
     % Fisher z-transformation
     z_act_tmp = atanh(r_act);
     z_bl_tmp = atanh(r_bl);
-   
+    
     %% put correlations in FieldTrip freq structure
     z_act = rmfield(tfa, {'powspctrm', 'cfg'});
     z_act.dimord = 'chan_freq_time';
@@ -196,12 +203,8 @@ elseif strcmp(correlation, 'amp_tfr')
 end
 %% save
 if strcmp(correlation, 'gamma_rt');
-    if isPilot
-        filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/corr_gamma_rt', subj);
-    else
-        filename = sprintf('/project/3011085.02/results/freq/sub-%03d/corr_gamma_rt', subj);
-    end
-    save(fullfile([filename '.mat']), 'r', 'p', 'rt', 'gammaPow');
+    filename = '/project/3011085.02/results/stat_corr_gamma_rt';
+    save(fullfile([filename '.mat']), 'stat', 'r', 'p', 'rt', 'gammaPow');
 elseif strcmp(correlation, 'amp_tfr')
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/corr_amp_tfr', subj);
     save(fullfile([filename '.mat']), 'z_act', 'z_bl', 'r_act', 'r_bl', 'lat', 'p1amp', 'maxchanid','p1chans_id');
