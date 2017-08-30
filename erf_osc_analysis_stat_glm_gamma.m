@@ -14,7 +14,6 @@ erf_osc_datainfo;
 for subj=allsubs
     tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time.mat', subj));
     tstat1{subj} = tmp{subj}.tstat1;
-    tstat1_plCmb{subj} = tmp{subj}.tstat1_plCmb;
 end
 clear tmp
 
@@ -24,7 +23,7 @@ clear tmp
 cfg               = [];
 cfg.appenddim     = 'rpt';
 tstat1_GA = ft_appendtimelock(cfg, tstat1{allsubs});
-tstat1_plCmb_GA = ft_appendtimelock(cfg, tstat1_plCmb{allsubs});
+clear tstat1
 
 % create zero distribution
 cfg = [];
@@ -39,6 +38,7 @@ Nsub = length(allsubs);
 cfg                  = [];
 cfg.method           = 'template'; 
 cfg.feedback         = 'no';
+% neighbours           = ft_prepare_neighbours(cfg, tstat1_plCmb_GA); % define neighbouring channels
 neighbours           = ft_prepare_neighbours(cfg, tstat1_GA); % define neighbouring channels
 
 cfg                  = [];
@@ -50,7 +50,6 @@ cfg.statistic        = 'ft_statfun_depsamplesT';
 cfg.alpha            = 0.05;
 cfg.correctm         = 'cluster';
 cfg.clusteralpha     = 0.05;
-cfg.minnbchan        = 2;
 cfg.correcttail      = 'prob';
 cfg.numrandomization = 10000;
 
@@ -60,12 +59,12 @@ cfg.design(2,1:2*Nsub)  = [1:Nsub 1:Nsub];
 cfg.ivar                = 1; % the 1st row in cfg.design contains the independent variable
 cfg.uvar                = 2; % the 2nd row in cfg.design contains the subject number
 
-tstat2 = ft_timelockstatistics(cfg, tstat1_plCmb_GA, zero_distribution);
+tstat2 = ft_timelockstatistics(cfg, tstat1_GA, zero_distribution);
 
 
 % save
-filename = sprintf('/project/3011085.02/results/stat_glm_gamma_time_%s.mat', erfoi);
-save(filename, 'tstat2', 'tstat1_GA');
+filename = sprintf('/project/3011085.02/results/stat_glm_gamma_time_%s', erfoi);
+save(fullfile([filename, '.mat']), 'tstat2', 'tstat1_GA');
 
 ft_diary('off')
 

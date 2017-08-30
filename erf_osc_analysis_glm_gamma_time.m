@@ -96,24 +96,11 @@ for k=1:length(data_conc.label)
     tstat1_tmp(k,:) = tmp.stat;
 end
 
-%% planar gradiant transformation of beta weights
 % put beta weights in timelock structure
 tstat1        = rmfield(data,{'trial', 'cfg'});
 tstat1.avg    = tstat1_tmp;
 tstat1.time   = active.time;
 tstat1.dimord = 'chan_time';
-
-% planar combination
-cfg                 = [];
-cfg.feedback        = 'no';
-cfg.method          = 'template';
-cfg.neighbours      = ft_prepare_neighbours(cfg, tstat1);
-cfg.planarmethod    = 'sincos';
-tstat1_planar            = ft_megplanar(cfg, tstat1);
-cfg                 = [];
-cfg.demean          = 'no';
-tstat1_plCmb        = ft_combineplanar(cfg,tstat1_planar);
-
 
 %% Save
 if isPilot
@@ -121,6 +108,6 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time', subj);
 end
-save(fullfile([filename '.mat']), 'tstat1', 'tstat1_plCmb', '-v7.3');
+save(fullfile([filename '.mat']), 'tstat1', '-v7.3');
 ft_diary('off')
 
