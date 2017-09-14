@@ -35,7 +35,8 @@ else
 end
 fs=data.fsample;
 if ~doDSS
-    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
+    
+    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
     nTrials = length(idxM);
     
     cfg=[];
@@ -43,20 +44,39 @@ if ~doDSS
     cfg.channel = 'MEG';
     data = ft_selectdata(cfg, data);
     
+    % find out which trials have response after end of trial, so you can
+    % exclude them
+    cfg=[];
+    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    data_reversal_tmp = ft_redefinetrial(cfg, data);
+    
+    for iTrial=1:nTrials
+        trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
+    end
+    idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    
+    cfg=[];
+    cfg.trials = idx_trials;
+    data = ft_selectdata(cfg, data);
+    
+    
     if strcmp(erfoi, 'reversal')
         cfg=[];
         cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-        data = ft_redefinetrial(cfg, data);
+        data=ft_redefinetrial(cfg, data);
     elseif strcmp(erfoi, 'motor')
         cfg=[];
-        cfg.offset = -(data.trialinfo(:,6)-data.ltrialinfo(:,4));
+        cfg.offset = -(data.trialinfo(:,6)-data.trialinfo(:,4));
         data=ft_redefinetrial(cfg, data);
     end
+    clear data_reversal_tmp trlLatency
 end
 
 for i=1:length(gammaChan.trial)
     gammaPow(i) = log(gammaChan.trial(i).pow);
 end
+gammaPow(idx_trials_invalid)=[];
 gammaPow = (gammaPow-mean(gammaPow))/std(gammaPow);
 nTrials = length(data.trial);
 
@@ -68,11 +88,18 @@ cfg=[];
 cfg.lpfilter = 'yes';
 cfg.lpfilttype = 'firws';
 cfg.lpfreq = 30;
-% cfg.lpfiltdir = 'onepass-reverse';
+cfg.lpfiltdir = 'onepass-reverse';
 data = ft_preprocessing(cfg, data);
 if ~doDSS
     cfg=[];
-    cfg.latency = [-1 0.65];
+    if strcmp(erfoi, 'motor')
+        for iTrial = 1:nTrials
+            trlLatency(iTrial) = data.time{iTrial}(end);
+        end
+        cfg.latency = [-1 0];
+    else
+        cfg.latency = [-1 0.65];
+    end
     data = ft_selectdata(cfg, data);
 end
 
@@ -84,18 +111,16 @@ if ~strcmp(erfoi,'motor')
     cfg=[];
     cfg.latency = [-0.5 0];
     baseline = ft_selectdata(cfg, data_conc);
+    cfg.latency = [0 0.5];
+    active = ft_selectdata(cfg, data_conc);
+else
+    cfg.latency = [-0.5 0];
+    active = ft_selectdata(cfg, data_conc);
 end
-cfg.latency = [0 0.5];
-active = ft_selectdata(cfg, data_conc);
 
-
-% design = [gammaPow zeros(size(gammaPow)); zeros(size(gammaPow)) gammaPow; ones(size(gammaPow)) ones(size(gammaPow)); ...
-%     0.5*ones(size(gammaPow)) -0.5*ones(size(gammaPow))];
-% contrast = [1 -1 0 0];
 design = [gammaPow; ones(size(gammaPow))];
 
 cfg=[];
-% cfg.glm.contrast = contrast;
 cfg.glm.statistic = 'beta';
 
 for k=1:length(data_conc.label)
@@ -140,7 +165,7 @@ end
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_gamma_time_%s', subj, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time_%s', subj, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time_%s_revfiltdir', subj, erfoi);
 end
 save(fullfile([filename '.mat']), 'betas_plcmb','betas_bl_plcmb', 'betas','betas_bl', '-v7.3');
 ft_diary('off')
