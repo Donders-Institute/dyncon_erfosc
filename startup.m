@@ -13,7 +13,6 @@ else
     
     addpath('/project/3011085.02/scripts/erfosc');
     addpath('/home/electromag/matves/MATLAB');
-    addpath('/home/electromag/matves/Data/bbcm/');
     addpath('/home/electromag/matves/MATLAB/cellfunction/');
     % Dss and ASEO
     addpath('/home/electromag/matves/MATLAB/dss_aseo/peakfit');
