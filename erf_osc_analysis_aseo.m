@@ -85,12 +85,32 @@ else
     data = data.dataClean;
     fs = data.fsample;
     
-    % select only shift trials, with valid response
-    idxM        = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
-    cfg         = [];
-    cfg.trials  = idxM;
+   % select only shift trials, with valid response
+    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
+    nTrials = length(idxM);
+    
+    cfg=[];
+    cfg.trials = idxM;
     cfg.channel = 'MEG';
-    data        = ft_selectdata(cfg, data);
+    data = ft_selectdata(cfg, data);
+    
+    % find out which trials have response after end of trial, so you can
+    % exclude them
+    cfg=[];
+    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    data_reversal_tmp = ft_redefinetrial(cfg, data);
+    
+    for iTrial=1:nTrials
+        trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
+    end
+    idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    
+    cfg=[];
+    cfg.trials = idx_trials;
+    cfg.channel = 'MEG';
+    data = ft_selectdata(cfg, data);
+    clear data_reversal_tmp
     
     % redifine zero point to shift onset
     cfg         = [];

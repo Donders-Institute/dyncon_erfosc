@@ -7,18 +7,13 @@ function erf_osc_analysis_erf(subj, isPilot)
 % 5: sample of grating shift (=0 if no shift)
 % 6: sample of response (=0 if no response or if response too early)
 
-if nargin<1
+if nargin<1 || isempty(subj)
     subj = 1;
 end
-if isempty(subj)
-    subj = 1;
-end
-if nargin<2
+if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
-if isempty(isPilot);
-    isPilot = false;
-end
+
 
 % initiate diary
 ft_diary('on')
@@ -32,56 +27,65 @@ else
     data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
 end
 data = data.dataClean;
+fs = data.fsample;
 
 % select only shift trials, with valid response
-idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
-fs = data.fsample;
-nTrials = length(idxM);
-
-cfg=[];
-cfg.trials = idxM;
-cfg.channel = 'MEG';
-dataM = ft_selectdata(cfg, data);
+    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
+    nTrials = length(idxM);
+    
+    cfg=[];
+    cfg.trials = idxM;
+    cfg.channel = 'MEG';
+    data = ft_selectdata(cfg, data);
+    
+    % find out which trials have response after end of trial, so you can
+    % exclude them
+    cfg=[];
+    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    data_reversal_tmp = ft_redefinetrial(cfg, data);
+    
+    for iTrial=1:nTrials
+        trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
+    end
+    idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    
+    cfg=[];
+    cfg.trials = idx_trials;
+    cfg.channel = 'MEG';
+    data = ft_selectdata(cfg, data);
+    clear data_reversal_tmp
 
 % realign to grating change
 cfg=[];
-cfg.offset = -(dataM.trialinfo(:,5)-dataM.trialinfo(:,4));
-dataShift = ft_redefinetrial(cfg, dataM);
+cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+dataShift = ft_redefinetrial(cfg, data);
 
 % baseline correct with last 50 ms just before change
 cfg=[];
 cfg.baseline = [-0.050+1/fs 0];
-data = ft_timelockbaseline(cfg, dataShift);
+data = ft_timelockbaseline(cfg, data);
+dataShift = ft_timelockbaseline(cfg, dataShift);
 
 %% Time-lock analysis
-cfg=[];
+cfg              = [];
 cfg.vartrllength = 2;
-cfg.channel = {'MEG'};
-tlShift = ft_timelockanalysis(cfg, data);
+cfg.channel      = {'MEG'};
+tl               = ft_timelockanalysis(cfg, data);
+tlShift          = ft_timelockanalysis(cfg, dataShift);
 
-cfg=[];
-cfg.latency = [0 0.3];
-tlShift = ft_selectdata(cfg, tlShift);
-
+% planar gradient transformation
 cfg                 = [];
-cfg.feedback        = 'yes';
+cfg.feedback        = 'no';
 cfg.method          = 'template';
-cfg.neighbours      = ft_prepare_neighbours(cfg, data);
+cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
 
 cfg.planarmethod    = 'sincos';
-dataPlanar        = ft_megplanar(cfg, data);
+tl_planar           = ft_megplanar(cfg, tl);
+tlShift_planar      = ft_megplanar(cfg, tlShift);
 
-cfg=[];
-cfg.vartrllength = 2;
-cfg.channel = {'MEG'};
-tlShiftPlanar = ft_timelockanalysis(cfg, dataPlanar);
-
-cfg = [];
-tlShiftPlanarCmb = ft_combineplanar(cfg,tlShiftPlanar);
-
-cfg=[];
-cfg.latency = [0 0.3];
-tlShiftPlanarCmb = ft_selectdata(cfg, tlShiftPlanarCmb);
+tl_plcmb            = ft_combineplanar([], tl_planar);
+tlShift_plcmb       = ft_combineplanar([], tlShift_planar);
 
 
 
@@ -91,7 +95,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/timelock', subj);
 end
-save(fullfile([filename '.mat']), 'tlShift', 'tlShiftPlanarCmb')
+save(fullfile([filename '.mat']), 'tl_plcmb', 'tlShift_plcmb', 'tl', 'tlShift')
 ft_diary('off')
 
 end

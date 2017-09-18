@@ -43,17 +43,32 @@ end
 data = data.dataClean;
 fs = data.fsample;
 
-cfg         = [];
-cfg.channel = 'MEG';
-data        = ft_selectdata(cfg, data);
-
 % select only shift trials, with valid response
-idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0);
-nTrials = length(idxM);
-
-cfg        = [];
-cfg.trials = idxM;
-data       = ft_selectdata(cfg, data);
+    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
+    nTrials = length(idxM);
+    
+    cfg=[];
+    cfg.trials = idxM;
+    cfg.channel = 'MEG';
+    data = ft_selectdata(cfg, data);
+    
+    % find out which trials have response after end of trial, so you can
+    % exclude them
+    cfg=[];
+    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    data_reversal_tmp = ft_redefinetrial(cfg, data);
+    
+    for iTrial=1:nTrials
+        trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
+    end
+    idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    
+    cfg=[];
+    cfg.trials = idx_trials;
+    cfg.channel = 'MEG';
+    data = ft_selectdata(cfg, data);
+    clear data_reversal_tmp
 
 cfg        = [];
 cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4)); % trialinfo is specified in 1200 Hz. If data is resampled, it has to be taken care of for ft_redefinetrial.
@@ -174,13 +189,15 @@ for i=1:length(dataShift.trial)
     lcmvData.trial{i} = gammaFilter{1} * data.trial{i};
 end
 
+
+sourceDiff = rmfield(sourceDiff,{'avg', 'cfg'});
 %% save
 if isPilot
     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel', subj);
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
 end
-save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan');
+save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan', 'sourceDiff', 'maxpowindx');
 ft_diary('off')
 
 

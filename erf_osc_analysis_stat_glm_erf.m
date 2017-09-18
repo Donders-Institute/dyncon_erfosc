@@ -18,7 +18,7 @@ erf_osc_datainfo;
 
 for subj=allsubs
     tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tstat_%s_%s_erf_%s.mat', subj, freqRange, zeropoint, erfoi));
-    tstat1{subj} = tmp{subj}.betas;
+    tstat1{subj} = tmp{subj}.tstat1;
 end
 clear tmp
 

@@ -58,6 +58,7 @@ if ~doDSS
     
     cfg=[];
     cfg.trials = idx_trials;
+    cfg.channel = 'MEG';
     data = ft_selectdata(cfg, data);
     
     
@@ -76,7 +77,6 @@ end
 for i=1:length(gammaChan.trial)
     gammaPow(i) = log(gammaChan.trial(i).pow);
 end
-gammaPow(idx_trials_invalid)=[];
 gammaPow = (gammaPow-mean(gammaPow))/std(gammaPow);
 nTrials = length(data.trial);
 
@@ -88,7 +88,7 @@ cfg=[];
 cfg.lpfilter = 'yes';
 cfg.lpfilttype = 'firws';
 cfg.lpfreq = 30;
-cfg.lpfiltdir = 'onepass-reverse';
+% cfg.lpfiltdir = 'onepass-reverse';
 data = ft_preprocessing(cfg, data);
 if ~doDSS
     cfg=[];
@@ -165,7 +165,7 @@ end
 if isPilot
     filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_gamma_time_%s', subj, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time_%s_revfiltdir', subj, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time_%s', subj, erfoi);
 end
 save(fullfile([filename '.mat']), 'betas_plcmb','betas_bl_plcmb', 'betas','betas_bl', '-v7.3');
 ft_diary('off')
