@@ -83,39 +83,37 @@ nTrials = length(data.trial);
 [~, idxMax] = sort(gammaPow, 2, 'descend');
 
 %% GLM on all trials
+% first select data epochs. Filtering the data might introduce past data to
+% future when using a forward filter). Therefore apply reverse filter.
+% filter before data-cutting to avoid edge-effects.
 
 cfg=[];
 cfg.lpfilter = 'yes';
 cfg.lpfilttype = 'firws';
 cfg.lpfreq = 30;
-% cfg.lpfiltdir = 'onepass-reverse';
+cfg.lpfiltdir = 'onepass-reverse-zerophase';
 data = ft_preprocessing(cfg, data);
-if ~doDSS
-    cfg=[];
-    if strcmp(erfoi, 'motor')
-        for iTrial = 1:nTrials
-            trlLatency(iTrial) = data.time{iTrial}(end);
-        end
-        cfg.latency = [-1 0];
-    else
-        cfg.latency = [-1 0.65];
-    end
-    data = ft_selectdata(cfg, data);
+
+% now cut out the segment of interest.
+cfg=[];
+if strcmp(erfoi, 'motor')
+    cfg.latency = [-0.5 0];
+    active = ft_selectdata(cfg, data);
+else
+    cfg.latency = [0 0.5];
+    active = ft_selectdata(cfg, data);
+    cfg.latency = [-0.5 0];
+    baseline = ft_selectdata(cfg, data);
 end
 
-data_conc = data;
-data_conc.trial = cat(3,data_conc.trial{:});
-data_conc.trial = permute(data_conc.trial, [3,1,2]);
-data_conc.time = data_conc.time{1};
-if ~strcmp(erfoi,'motor')
-    cfg=[];
-    cfg.latency = [-0.5 0];
-    baseline = ft_selectdata(cfg, data_conc);
-    cfg.latency = [0 0.5];
-    active = ft_selectdata(cfg, data_conc);
-else
-    cfg.latency = [-0.5 0];
-    active = ft_selectdata(cfg, data_conc);
+active.trial = cat(3,active.trial{:});
+active.trial = permute(active.trial, [3,1,2]);
+active.time = active.time{1};
+
+if ~strcmp(erfoi, 'motor')
+    baseline.trial = cat(3,baseline.trial{:});
+    baseline.trial = permute(baseline.trial, [3,1,2]);
+    baseline.time = active.time;
 end
 
 design = [gammaPow; ones(size(gammaPow))];
@@ -123,7 +121,7 @@ design = [gammaPow; ones(size(gammaPow))];
 cfg=[];
 cfg.glm.statistic = 'beta';
 
-for k=1:length(data_conc.label)
+for k=1:length(active.label)
     dat = [squeeze(active.trial(:,k,:))]';
     dat = (dat - repmat(mean(dat,2),[1 length(data.trialinfo)]))./(repmat(std(dat,[],2),[1 length(data.trialinfo)]));
     tmp = statfun_glm(cfg, dat, design);
