@@ -75,15 +75,29 @@ cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4)); % trialinfo is specifie
 dataShift  = ft_redefinetrial(cfg, data);
 
 
-% select data: 0.25 second preceding grating start and 0.25 second preceding
+% select data: 1 second preceding grating start and 0.25 seconds preceding
 % grating shift. Contrast these in terms of gamma frequency at gamma peak
 cfg         = [];
-cfg.latency = [-0.25+1/fs 0];
-dataPre     = ft_selectdata(cfg, data);
+cfg.latency = [-1+1/fs 0];
+dataPreStim = ft_selectdata(cfg, data);
 % take second preceding shift (NOTE: is it confounding if this includes
-dataPost    = ft_selectdata(cfg, dataShift);
-dataAll     = ft_appenddata([], dataPost, dataPre);
+% ERF?)
+cfg.latency = [-0.25+1/fs 0];
+dataPreRev  = ft_selectdata(cfg, dataShift);
+dataAll     = ft_appenddata([], dataPreRev, dataPreStim);
 
+
+% preprocess data for lmcv filter
+% lowpass filter stimulus reversal erf
+cfg=[];
+cfg.lpfilter = 'yes';
+cfg.lpfreq = 30;
+cfg.lpfilttype = 'firws';
+dataPostRev = ft_preprocessing(cfg, dataShift);
+
+cfg=[];
+cfg.latency = [1/fs 0.4];
+dataPostRev = ft_selectdata(cfg, dataPostRev);
 %% Frequency analysis
 % calculate power in complete data (for calculation of common filter)
 cfg = [];
@@ -99,10 +113,10 @@ cfg.method     = 'mtmfft';
 cfg.output     = 'powandcsd';
 cfg.tapsmofrq  = 8;
 cfg.foilim     = [peakFreq_gamma peakFreq_gamma];
-freqPre        = ft_freqanalysis(cfg, dataPre);
+freqPre        = ft_freqanalysis(cfg, dataPreStim);
 cfg.keeptrials = 'yes';
 % cfg.pad        = 6;
-freqPost       = ft_freqanalysis(cfg, dataPost);
+freqPost       = ft_freqanalysis(cfg, dataPreRev);
 % cfg.tapsmofrq  = 1;
 % cfg.foilim     = [peakFreq_alpha peakFreq_alpha];
 % freqPost_alpha = ft_freqanalysis(cfg, dataPost);
@@ -163,11 +177,12 @@ gammaChan = ft_sourceanalysis(cfg, freqPost);
 
 % alphaChan = ft_sourceanalysis(cfg, freqPost_alpha);
 
+
 cfg                   = [];
 cfg.covariance        = 'yes';
 cfg.vartrllength      = 2;
 cfg.covariancewindow  = 'all';
-tlock                 = ft_timelockanalysis(cfg, dataAll);
+tlock                 = ft_timelockanalysis(cfg, dataPostRev);
 
 cfg                 = [];
 cfg.method          = 'lcmv';
@@ -190,7 +205,7 @@ for i=1:length(dataShift.trial)
 end
 
 
-sourceDiff = rmfield(sourceDiff,{'avg', 'cfg'});
+sourceDiff = rmfield(sourceDiff,'cfg');
 %% save
 if isPilot
     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel', subj);
