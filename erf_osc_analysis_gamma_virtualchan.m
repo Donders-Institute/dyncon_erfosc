@@ -75,14 +75,11 @@ cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4)); % trialinfo is specifie
 dataShift  = ft_redefinetrial(cfg, data);
 
 
-% select data: 1 second preceding grating start and 0.25 seconds preceding
-% grating shift. Contrast these in terms of gamma frequency at gamma peak
+% select data: 0.75 second preceding grating start same for grating shift. 
+% Contrast these in terms of gamma frequency at gamma peak
 cfg         = [];
-cfg.latency = [-1+1/fs 0];
+cfg.latency = [-0.75+1/fs 0];
 dataPreStim = ft_selectdata(cfg, data);
-% take second preceding shift (NOTE: is it confounding if this includes
-% ERF?)
-cfg.latency = [-0.25+1/fs 0];
 dataPreRev  = ft_selectdata(cfg, dataShift);
 dataAll     = ft_appenddata([], dataPreRev, dataPreStim);
 
@@ -96,7 +93,7 @@ cfg.lpfilttype = 'firws';
 dataPostRev = ft_preprocessing(cfg, dataShift);
 
 cfg=[];
-cfg.latency = [1/fs 0.4];
+cfg.latency = [-0.2+1/fs 0.5];
 dataPostRev = ft_selectdata(cfg, dataPostRev);
 %% Frequency analysis
 % calculate power in complete data (for calculation of common filter)
@@ -115,11 +112,9 @@ cfg.tapsmofrq  = 8;
 cfg.foilim     = [peakFreq_gamma peakFreq_gamma];
 freqPre        = ft_freqanalysis(cfg, dataPreStim);
 cfg.keeptrials = 'yes';
-% cfg.pad        = 6;
+cfg.pad        = 1;
 freqPost       = ft_freqanalysis(cfg, dataPreRev);
-% cfg.tapsmofrq  = 1;
-% cfg.foilim     = [peakFreq_alpha peakFreq_alpha];
-% freqPost_alpha = ft_freqanalysis(cfg, dataPost);
+
 
 %% Source analysis
 
@@ -175,9 +170,6 @@ cfg.grid = virtualgrid;
 cfg.rawtrial='yes';
 gammaChan = ft_sourceanalysis(cfg, freqPost);
 
-% alphaChan = ft_sourceanalysis(cfg, freqPost_alpha);
-
-
 cfg                   = [];
 cfg.covariance        = 'yes';
 cfg.vartrllength      = 2;
@@ -191,8 +183,7 @@ cfg.grid.pos        = sourcemodel.pos(maxpowindx,:);
 cfg.grid.inside     = sourcemodel.inside(maxpowindx);
 cfg.grid.unit       = sourcemodel.unit;
 cfg.lcmv.keepfilter = 'yes';
-cfg.lcmv.projectmom = 'yes';
-cfg.lcmv.fixedori   = 'yes';
+cfg.lcmv.lambda     = '5%';
 source_idx          = ft_sourceanalysis(cfg, tlock);
 
 gammaFilter = source_idx.avg.filter;
