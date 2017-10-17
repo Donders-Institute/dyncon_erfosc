@@ -1,4 +1,4 @@
- function erf_osc_analysis_gamma_virtualchan(subj, isPilot, sourcemodel)
+function erf_osc_analysis_gamma_virtualchan(subj, isPilot, sourcemodel)
 % This function estimates gamma power at the estimated gamma peak frequency
 
 if nargin<1
@@ -44,43 +44,45 @@ data = data.dataClean;
 fs = data.fsample;
 
 % select only shift trials, with valid response
-    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
-    nTrials = length(idxM);
-    
-    cfg=[];
-    cfg.trials = idxM;
-    cfg.channel = 'MEG';
-    data = ft_selectdata(cfg, data);
-    
-    % find out which trials have response after end of trial, so you can
-    % exclude them
-    cfg=[];
-    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-    data_reversal_tmp = ft_redefinetrial(cfg, data);
-    
-    for iTrial=1:nTrials
-        trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
-    end
-    idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
-    idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
-    
-    cfg=[];
-    cfg.trials = idx_trials;
-    cfg.channel = 'MEG';
-    data = ft_selectdata(cfg, data);
-    clear data_reversal_tmp
+idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
+nTrials = length(idxM);
+
+cfg=[];
+cfg.trials = idxM;
+cfg.channel = 'MEG';
+data = ft_selectdata(cfg, data);
+
+% find out which trials have response after end of trial, so you can
+% exclude them
+cfg=[];
+cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+data_reversal_tmp = ft_redefinetrial(cfg, data);
+
+for iTrial=1:nTrials
+    trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
+end
+idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+
+cfg=[];
+cfg.trials = idx_trials;
+cfg.channel = 'MEG';
+data = ft_selectdata(cfg, data);
+clear data_reversal_tmp
 
 cfg        = [];
 cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4)); % trialinfo is specified in 1200 Hz. If data is resampled, it has to be taken care of for ft_redefinetrial.
 dataShift  = ft_redefinetrial(cfg, data);
 
 
-% select data: 0.75 second preceding grating start same for grating shift. 
+% select data: 0.75 second preceding grating start same for grating shift.
 % Contrast these in terms of gamma frequency at gamma peak
 cfg         = [];
 cfg.latency = [-0.75+1/fs 0];
 dataPreStim = ft_selectdata(cfg, data);
-dataPreRev  = ft_selectdata(cfg, dataShift);
+dataPreRev  = ft_selectdata(cfg, dataShift); % use this for finding source location
+cfg.latency = [-0.25+1/fs 0];
+dataPreRev_short = ft_selectdata(cfg, dataShift);
 dataAll     = ft_appenddata([], dataPreRev, dataPreStim);
 
 
@@ -101,19 +103,22 @@ cfg = [];
 cfg.method    = 'mtmfft';
 cfg.output    = 'powandcsd';
 cfg.tapsmofrq = 8;
+cfg.pad       = 1;
 cfg.foilim    = [peakFreq_gamma peakFreq_gamma];
 freqAll       = ft_freqanalysis(cfg, dataAll);
 
 % calculate power pre and post stimulus
-cfg = [];
-cfg.method     = 'mtmfft';
-cfg.output     = 'powandcsd';
-cfg.tapsmofrq  = 8;
-cfg.foilim     = [peakFreq_gamma peakFreq_gamma];
-freqPre        = ft_freqanalysis(cfg, dataPreStim);
-cfg.keeptrials = 'yes';
-cfg.pad        = 1;
-freqPost       = ft_freqanalysis(cfg, dataPreRev);
+cfg              = [];
+cfg.method       = 'mtmfft';
+cfg.output       = 'powandcsd';
+cfg.tapsmofrq    = 8;
+cfg.pad          = 1;
+cfg.foilim       = [peakFreq_gamma peakFreq_gamma];
+freqPreStim      = ft_freqanalysis(cfg, dataPreStim);
+cfg.keeptrials   = 'yes';
+freqPreRev       = ft_freqanalysis(cfg, dataPreRev);
+freqPreRev_short = ft_freqanalysis(cfg, dataPreRev_short);
+
 
 
 %% Source analysis
@@ -142,8 +147,8 @@ cfg.dics.realfilter   = 'yes';
 sourceAll             = ft_sourceanalysis(cfg, freqAll);
 
 cfg.grid.filter       = sourceAll.avg.filter;
-sourcePre             = ft_sourceanalysis(cfg, freqPre);
-sourcePost            = ft_sourceanalysis(cfg, freqPost);
+sourcePre             = ft_sourceanalysis(cfg, freqPreStim);
+sourcePost            = ft_sourceanalysis(cfg, freqPreRev);
 sourceDiff            = sourcePost;
 sourceDiff.avg.pow    = (sourcePost.avg.pow - sourcePre.avg.pow) ./ sourcePre.avg.pow;
 
@@ -151,6 +156,7 @@ sourceDiff.avg.pow    = (sourcePost.avg.pow - sourcePre.avg.pow) ./ sourcePre.av
 % the following position contains the max gamma power difference
 % [maxval, maxpowindx] = max(sourceDiff.avg.pow(sourceDiff.inside));
 [maxval, maxpowindx] = max(sourceDiff.avg.pow);
+[val, idx] = sort(sourceDiff.avg.pow, 'descend');
 sourceDiff.pos(maxpowindx, :)
 % we will create a virtual channel based on this location. In order to do
 % this, we have to do timelockanalysis and use an LCMV beamformer, because
@@ -168,7 +174,8 @@ virtualgrid.filter = {[virtualgrid.filter{maxpowindx}]};
 
 cfg.grid = virtualgrid;
 cfg.rawtrial='yes';
-gammaChan = ft_sourceanalysis(cfg, freqPost);
+gammaChan = ft_sourceanalysis(cfg, freqPreRev_short); % should the filter just be determined on (250ms or 750ms) gamma data?
+
 
 cfg                   = [];
 cfg.covariance        = 'yes';
@@ -189,7 +196,7 @@ source_idx          = ft_sourceanalysis(cfg, tlock);
 gammaFilter = source_idx.avg.filter;
 
 lcmvData              = data;
-lcmvData.label        = {'gam_pow'};
+lcmvData.label        = {'gam_pow_1', 'gam_pow_2', 'gam_pow_3'};
 lcmvData.trial        = [];
 for i=1:length(dataShift.trial)
     lcmvData.trial{i} = gammaFilter{1} * data.trial{i};
