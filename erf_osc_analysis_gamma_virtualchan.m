@@ -38,6 +38,7 @@ else
     else
         load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel3d.mat']));
     end
+    sourcemodel = ft_convert_units(sourcemodel, 'mm');
 end
 
 data = data.dataClean;
@@ -110,7 +111,7 @@ freqAll       = ft_freqanalysis(cfg, dataAll);
 % calculate power pre and post stimulus
 cfg              = [];
 cfg.method       = 'mtmfft';
-cfg.output       = 'powandcsd';
+cfg.output       = 'fourier';%'powandcsd';
 cfg.tapsmofrq    = 8;
 cfg.pad          = 1;
 cfg.foilim       = [peakFreq_gamma peakFreq_gamma];
@@ -156,7 +157,12 @@ sourceDiff.avg.pow    = (sourcePost.avg.pow - sourcePre.avg.pow) ./ sourcePre.av
 % the following position contains the max gamma power difference
 % [maxval, maxpowindx] = max(sourceDiff.avg.pow(sourceDiff.inside));
 [maxval, maxpowindx] = max(sourceDiff.avg.pow);
-[val, idx] = sort(sourceDiff.avg.pow, 'descend');
+if subj==15
+    [val, idx] = sort(sourceDiff.avg.pow, 'descend');
+    idx(isnan(val))=[];
+    val(isnan(val))=[];
+    maxpowindx = idx(39);
+end
 sourceDiff.pos(maxpowindx, :)
 % we will create a virtual channel based on this location. In order to do
 % this, we have to do timelockanalysis and use an LCMV beamformer, because
@@ -166,16 +172,30 @@ sourceDiff.pos(maxpowindx, :)
 
 % select the grid information only for the position with maximum gamma
 % power
-virtualgrid = cfg.grid;
+virtualgrid = rmfield(cfg.grid, 'filter');
 virtualgrid.pos = virtualgrid.pos(maxpowindx,:);
 virtualgrid.inside = virtualgrid.inside(maxpowindx);
 virtualgrid.leadfield = {[virtualgrid.leadfield{maxpowindx}]};
-virtualgrid.filter = {[virtualgrid.filter{maxpowindx}]};
+%virtualgrid.filter = {[virtualgrid.filter{maxpowindx}]};
 
+cfg.method = 'pcc';
+cfg.pcc = cfg.dics;
+cfg = rmfield(cfg, 'dics');
 cfg.grid = virtualgrid;
-cfg.rawtrial='yes';
+%cfg.rawtrial='yes';
 gammaChan = ft_sourceanalysis(cfg, freqPreRev_short); % should the filter just be determined on (250ms or 750ms) gamma data?
-
+% here we have the single taper fourier coefficients in the mom-field
+mom = gammaChan.avg.mom{1};
+[u,s,v]=svd(real(mom*mom'));
+newmom=u(:,1)'*mom;
+newpow=abs(newmom).^2;
+newpow_trl=[];
+nTapers = size(mom,2)/length(dataPreRev_short.trial);
+for iTrial = 1:length(dataPreRev_short.trial)
+    newpow_trl(iTrial) = sum(newpow(iTrial*nTapers-(nTapers-1):iTrial*nTapers))/nTapers;
+end
+gammaPow = log(newpow_trl);
+gammaPow = (gammaPow-mean(gammaPow))/std(gammaPow);
 
 cfg                   = [];
 cfg.covariance        = 'yes';
@@ -210,7 +230,7 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
 end
-save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaChan', 'sourceDiff', 'maxpowindx');
+save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaPow', 'sourceDiff', 'maxpowindx');
 ft_diary('off')
 
 
