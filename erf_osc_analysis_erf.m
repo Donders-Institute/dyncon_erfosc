@@ -1,4 +1,4 @@
-function erf_osc_analysis_erf(subj, isPilot)
+function erf_osc_analysis_erf(subj, erfoi)
 % trialinfo columns:
 % 1: trialnumber
 % 2: position (-1=left, 0=middle, 1=right)
@@ -10,8 +10,8 @@ function erf_osc_analysis_erf(subj, isPilot)
 if nargin<1 || isempty(subj)
     subj = 1;
 end
-if nargin<2 || isempty(isPilot)
-    isPilot = false;
+if nargin<2 || isempty(erfoi)
+    erfoi = 'reversal';
 end
 
 
@@ -20,82 +20,97 @@ ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
-if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-    load(pilotsubjects(subj).logfile);% load log file
-else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-end
+data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+
 data = data.dataClean;
 fs = data.fsample;
 
 % select only shift trials, with valid response
-    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
-    nTrials = length(idxM);
-    
-    cfg=[];
-    cfg.trials = idxM;
-    cfg.channel = 'MEG';
-    data = ft_selectdata(cfg, data);
-    
-    % find out which trials have response after end of trial, so you can
-    % exclude them
-    cfg=[];
-    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-    data_reversal_tmp = ft_redefinetrial(cfg, data);
-    
-    for iTrial=1:nTrials
-        trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
-    end
-    idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
-    idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
-    
-    cfg=[];
-    cfg.trials = idx_trials;
-    cfg.channel = 'MEG';
-    data = ft_selectdata(cfg, data);
-    clear data_reversal_tmp
+idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
+nTrials = length(idxM);
 
-% realign to grating change
+cfg=[];
+cfg.trials = idxM;
+cfg.channel = 'MEG';
+data = ft_selectdata(cfg, data);
+
+% find out which trials have response after end of trial, so you can
+% exclude them
 cfg=[];
 cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-dataShift = ft_redefinetrial(cfg, data);
+data_reversal_tmp = ft_redefinetrial(cfg, data);
 
-% baseline correct with last 50 ms just before change
+for iTrial=1:nTrials
+    trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
+end
+idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+
 cfg=[];
-cfg.baseline = [-0.050+1/fs 0];
-data = ft_timelockbaseline(cfg, data);
-dataShift = ft_timelockbaseline(cfg, dataShift);
+cfg.trials = idx_trials;
+cfg.channel = 'MEG';
+data = ft_selectdata(cfg, data);
+clear data_reversal_tmp
+
+% realign to grating change or behavioral response
+if strcmp(erfoi, 'reversal')
+    cfg=[];
+    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    data=ft_redefinetrial(cfg, data);
+elseif strcmp(erfoi, 'motor')
+    cfg=[];
+    cfg.offset = -(data.trialinfo(:,6)-data.trialinfo(:,4));
+    data=ft_redefinetrial(cfg, data);
+end
 
 %% Time-lock analysis
+%select channel
 cfg              = [];
 cfg.vartrllength = 2;
 cfg.channel      = {'MEG'};
-tl               = ft_timelockanalysis(cfg, data);
-tlShift          = ft_timelockanalysis(cfg, dataShift);
+cfg.keeptrials   = 'yes';
+cfg.preproc.lpfilter = 'yes';
+cfg.preproc.lpfilttype = 'firws';
+cfg.preproc.lpfreq = 30;
+cfg.preproc.demean = 'yes';
+cfg.preproc.baselinewindow = [-0.1 0];
+% tlck             = ft_timelockanalysis(cfg, dataShift);
+tl          = ft_timelockanalysis(cfg, data);
 
-% planar gradient transformation
+%planar gradient transformation
 cfg                 = [];
 cfg.feedback        = 'no';
 cfg.method          = 'template';
 cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
 
 cfg.planarmethod    = 'sincos';
-tl_planar           = ft_megplanar(cfg, tl);
-tlShift_planar      = ft_megplanar(cfg, tlShift);
+% tl_planar           = ft_megplanar(cfg, tlck);
+tl_planar      = ft_megplanar(cfg, tl);
 
-tl_plcmb            = ft_combineplanar([], tl_planar);
-tlShift_plcmb       = ft_combineplanar([], tlShift_planar);
+% tl_plcmb            = ft_combineplanar([], tl_planar);
+tl_plcmb       = ft_combineplanar([], tl_planar);
 
+load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
+[val, idx] = sort(gammaPow, 'descend');
+qSize = round(length(gammaPow)/4);
+cfg=[];
+cfg.trials = idx(1:qSize);
+cfg.avgoverrpt = 'yes';
+if strcmp(erfoi, 'reversal')
+    cfg.latency = [0 0.5];
+elseif strcmp(erfoi, 'motor')
+    cfg.latency = [-0.5 0];
+end
+q1 = ft_selectdata(cfg, tl_plcmb);
+cfg.trials = idx(end-qSize+1:end);
+q4 = ft_selectdata(cfg, tl_plcmb);
 
 
 %% save
-if isPilot
-    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/timelock', subj);
-else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/timelock', subj);
-end
-save(fullfile([filename '.mat']), 'tl_plcmb', 'tlShift_plcmb', 'tl', 'tlShift')
+
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/timelock_%s', subj, erfoi);
+
+save(fullfile([filename '.mat']), 'q1','q4', '-v7.3')
 ft_diary('off')
 
 end
