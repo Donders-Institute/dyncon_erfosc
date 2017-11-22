@@ -197,6 +197,19 @@ end
 gammaPow = log(newpow_trl);
 gammaPow = (gammaPow-mean(gammaPow))/std(gammaPow);
 
+%%%%%% Previously %%%%%%%
+% virtualgrid = cfg.grid;
+% virtualgrid.pos = virtualgrid.pos(maxpowindx,:);
+% virtualgrid.inside = virtualgrid.inside(maxpowindx);
+% virtualgrid.leadfield = {[virtualgrid.leadfield{maxpowindx}]};
+% virtualgrid.filter = {[virtualgrid.filter{maxpowindx}]};
+% 
+% cfg.grid = virtualgrid;
+% cfg.rawtrial='yes';
+% gammaChan = ft_sourceanalysis(cfg, freqPost);
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 cfg                   = [];
 cfg.covariance        = 'yes';
 cfg.vartrllength      = 2;
