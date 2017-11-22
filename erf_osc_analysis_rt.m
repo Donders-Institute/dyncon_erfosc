@@ -10,10 +10,12 @@ end
 ft_diary('on')
 
 %% load data, select trials, estimate RT
-load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+data=load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
 
-data = dataClean;
+data = data.dataClean;
+fs = data.fsample;
 
+% select only shift trials, with valid response
 idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
 nTrials = length(idxM);
 
@@ -36,8 +38,8 @@ idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))
 
 cfg=[];
 cfg.trials = idx_trials;
+cfg.channel = 'MEG';
 data = ft_selectdata(cfg, data);
-clear data_reversal_tmp
 
 rt = (data.trialinfo(:,6)-data.trialinfo(:, 5))/data.fsample;
 
