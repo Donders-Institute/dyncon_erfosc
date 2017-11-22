@@ -3,13 +3,14 @@ function startup
 if ispc
     addpath('P:\3011085.02\scripts\fieldtrip');
     addpath('P:\3011085.02\scripts\fieldtrip\qsub');
-    addpath('P:\3011085.02\scripts\dyncon');
+    addpath('P:\3011085.02\scripts\fieldtrip\external\brewermap');
     addpath('M:\MATLAB');
     addpath('M:\MATLAB\cellfunction');
     cd('P:\3011085.02\scripts\erfosc');
 else
     addpath('/project/3011085.02/scripts/fieldtrip');
     addpath('/project/3011085.02/scripts/fieldtrip/qsub');
+    addpath('/project/3011085.02/scripts/fieldtrip/external/brewermap');
     
     addpath('/project/3011085.02/scripts/erfosc');
     addpath('/home/electromag/matves/MATLAB');
