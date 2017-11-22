@@ -22,9 +22,9 @@ ft_diary('on')
 erf_osc_datainfo;
 if isPilot
     load(sprintf('/project/3011085.02/results/erf/pilot-%03d/dss.mat', subj), 'data_dss');
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
+    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
 else
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
     if doDSS
         [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
     else
@@ -60,7 +60,7 @@ if ~doDSS
     cfg.trials = idx_trials;
     cfg.channel = 'MEG';
     data = ft_selectdata(cfg, data);
-    
+    data_orig = data;
     
     if strcmp(erfoi, 'reversal')
         cfg=[];
@@ -74,10 +74,6 @@ if ~doDSS
     clear data_reversal_tmp trlLatency
 end
 
-for i=1:length(gammaChan.trial)
-    gammaPow(i) = log(gammaChan.trial(i).pow);
-end
-gammaPow = (gammaPow-mean(gammaPow))/std(gammaPow);
 nTrials = length(data.trial);
 
 [~, idxMax] = sort(gammaPow, 2, 'descend');
@@ -120,16 +116,17 @@ design = [gammaPow; ones(size(gammaPow))];
 
 cfg=[];
 cfg.glm.statistic = 'beta';
+cfg.glm.standardise = false;
 
 for k=1:length(active.label)
     dat = [squeeze(active.trial(:,k,:))]';
-    dat = (dat - repmat(mean(dat,2),[1 length(data.trialinfo)]))./(repmat(std(dat,[],2),[1 length(data.trialinfo)]));
+    dat = (dat - repmat(mean(dat,2),[1 length(data.trialinfo)]));
     tmp = statfun_glm(cfg, dat, design);
     betas_tmp(k,:) = tmp.stat(:,1);
     
     if ~strcmp(erfoi, 'motor')
         dat_bl = [squeeze(baseline.trial(:,k,:))]';
-        dat_bl = (dat_bl - repmat(mean(dat_bl,2),[1 length(data.trialinfo)]))./(repmat(std(dat_bl,[],2),[1 length(data.trialinfo)]));
+        dat_bl = (dat_bl - repmat(mean(dat_bl,2),[1 length(data.trialinfo)]));
         tmp_bl = statfun_glm(cfg, dat_bl, design);
         betas_bl_tmp(k,:) = tmp_bl.stat(:,1);
     end
@@ -145,17 +142,7 @@ if ~strcmp(erfoi, 'motor')
     betas_bl.avg = betas_bl_tmp;
 end
 
-cfg                 = [];
-cfg.method          = 'template';
-cfg.neighbours      = ft_prepare_neighbours(cfg, betas);
-cfg.planarmethod    = 'sincos';
-betas_planar        = ft_megplanar(cfg, betas);
-betas_plcmb         = ft_combineplanar([], betas_planar);
-if ~strcmp(erfoi, 'motor')
-    betas_bl_planar     = ft_megplanar(cfg, betas_bl);
-    betas_bl_plcmb      = ft_combineplanar([], betas_bl_planar);
-else
-    betas_bl_plcmb = 'use baseline in erfoi = reversal';
+if strcmp(erfoi, 'motor')
     betas_bl = 'use baseline in erfoi = reversal';
 end
 
@@ -165,6 +152,6 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time_%s', subj, erfoi);
 end
-save(fullfile([filename '.mat']), 'betas_plcmb','betas_bl_plcmb', 'betas','betas_bl', '-v7.3');
+save(fullfile([filename '.mat']), 'betas','betas_bl', '-v7.3');
 ft_diary('off')
 
