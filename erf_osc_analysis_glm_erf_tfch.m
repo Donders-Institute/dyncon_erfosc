@@ -12,7 +12,7 @@ if nargin<3 || isempty(freqRange)
     freqRange = 'high'; % can be 'high' or 'low'; depending on which frequency range you want to do regression (2-30 Hz or 28-100 Hz)
 end
 if nargin<4 || isempty(zeropoint)
-    zeropoint = 'onset'; % other option 'reversal': redefine time axis to stimulus reversal or keep it at stimulus onset
+    zeropoint = 'reversal'; % other option 'reversal': redefine time axis to stimulus reversal or keep it at stimulus onset
 end
 if nargin<5 || isempty(erfoi) % erf of interest
     erfoi = 'reversal'; % other option 'onset': redefine time axis to stimulus reversal or keep it at stimulus onset
@@ -89,33 +89,6 @@ end
 fs=data.fsample;
 nTrials = length(data.trial);
 
-%% regress out headmotion
-load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/headmotion.mat', subj));
-cfg=[];
-cfg.channel                 = {'HLC0011','HLC0012','HLC0013', ...
-                              'HLC0021','HLC0022','HLC0023', ...
-                              'HLC0031','HLC0032','HLC0033'};
-headmotion = ft_selectdata(cfg, headmotion);
-
-% calculate the mean coil position per trial
-for trl = 1:nTrials
-coil1(:,trl) = [mean(headmotion.trial{1,trl}(1,:)); mean(headmotion.trial{1,trl}(2,:)); mean(headmotion.trial{1,trl}(3,:))];
-coil2(:,trl) = [mean(headmotion.trial{1,trl}(4,:)); mean(headmotion.trial{1,trl}(5,:)); mean(headmotion.trial{1,trl}(6,:))];
-coil3(:,trl) = [mean(headmotion.trial{1,trl}(7,:)); mean(headmotion.trial{1,trl}(8,:)); mean(headmotion.trial{1,trl}(9,:))];
-end
- 
-% calculate the headposition and orientation per trial (for function see bottom page) 
-cc = circumcenter(coil1, coil2, coil3);
-
-% demean to obtain translations and rotations from the average position and orientation
-cc_dem = [cc - repmat(mean(cc,2),1,size(cc,2))]';
-
-
-% add head movements to the regressorlist. also add the constant (at the end; column 7)
-confound = [cc_dem ones(size(cc_dem,1),1)];
- 
-
-
 %% select p1 amplitude for regression
 cfg=[];
 cfg.vartrllength=2;
@@ -129,12 +102,6 @@ cfg=[];
 cfg.channel = {'MRO', 'MRP', 'MLO', 'MLP', 'MZO', 'MZP'};
 cfg.latency = [tlck.time(t1p1) tlck.time(t2p1)];
 tlck = ft_selectdata(cfg, tlck);
-
-% regress out headposition confounds
-cfg                         = [];
-cfg.confound                = confound;
-cfg.reject                  = [1:6]; % keeping the constant (nr 7)
-tlck = ft_regressconfound(cfg, tlck);
 
 cfg=[];
 cfg.lpfilter = 'yes';
@@ -212,37 +179,40 @@ nfreq = size(tfa.powspctrm, 3);
 ntime = size(tfa.powspctrm, 4);
 ntrl = size(p1amp,2);
 
-design = [((p1amp-mean(p1amp))./std(p1amp)) zeros(1,ntrl); zeros(1,ntrl) ((p1amp-mean(p1amp))./std(p1amp));...
-    ones(1,ntrl*2); zeros(1,ntrl) ones(1,ntrl); cc_dem' cc_dem'];
-contrast = [1 -1 0 0 0 0 0 0 0 0];
+design = [((p1amp-mean(p1amp))./std(p1amp)); ones(1,ntrl)];
 
 cfg=[];
-cfg.glm.contrast = contrast;
-cfg.glm.statistic = 'T';
-
+cfg.glm.statistic = 'beta';
 
 for freq = 1:nfreq
     for ch = 1:nchan
-        dat = [squeeze(squeeze(tfa.powspctrm(:,ch,freq,:))); squeeze(squeeze(baseline.powspctrm(:,ch,freq,:)))]';
-        dat = (dat - repmat(mean(dat,2),[1 length(tfa.trialinfo)*2]))./(repmat(std(dat,[],2),[1 length(tfa.trialinfo)*2]));
+        dat = [squeeze(squeeze(tfa.powspctrm(:,ch,freq,:)))]'; 
+        dat = (dat - repmat(mean(dat,2),[1 length(tfa.trialinfo)]))./(repmat(std(dat,[],2),[1 length(tfa.trialinfo)]));
         tmp = statfun_glm(cfg, dat, design);
-        tstat_tmp(freq,ch,:,:) = tmp.stat;
+        betas_tmp(freq,ch,:,:) = tmp.stat(:,1);
+        
+        dat_bl = [squeeze(squeeze(baseline.powspctrm(:,ch,freq,:)))]';
+        dat_bl = (dat_bl - repmat(mean(dat_bl,2),[1 length(tfa.trialinfo)]))./(repmat(std(dat_bl,[],2),[1 length(tfa.trialinfo)]));
+        tmp_bl = statfun_glm(cfg, dat_bl, design);
+        betas_bl_tmp(freq,ch,:,:) = tmp_bl.stat(:,1);        
     end
 end
 
 %% Put betas and shuffles in freq-structure
-tstat1 = rmfield(tfa, {'powspctrm', 'cfg'});
-tstat1.powspctrm = permute(tstat_tmp, [2,1,3]);
-tstat1.dimord = 'chan_freq_time';
+betas = rmfield(tfa, {'powspctrm', 'cfg'});
+betas.powspctrm = permute(betas_tmp, [2,1,3]);
+betas.dimord = 'chan_freq_time';
+betas_bl = rmfield(betas, 'powspctrm');
+betas_bl.powspctrm = permute(betas_bl_tmp, [2,1,3]);
 
 %% Save
 
 if isPilot
-    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tstat_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tstat_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
 end
-save(fullfile([filename '.mat']), 'tstat1', 'lat', 'p1amp', 'maxchanid','p1chans_id', '-v7.3');
+save(fullfile([filename '.mat']), 'betas', 'betas_bl', 'lat', 'p1amp', 'maxchanid','p1chans_id', '-v7.3');
 
 ft_diary('off')
 
