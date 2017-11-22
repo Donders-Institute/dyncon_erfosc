@@ -35,9 +35,10 @@ erf_osc_datainfo;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if strcmp(correlation, 'gamma_rt');
     for subj=allsubs
-        load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_peak.mat', subj), 'peakFreq_gamma');
-        load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan'); % load gamma power
-        rt{subj} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load gamma power
+        load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj), 'peakFreq_gamma');
+        gammaPow{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow'); % load gamma power
+        gammaPow{subj} = gammaPow{subj}.gammaPow;
+        rt{subj} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load reaction time power
         rt{subj} = rt{subj}.rt;
         
         
@@ -74,11 +75,10 @@ if strcmp(correlation, 'gamma_rt');
         clear data data_reversal_tmp
         jitter{subj} = (trialinfo{subj}(:,5)-trialinfo{subj}(:,4))/1200;
         
-        for i=1:length(gammaChan.trial)
-            gammaPow_tmp(i) = log(gammaChan.trial(i).pow);
-        end
-        gammaPow{subj} = gammaPow_tmp-mean(gammaPow_tmp);
-        clear gammaChan gammaPow_tmp
+        rt{subj} = log(rt{subj});
+        rt{subj} = rt{subj}-mean(rt{subj});
+        jitter{subj} = log(jitter{subj});
+        jitter{subj} = jitter{subj}-mean(jitter{subj});
         [r_gamma_rt(subj) p_gamma_rt(subj)] = corr(gammaPow{subj}', rt{subj}, 'type', 'spearman');
         [r_jitter_gamma(subj) p_jitter_gamma(subj)] = corr(gammaPow{subj}', jitter{subj}, 'type', 'spearman');
         [r_jitter_rt(subj) p_jitter_rt(subj)] = corr(rt{subj}, jitter{subj}, 'type', 'spearman');
@@ -118,7 +118,7 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
             load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, zeropoint), 'tfa');
             load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, 'onset'), 'baseline');
         elseif strcmp(correlation, 'gamma_erf')
-            load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
+            load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
         end
     end
     %% if no data_dss cleaning is done beforehand, do this
@@ -308,10 +308,6 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
             
         end
     elseif strcmp(correlation, 'gamma_erf')
-        for i=1:length(gammaChan.trial)
-            gammaPow(i) = log(gammaChan.trial(i).pow);
-        end
-        gammaPow = (gammaPow-mean(gammaPow))/std(gammaPow);
         nTrials = length(data.trial);
         
         if compareQuartile
