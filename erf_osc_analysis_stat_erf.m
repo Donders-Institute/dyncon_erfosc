@@ -9,37 +9,18 @@ ft_diary('on')
 erf_osc_datainfo;
 
 for subj=allsubs
-    if strcmp(erfoi, 'reversal')
-        tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock', subj), 'tlShift', 'tlShift_plcmb');
-        tl{subj} = tmp{subj}.tlShift;
-        tl_plcmb{subj} = tmp{subj}.tlShift_plcmb;
-    else
-        tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock', subj), 'tl', 'tl_plcmb');
-        tl{subj} = tmp{subj}.tl;
-        tl_plcmb{subj} = tmp{subj}.tl_plcmb;
-    end
+        tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock_%s.mat', subj, erfoi), 'q1', 'q4');
+        q1{subj} = tmp{subj}.q1;
+        q4{subj} = tmp{subj}.q4;
 end
 clear tmp
 
-
 cfg=[];
 cfg.appenddim='rpt';
-tl_GA = ft_appendtimelock(cfg, tl{allsubs});
-tl_plcmb_GA = ft_appendtimelock(cfg, tl_plcmb{allsubs});
+q1_GA = ft_appendtimelock(cfg, q1{allsubs});
+q4_GA = ft_appendtimelock(cfg, q4{allsubs});
 
-% seperate active from baseline;
-cfg=[];
-cfg.latency = [-0.5 0];
-tl_bl_GA = ft_selectdata(cfg, tl_GA);
-tl_bl_plcmb_GA = ft_selectdata(cfg, tl_plcmb_GA);
-cfg.latency = [0 0.5];
-tl_act_GA = ft_selectdata(cfg, tl_GA);
-tl_act_plcmb_GA = ft_selectdata(cfg, tl_plcmb_GA);
 
-cfg=[];
-cfg.parameter = 'trial';
-cfg.operation = '0*x1';
-zero_distribution = ft_math(cfg, tl_act_plcmb_GA);
 %% statistics
 
 Nsub = length(allsubs);
@@ -47,8 +28,7 @@ Nsub = length(allsubs);
 cfg                  = [];
 cfg.method           = 'template'; 
 cfg.feedback         = 'no';
-% neighbours           = ft_prepare_neighbours(cfg, tstat1_plCmb_GA); % define neighbouring channels
-neighbours           = ft_prepare_neighbours(cfg, tl_act_plcmb_GA); % define neighbouring channels
+neighbours           = ft_prepare_neighbours(cfg, q1_GA); % define neighbouring channels
 
 cfg                  = [];
 cfg.channel          = 'MEG';
@@ -68,7 +48,7 @@ cfg.design(2,1:2*Nsub)  = [1:Nsub 1:Nsub];
 cfg.ivar                = 1; % the 1st row in cfg.design contains the independent variable
 cfg.uvar                = 2; % the 2nd row in cfg.design contains the subject number
 
-stat = ft_timelockstatistics(cfg, tl_act_plcmb_GA, zero_distribution);
+stat = ft_timelockstatistics(cfg, q1_GA, q4_GA);
 stat.cfg = rmfield(stat.cfg, 'previous');
 
 
