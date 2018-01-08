@@ -69,21 +69,16 @@ inputTime = itc.time(find(itc.itpc>u+5*sigma,1));
 %% estimate angle
 cfg=[];
 cfg.latency = [-1.5+1/fs 0.5];
-data = ft_selectdata(cfg, data);
-data = rmfield(data, 'cfg');
+data_estangle = ft_selectdata(cfg, data);
+data_estangle = rmfield(data_estangle, 'cfg');
 
+cfg=[];
+cfg.latency = [inputTime inputTime+0.250];
+data_erf = ft_selectdata(cfg, data_estangle);
 
-nTrials = length(data.trial);
-nBins = 6;
+nTrials = length(data_estangle.trial);
+nBins = 12;
 binSize = floor(nTrials/nBins);
-
-% center angles
-centerAngle1 = pi/6; % 30 degrees
-centerAngle2 = pi/2; % 90 degrees
-centerAngle3 = 5*pi/6; % 150 degrees
-centerAngle4 = 7*pi/6; % 210 degrees
-centerAngle5 = 3*pi/2; % 270 degrees
-centerAngle6 = 11*pi/6; % 330 degrees
 
 if ischar(freqoistr)
     if strcmp(freqoistr, 'all')
@@ -92,13 +87,13 @@ if ischar(freqoistr)
         freqoi = peakFreq_gamma;
     end
 end
-t = data.time{1};
+t = data_estangle.time{1};
 m=1;
 for frq = freqoi
-    %{
+%{
     cfg=[];
     cfg.latency = [inputTime-3/frq inputTime-1/fs];
-    dataShort = ft_selectdata(cfg, data);
+    dataShort = ft_selectdata(cfg, bpdata);
     
     cfg=[];
     cfg.taper = 'hanning';
@@ -107,7 +102,7 @@ for frq = freqoi
     cfg.keeptrials = 'yes';
     cfg.foilim = [frq frq];   
     fcomp = ft_freqanalysis(cfg, dataShort);
-%}    
+%}   
 cfg            = [];
 % use an alpha taper, which concentrates more on the right side of the
 % window instead of the center. This way, we can still use mtmconvol, even
@@ -127,123 +122,51 @@ cfg.toi        = t(nearest(t,inputTime-0.5/frq-1/fs)); % The window is centered 
 % nearest to work around numerical inaccuracies in the time axis (because
 % of sample freq)
 cfg.t_ftimwin  = 1/frq; 
-fcomp          = ft_freqanalysis(cfg, data); 
-
-angle_rad   = angle(fcomp.fourierspctrm)+pi; % in radians [0, 2pi]
+fcomp          = ft_freqanalysis(cfg, data_estangle); 
+%}
+angle_rad   = angle(fcomp.fourierspctrm); % in radians [0, 2pi]
 angle_deg   = rad2deg(angle_rad);
 
 %% binning
 % estimate angles closest to six center angles. for angles close to 0 and
 % 360 degrees, this is a bit more complicated (there is no circular sorting
 % option).
-[val1a, idx1a] = sort(abs(angle_rad-centerAngle1), 'ascend');
-[val1b, idx1b] = sort(abs(angle_rad-(centerAngle1 + 2*pi)), 'ascend');
-idx1ab = [idx1a; idx1b];
-[~, idx1tmp] = sort([val1a; val1b], 'ascend');
-idx1 = idx1ab(idx1tmp(1:nTrials));
-val1 = angle_rad(idx1);
 
-[~, idx2] = sort(abs(angle_rad-centerAngle2), 'ascend');
-val2 = angle_rad(idx2);
-[~, idx3] = sort(abs(angle_rad-centerAngle3), 'ascend');
-val3 = angle_rad(idx3);
-[~, idx4] = sort(abs(angle_rad-centerAngle4), 'ascend');
-val4 = angle_rad(idx4);
-[~, idx5] = sort(abs(angle_rad-centerAngle5), 'ascend');
-val5 = angle_rad(idx5);
+trldata = cat(1, data_erf.trial{:});
+[cAngles, binAvg{m}, binAngles{m}] = erf_osc_analysis_binangles(trldata, angle_rad, nBins);
 
-[val6a, idx6a] = sort(abs(angle_rad-centerAngle6), 'ascend');
-[val6b, idx6b] = sort(abs(angle_rad-(centerAngle6 - 2*pi)), 'ascend');
-idx6ab = [idx6a; idx6b];
-[~, idx6tmp] = sort([val6a; val6b], 'ascend');
-idx6 = idx6ab(idx6tmp(1:nTrials));
-val6 = angle_rad(idx6);
-
-binAngles{m} = [val1(1:binSize), val2(1:binSize), val3(1:binSize), val4(1:binSize), val5(1:binSize), val6(1:binSize)];
-% estimate avg angle of phase bins
-val1tmp=val1;
-val1tmp(val1>pi) = val1tmp(val1>pi) + 2*pi; % take care of edges
-angle1real = mean(val1tmp(1:binSize));
-angle2real = mean(val2(1:binSize));
-angle3real = mean(val3(1:binSize));
-angle4real = mean(val4(1:binSize));
-angle5real = mean(val5(1:binSize));
-val6tmp=val6;
-val6tmp(val6<pi) = val6tmp(val6<pi) + 2*pi;
-angle6real = mean(val6tmp(1:binSize)); % take care of edges
-
-% select trials for each phase bin
-trldata = cat(1, data.trial{:});
-idx_inputTime = nearest(data.time{1}, inputTime);
-bin1 = trldata(idx1(1:binSize), idx_inputTime:idx_inputTime+fs*0.25);
-bin2 = trldata(idx2(1:binSize), idx_inputTime:idx_inputTime+fs*0.25);
-bin3 = trldata(idx3(1:binSize), idx_inputTime:idx_inputTime+fs*0.25);
-bin4 = trldata(idx4(1:binSize), idx_inputTime:idx_inputTime+fs*0.25);
-bin5 = trldata(idx5(1:binSize), idx_inputTime:idx_inputTime+fs*0.25);
-bin6 = trldata(idx6(1:binSize), idx_inputTime:idx_inputTime+fs*0.25);
-
-alldata_inputTime = trldata(:, idx_inputTime:idx_inputTime+fs*0.25);
 
 %% Cosine fit
 % to do: fit a cosine function (statfun_cosinefit)
 % compare it with a fit where random angles are joined (avg fit over N(100)
 % reps).
 
-data_inputTime_binned = [mean(bin1,1)', mean(bin2,1)', mean(bin3,1)', mean(bin4,1)', mean(bin5,1)', mean(bin6,1)'];
-
 cfg = [];
 cfg.cosinefit.statistic = 'complex';
-design = [centerAngle1, centerAngle2, centerAngle3, centerAngle4, centerAngle5, centerAngle6];
-% design = [angle1real, angle2real, angle3real, angle4real, angle5real, angle6real];
-design = design-pi; % statfun_cosinefit can only swallow angular values in the [-pi, pi] regime
-design = repmat(design, [size(data_inputTime_binned,1), 1]);
-[s{m}, ~] = statfun_cosinefit(cfg, data_inputTime_binned, design);
+design = cAngles;
+design = repmat(design, [size(binAvg{m},1), 1]); % repeat for number of time points
+[s{m}, ~] = statfun_cosinefit(cfg, binAvg{m}, design);
 
 % Do the same for random distribution
 % combine random angles (without replacement; i.e. every trial is used once)
 nRep = 100;
 
 for k=1:nRep
-allidx = 1:nTrials;
-
-cfg=[];
-idx1rand = randsample(allidx, binSize);
-rand_inputTime_bin1(k,:) = mean(alldata_inputTime(idx1rand,:),1);
-
-idxtmp = ismember(allidx, idx1rand);
-allidx(idxtmp) = [];
-idx2rand = randsample(allidx, binSize);
-rand_inputTime_bin2(k,:) = mean(alldata_inputTime(idx2rand,:),1);
-
-idxtmp = ismember(allidx, idx2rand);
-allidx(idxtmp) = [];
-idx3rand = randsample(allidx, binSize);
-rand_inputTime_bin3(k,:) = mean(alldata_inputTime(idx3rand,:),1);
-
-idxtmp = ismember(allidx, idx3rand);
-allidx(idxtmp) = [];
-idx4rand = randsample(allidx, binSize);
-rand_inputTime_bin4(k,:) = mean(alldata_inputTime(idx4rand,:),1);
-
-idxtmp = ismember(allidx, idx4rand);
-allidx(idxtmp) = [];
-idx5rand = randsample(allidx, binSize);
-rand_inputTime_bin5(k,:) = mean(alldata_inputTime(idx5rand,:),1);
-
-idxtmp = ismember(allidx, idx5rand);
-allidx(idxtmp) = [];
-idx6rand = randsample(allidx, binSize);
-rand_inputTime_bin6(k,:) = mean(alldata_inputTime(idx6rand,:),1);
+    allidx = 1:nTrials;
+    for iBin = 1:nBins
+        idxtmp = [];
+        idxrand = randsample(allidx, binSize);
+        randbin(k,iBin,:) = mean(trldata(idxrand,:),1);
+        idxtmp = ismember(allidx, idxrand);
+        allidx(idxtmp) = [];
+    end
 end
 
-% rand_inputTime_binned = [rand_inputTime_bin1; rand_inputTime_bin2; rand_inputTime_bin3; rand_inputTime_bin4; rand_inputTime_bin5; rand_inputTime_bin6]';
-rand_inputTime_binned = zeros(nRep, size(alldata_inputTime,2), nBins);
 cfg = [];
 cfg.cosinefit.statistic = 'complex';
 cfg.parameter = 'trial';
 for k=1:nRep
-rand_inputTime_binned(k,:,:) = [rand_inputTime_bin1(k,:); rand_inputTime_bin2(k,:); rand_inputTime_bin3(k,:); rand_inputTime_bin4(k,:); rand_inputTime_bin5(k,:); rand_inputTime_bin6(k,:)]';    
-[srand{k}, ~] = statfun_cosinefit(cfg, squeeze(rand_inputTime_binned(k,:,:)), design);
+[srand{k}, ~] = statfun_cosinefit(cfg, squeeze(randbin(k,:,:))', design);
 ampstatrand(k,:) = abs(srand{k}.stat);
 anglestatrand(k,:) = angle(srand{k}.stat);
 end
@@ -266,7 +189,7 @@ if ~ischar(freqoistr)
         freqoistr = num2str(freqoistr);
     end
 end
-filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_angle_%s', subj, freqoistr);
+filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tzero/gamma_angle_%s', subj, freqoistr);
 
 save(fullfile([filename '.mat']), 'angle_rad', 'inputTime','s', 'srand', 'allampstat', 'allanglestat', 'allampstatrand', 'allanglestatrand', 'peakFreq_gamma', 'binAngles');
 
