@@ -27,10 +27,10 @@ erf_osc_datainfo;
 load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'lcmvData');
 load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj), 'peakFreq_gamma');
 
-data = erf_osc_analysis_lcmv_orientation(subj, erfoi, 'reverse', 'lp'); % optimal dipole orientation is chosen based on [0 0.5] after stimulus-reversal.
+data_lp = erf_osc_analysis_lcmv_orientation(subj, erfoi, 'reverse', 'lp'); % optimal dipole orientation is chosen based on [0 0.5] after stimulus-reversal.
 % data is timelocked to reversal or behavioral response, and low pass
 % filtered. 
-
+data = erf_osc_analysis_lcmv_orientation(subj, erfoi, 'reverse', 'no'); % no filtering
 
 fs=data.fsample;
 %% ITC
@@ -42,7 +42,7 @@ cfg.pad          = 6;
 cfg.foi          = 10;
 cfg.t_ftimwin    = ones(length(cfg.foi),1).*0.10;   % length of time window
 cfg.toi          = -2:1/fs:1;                  % time window "slides" in steps of 1/fs
-freq = ft_freqanalysis(cfg, data);
+freq = ft_freqanalysis(cfg, data_lp);
 
 % make a new FieldTrip-style data structure containing the ITC
 % copy the descriptive fields over from the frequency decomposition
@@ -93,7 +93,7 @@ for frq = freqoi
 %{
     cfg=[];
     cfg.latency = [inputTime-3/frq inputTime-1/fs];
-    dataShort = ft_selectdata(cfg, bpdata);
+    dataShort = ft_selectdata(cfg, data);
     
     cfg=[];
     cfg.taper = 'hanning';
