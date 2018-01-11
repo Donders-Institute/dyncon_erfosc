@@ -264,7 +264,7 @@ if dosplitpow_lcmv
   signpeak         = sign(mean(source_parc.avg(maxidx,ix1:ix2),2));
   fprintf('parcel with max amplitude = %s\n', source_parc.label{maxidx});
   
-  datapst.trial =  *datapst.trial;
+  datapst.trial = source_parc.F{maxidx}(1,:)*datapst.trial;
   datapst.label = source_parc.label(maxidx);
   
   tmpcfg = [];
