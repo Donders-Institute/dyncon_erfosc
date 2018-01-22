@@ -81,7 +81,7 @@ if strcmp(correlation, 'gamma_rt');
         jitter{subj} = jitter{subj}-mean(jitter{subj});
         [r_gamma_rt(subj) p_gamma_rt(subj)] = partialcorr(gammaPow{subj}', rt{subj},jitter{subj}, 'type', 'spearman');
         [r_jitter_gamma(subj) p_jitter_gamma(subj)] = partialcorr(gammaPow{subj}', jitter{subj},rt{subj}, 'type', 'spearman');
-        [r_jitter_rt(subj) p_jitter_rt(subj)] = partialcorr(rt{subj}, jitter{subj},gammaPow{subj}, 'type', 'spearman');
+        [r_jitter_rt(subj) p_jitter_rt(subj)] = partialcorr(rt{subj}, jitter{subj},gammaPow{subj}', 'type', 'spearman');
         
     end
     
