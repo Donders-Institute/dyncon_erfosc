@@ -7,7 +7,7 @@ if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
 if nargin<3 || isempty(correlation);
-    correlation = input('which correlation do you want to compute? choose *gamma_rt*, *gamma_erf* or *amp_tfr*')
+    correlation = input('which correlation do you want to compute? choose *gamma_rt*, *gamma_erf*, *gamma_erf_virtualchan* or *amp_tfr*')
 end
 if nargin<4 || isempty(freqRange)
     freqRange = 'high';
@@ -79,9 +79,9 @@ if strcmp(correlation, 'gamma_rt');
         rt{subj} = rt{subj}-mean(rt{subj});
         jitter{subj} = log(jitter{subj});
         jitter{subj} = jitter{subj}-mean(jitter{subj});
-        [r_gamma_rt(subj) p_gamma_rt(subj)] = corr(gammaPow{subj}', rt{subj}, 'type', 'spearman');
-        [r_jitter_gamma(subj) p_jitter_gamma(subj)] = corr(gammaPow{subj}', jitter{subj}, 'type', 'spearman');
-        [r_jitter_rt(subj) p_jitter_rt(subj)] = corr(rt{subj}, jitter{subj}, 'type', 'spearman');
+        [r_gamma_rt(subj) p_gamma_rt(subj)] = corr(gammaPow{subj}', rt{subj},jitter{subj}, 'type', 'spearman');
+        [r_jitter_gamma(subj) p_jitter_gamma(subj)] = corr(gammaPow{subj}', jitter{subj},rt{subj}, 'type', 'spearman');
+        [r_jitter_rt(subj) p_jitter_rt(subj)] = corr(rt{subj}, jitter{subj},gammaPow{subj}, 'type', 'spearman');
         
     end
     
@@ -329,10 +329,14 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
         end
         
     end
+elseif strcmp(correlation, 'gamma_erf_virtualchan')
+        load(sprintf('/project/3011085.02/results/freq/sub-%03d/allori/gamma_virtual_channel.mat', subj), 'gammaPow');
+        lcmvData = erf_osc_analysis_lcmv_orientation(subj, erfoi); 
+
 end
     %% save
     if strcmp(correlation, 'gamma_rt');
-        filename = '/project/3011085.02/results/stat_corr_gamma_rt';
+        filename = '/project/3011085.02/results/stat_partcorr_gamma_rt';
         save(fullfile([filename '.mat']), 'stat_gamma_rt', 'r_gamma_rt', 'p_gamma_rt', 'rt', 'gammaPow', 'r_jitter_gamma', 'p_jitter_gamma', 'stat_jitter_gamma', 'r_jitter_rt', 'p_jitter_rt', 'stat_jitter_rt');
     elseif strcmp(correlation, 'amp_tfr') && ~compareQuartile
         filename = sprintf('/project/3011085.02/results/freq/sub-%03d/corr_amp_tfr', subj);
