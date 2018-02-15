@@ -1,9 +1,10 @@
 function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel)
+load('atlas_subparc374_8k.mat')
 
 cfg         = [];
 cfg.latency = [-0.1 inf];
 data_shift  = ft_selectdata(cfg, data_shift);
-cfg.latency = [-0.05 0.25];
+cfg.latency = [-0.1 0.6];
 data_shift_short = ft_selectdata(cfg, data_shift);
 
 cfg = [];
@@ -39,8 +40,9 @@ F(source.inside,:) = cat(1,source.avg.filter{:});
 cfg                       = [];
 cfg.method                = 'pca';
 
-tmp     = rmfield(data, {'elec' 'grad'});
-selparc = setdiff(1:numel(atlas.parcellationlabel),[1 2 194 195]); % hard coded exclusion of midline and ???
+tmp     = rmfield(data_shift, {'elec' 'grad'});
+exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'});
+selparc = setdiff(1:numel(atlas.parcellationlabel),exclude_label); % hard coded exclusion of midline and ???
 
 source_parc.label = atlas.parcellationlabel(selparc);
 source_parc.time  = tlck.time;
@@ -50,8 +52,12 @@ source_parc.dimord = 'chan_time';
 
 for k = 1:numel(selparc)
   tmpF = F(atlas.parcellation==selparc(k),:);
-  tmp.trial = tmpF*data.trial;
-  tmp.label = data.label(1:size(tmpF,1));
+  tmp.trial = tmpF*data_shift.trial;
+  for l=1:size(tmpF,1)
+      tmplabel{l} = sprintf('loc%03d', l);
+  end
+  tmp.label = tmplabel;
+  clear tmplabel
   tmpcomp   = ft_componentanalysis(cfg, tmp);
 
   source_parc.F{k}     = tmpcomp.unmixing*tmpF;
