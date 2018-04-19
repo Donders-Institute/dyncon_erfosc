@@ -58,7 +58,7 @@ clear data_reversal_tmp
 
 % get the stim-onset aligned data
 cfg         = [];
-cfg.latency = [-0.75 0.5-1/fsorig];
+cfg.latency = [-0.75 0.6-1/fsorig];
 data_onset  = ft_selectdata(cfg, data);
 
 % get the shift aligned data

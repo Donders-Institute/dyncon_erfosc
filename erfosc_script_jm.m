@@ -33,8 +33,9 @@ if ~exist('dosplitpow_lcmv', 'var'), dosplitpow_lcmv = false; end
 if ~exist('doPlanar', 'var'), doPlanar = false; end
 if ~exist('doglm', 'var'), doglm = false; end
 if ~exist('dosplitpow_source', 'var'), dosplitpow_source = false; end
+if ~exist('doparcel_erf', 'var'), doparcel_erf = false; end
 
-
+if doparcel_erf, dolcmv_parc = true; end
 if dodics_gamma, dofreq  = true; end
 if dodics_alpha, dofreq  = true; end
 if dofreq,       getdata = true; end
@@ -44,7 +45,7 @@ if dofreq_short_alpha, getdata = true; end
 if dolcmv_parc,  getdata = true; end
 if dolcmv_norm,  getdata = true; end
 if dosplitpow_lcmv, getdata = true; end
-if doglm,     getdata = true; end
+if doglm,     getdata = true; dolcmv_parc = true; end
 if dosplitpow_source, getdata = true; end
 
 % this chunk creates 2 data structures [-0.75 0.5]
@@ -173,8 +174,8 @@ if dolcmv_parc
     load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
     [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel);
     
-    savedir = '/home/language/jansch/erfosc';
-    save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
+%     savedir = '/home/language/jansch/erfosc';
+%     save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
 end
 
 if dolcmv_norm
@@ -385,59 +386,58 @@ if dosplitpow_lcmv
     end
 end
 if doglm
-    datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
-    load(fullfile(datadir, sprintf('sub-%03d_corr', subj)));
+load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
     
-    cfg = [];
-    cfg.method = 'mtmconvol';
-    cfg.output = 'pow';
-    cfg.pad    = 2;
-    cfg.foi    = [2:2:100];
-    cfg.tapsmofrq = ones(1,numel(cfg.foi)).*8;
-    cfg.t_ftimwin = ones(1,numel(cfg.foi)).*0.25;
-    cfg.toi    = (-150:6:0)./300;
-    cfg.keeptrials = 'yes';
-    cfgb                 = [];
-    cfgb.method          = 'template';
-    cfgb.template        = 'CTF275_neighb.mat';
-    cfgb.neighbours      = ft_prepare_neighbours(cfgb, data_shift);
-    cfgb.method          = 'sincos';
-    data_shift_planar         = ft_megplanar(cfgb, data_shift);
-    data_onset_planar =  ft_megplanar(cfgb, data_onset);
-    cfgb = [];
-    cfgb.method = 'sum'
-    tfr_shift = ft_combineplanar(cfgb, ft_freqanalysis(cfg, data_shift_planar));
-    cfg.toi = (-450:6:0)./300;
-    tfr_onset = ft_combineplanar(cfgb, ft_freqanalysis(cfg, data_onset_planar));
+    parceldata_shift = data_shift;
     
-    design = [((amp-mean(amp))./std(amp))'; ones(1,length(amp))];
-    
-    cfg=[];
-    cfg.glm.statistic = 'beta';
-    cfg.glm.standardise = false;
-    
-    for freq = 1:length(tfr_onset.freq)
-        for ch = 1:length(tfr_onset.label)
-            dat = [squeeze(squeeze(tfr_shift.powspctrm(:,ch,freq,:)))]';
-            dat = (dat - repmat(mean(dat,2),[1 length(amp)]))./(repmat(std(dat,[],2),[1 length(amp)]));
-            
-            tmp = statfun_glm(cfg, dat, design);
-            betas(freq,ch,:,:) = tmp.stat(:,1);
-            
-            dat_bl = [squeeze(squeeze(tfr_onset.powspctrm(:,ch,freq,:)))]';
-            dat_bl = (dat_bl - repmat(mean(dat_bl,2),[1 length(amp)]))./(repmat(std(dat_bl,[],2),[1 length(amp)]));
-            
-            tmp_bl = statfun_glm(cfg, dat_bl, design);
-            betas_bl(freq,ch,:,:) = tmp_bl.stat(:,1);
-        end
+    parceldata_shift.label = source_parc.label
+    for k=1:length(source_parc.F);
+        spatfilter_parcel(k,:) = source_parc.F{k}(1,:);
     end
-    betas_bl = nanmean(betas_bl,3);
-    try
-        save(fullfile(datadir, sprintf('sub-%03d_glm', subj)), 'betas', 'betas_bl')
-    catch
-        save(fullfile(datadir, sprintf('sub-%03d_glm', subj)), 'betas', 'betas_bl','-v7.3')
-    end
+    parceldata_shift.trial = spatfilter_parcel*parceldata_shift.trial;
+    
+cfg=[];
+cfg.lpfilter = 'yes';
+cfg.lpfilttype = 'firws';
+cfg.lpfreq = 30;
+cfg.lpfiltdir = 'onepass-reverse-zerophase';
+cfg.preproc.demean = 'yes';
+cfg.preproc.baselinewindow = [-0.1 0];
+parceldata_shift = ft_preprocessing(cfg, parceldata_shift);
+    
+cfg=[];
+cfg.latency = [-0.1 0.5];
+erfdata = ft_selectdata(cfg, parceldata_shift);
+
+cfg=[];
+cfg.vartrllength = 2;
+tlck = ft_timelockanalysis(cfg, erfdata);
+
+erfdata.trial = cat(3,erfdata.trial{:});
+erfdata.trial = permute(erfdata.trial, [3,1,2]);
+erfdata.time = erfdata.time{1};
+
+design = [gammaPow;((data_shift.trialinfo(:,5)-data_shift.trialinfo(:,4))/1200)'];
+cfg=[];
+cfg.glm.statistic = 'beta';
+cfg.glm.standardise = false;
+
+for k=1:length(erfdata.label)
+    dat = [squeeze(erfdata.trial(:,k,:))]';
+    dat = (dat - repmat(mean(dat,2),[1 length(erfdata.trialinfo)]));
+    tmp = statfun_glm(cfg, dat, design);
+    betas_tmp(k,:) = tmp.stat(:,1);
 end
+
+betas        = rmfield(erfdata,{'trial', 'cfg'});
+betas.avg    = betas_tmp;
+betas.time   = erfdata.time;
+betas.dimord = 'chan_time';
+
+savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
+save(fullfile([savedir, sprintf('sub-%03d_glm_parcel', subj)]), 'betas', 'tlck');
+end
+
 if dosplitpow_source
     datadir1 = '/home/language/jansch/erfosc';
     datadir2 = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
@@ -461,7 +461,7 @@ if dosplitpow_source
     erftrlinfo = datapst.trialinfo(:,1);
     
     parceltrlinfo=parceldata_shift.trialinfo(:,1);
-    [~, order] = ismember(erftrlinfo, tmp1);
+    [~, order] = ismember(erftrlinfo, parceltrlinfo);
     parceldata_shift.trialinfo = parceldata_shift.trialinfo(order, :); % sort parceldata on erf amp (low-high)
     parceldata_shift.trial = parceldata_shift.trial(order);
     
@@ -470,18 +470,47 @@ if dosplitpow_source
     cfg.method = 'mtmconvol';
     cfg.output = 'pow';
     cfg.pad    = 2;
-    cfg.foi    = subject(subj).gammaband(1):2:subject(subj).gammaband(2)
-    cfg.tapsmofrq = ones(1,numel(cfg.foi)).*4;
+    cfg.foi    = 20:2:100
+    cfg.tapsmofrq = ones(1,numel(cfg.foi)).*8;
     cfg.t_ftimwin = ones(1,numel(cfg.foi)).*0.25;
     cfg.toi    = (-300:6:150)./300;
     cfg.trials = 1:100;
-    tfr_low = ft_freqanalysis(cfg, parceldata_shift);
+    tfr_high_1 = ft_freqanalysis(cfg, parceldata_shift); % low ERF amp
     cfg.trials = numel(data_shift.trial)-100 + (1:100);
-    tfr_high = ft_freqanalysis(cfg, parceldata_shift);
+    tfr_high_2 = ft_freqanalysis(cfg, parceldata_shift); % high ERF amp
+    
+    cfg = [];
+    cfg.method = 'mtmconvol';
+    cfg.output = 'pow';
+    cfg.pad    = 2;
+    cfg.foi    = 2:2:30
+    cfg.taper  = 'hanning';
+    cfg.t_ftimwin = ones(1,numel(cfg.foi)).*0.25;
+    cfg.toi    = (-300:6:150)./300;
+    cfg.trials = 1:100;
+    tfr_low_1 = ft_freqanalysis(cfg, parceldata_shift); % low ERF amp
+    cfg.trials = numel(data_shift.trial)-100 + (1:100);
+    tfr_low_2 = ft_freqanalysis(cfg, parceldata_shift); % high ERF amp
     
     savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
-    save(fullfile(savedir, sprintf('sub-%03d_splitpow_source', subj)), 'parceldata_shift', 'tfr_low', 'tfr_high')
+    save(fullfile(savedir, sprintf('sub-%03d_splitpow_source', subj)), 'tfr_low_1','tfr_low_2','tfr_high_1', 'tfr_high_2')
+end
+
+if doparcel_erf
+    parceldata_shift = data_shift;
+    
+    parceldata_shift.label = source_parc.label;
+    for k=1:length(source_parc.F);
+        spatfilter_parcel(k,:) = source_parc.F{k}(1,:);
+    end
+    parceldata_shift.trial = spatfilter_parcel*parceldata_shift.trial;
+    
+    [~, idx] = sort(parceldata_shift.trialinfo(:,6)-parceldata_shift.trialinfo(:,5), 'ascend');
+    parceldata_shift.trial = parceldata_shift.trial(idx);
+    parceldata_shift.trialinfo = parceldata_shift.trialinfo(idx);    
+    
+    savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
+    save(fullfile(savedir, sprintf('sub-%03d_erfparc', subj)), 'parceldata_shift');
     
 end
     
-

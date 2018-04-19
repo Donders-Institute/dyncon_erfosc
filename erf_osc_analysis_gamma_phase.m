@@ -30,7 +30,7 @@ load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj), 'peakFr
 data_lp = erf_osc_analysis_lcmv_orientation(subj, erfoi, 'reverse', 'lp'); % optimal dipole orientation is chosen based on [0 0.5] after stimulus-reversal.
 % data is timelocked to reversal or behavioral response, and low pass
 % filtered. 
-data = erf_osc_analysis_lcmv_orientation(subj, erfoi, 'reverse', 'no'); % no filtering
+data = erf_osc_analysis_lcmv_orientation(subj, erfoi, 'reverse', 'no'); % no filtering/project/3011085.02/results/freq/sub-00$i/tzero/gamma_angle_all.mat
 
 fs=data.fsample;
 %% ITC
@@ -65,6 +65,7 @@ t2 = nearest(itc.time, 0);
 u = mean(itc.itpc(1:t2));
 sigma = std(itc.itpc(1:t2));
 inputTime = itc.time(find(itc.itpc>u+5*sigma,1));
+inputTime = -inputTime;
 
 %% estimate angle
 cfg=[];
@@ -90,7 +91,7 @@ end
 t = data_estangle.time{1};
 m=1;
 for frq = freqoi
-%{
+%
     cfg=[];
     cfg.latency = [inputTime-3/frq inputTime-1/fs];
     dataShort = ft_selectdata(cfg, data);
@@ -102,7 +103,7 @@ for frq = freqoi
     cfg.keeptrials = 'yes';
     cfg.foilim = [frq frq];   
     fcomp = ft_freqanalysis(cfg, dataShort);
-%}   
+%{   
 cfg            = [];
 % use an alpha taper, which concentrates more on the right side of the
 % window instead of the center. This way, we can still use mtmconvol, even
@@ -189,7 +190,7 @@ if ~ischar(freqoistr)
         freqoistr = num2str(freqoistr);
     end
 end
-filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tzero/gamma_angle_%s', subj, freqoistr);
+filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tneg/gamma_angle_%s', subj, freqoistr);
 
 save(fullfile([filename '.mat']), 'angle_rad', 'inputTime','s', 'srand', 'allampstat', 'allanglestat', 'allampstatrand', 'allanglestatrand', 'peakFreq_gamma', 'binAngles');
 

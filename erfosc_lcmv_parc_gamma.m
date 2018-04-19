@@ -44,7 +44,8 @@ cfg                       = [];
 cfg.method                = 'pca';
 
 tmp     = rmfield(data_pre_short, {'elec' 'grad'});
-selparc = setdiff(1:numel(atlas.parcellationlabel),[1 2 194 195]); % hard coded exclusion of midline and ???
+exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'});
+selparc = setdiff(1:numel(atlas.parcellationlabel),exclude_label); % hard coded exclusion of midline and ???
 
 source_parc.label = atlas.parcellationlabel(selparc);
 source_parc.time  = tlck_pre.time;

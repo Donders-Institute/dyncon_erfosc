@@ -169,14 +169,14 @@ sourceDiff.pos(maxpowindx, :)
 % this will pass the activity at the location of interest with unit gain,
 % while optimally reducing activity from other locations. This filter then
 % can be applied to the original MEG data
-
+%
 % select the grid information only for the position with maximum gamma
 % power
 virtualgrid = rmfield(cfg.grid, 'filter');
 virtualgrid.pos = virtualgrid.pos(maxpowindx,:);
 virtualgrid.inside = virtualgrid.inside(maxpowindx);
 virtualgrid.leadfield = {[virtualgrid.leadfield{maxpowindx}]};
-%virtualgrid.filter = {[virtualgrid.filter{maxpowindx}]};
+
 
 cfg.method = 'pcc';
 cfg.pcc = cfg.dics;
@@ -197,16 +197,24 @@ end
 gammaPow = log(newpow_trl);
 gammaPow = (gammaPow-mean(gammaPow))/std(gammaPow);
 
+
 %%%%%% Previously %%%%%%%
-% virtualgrid = cfg.grid;
-% virtualgrid.pos = virtualgrid.pos(maxpowindx,:);
-% virtualgrid.inside = virtualgrid.inside(maxpowindx);
-% virtualgrid.leadfield = {[virtualgrid.leadfield{maxpowindx}]};
-% virtualgrid.filter = {[virtualgrid.filter{maxpowindx}]};
-% 
-% cfg.grid = virtualgrid;
-% cfg.rawtrial='yes';
-% gammaChan = ft_sourceanalysis(cfg, freqPost);
+%{
+virtualgrid = cfg.grid;
+virtualgrid.pos = virtualgrid.pos(maxpowindx,:);
+virtualgrid.inside = virtualgrid.inside(maxpowindx);
+virtualgrid.leadfield = {[virtualgrid.leadfield{maxpowindx}]};
+virtualgrid.filter = {[virtualgrid.filter{maxpowindx}]};
+
+cfg.grid = virtualgrid;
+cfg.rawtrial='yes';
+gammaChan = ft_sourceanalysis(cfg, freqPreRev_short);
+for k=1:length(gammaChan.trial)
+    gammaPow(k) = gammaChan.trial(k).pow;
+end
+gammaPow = log(gammaPow);
+gammaPow = gammaPow-mean(gammaPow);
+%}
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -237,6 +245,7 @@ end
 
 
 sourceDiff = rmfield(sourceDiff,'cfg');
+
 %% save
 if isPilot
     filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel', subj);
@@ -244,6 +253,7 @@ else
     filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
 end
 save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaPow', 'sourceDiff', 'maxpowindx');
+
 ft_diary('off')
 
 

@@ -25,6 +25,7 @@ if isPilot
     load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
 else
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
+    load(sprintf('/project/3011085.02/results/eye/sub%03d.mat', subj), 'X', 'Y');
     if doDSS
         [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
     else
@@ -88,11 +89,27 @@ cfg.lpfilter = 'yes';
 cfg.lpfilttype = 'firws';
 cfg.lpfreq = 30;
 cfg.lpfiltdir = 'onepass-reverse-zerophase';
+cfg.preproc.demean = 'yes';
+cfg.preproc.baselinewindow = [-0.1 0];
 data = ft_preprocessing(cfg, data);
 
 % now cut out the segment of interest.
 cfg=[];
 if strcmp(erfoi, 'motor')
+cfg.lpfilter = 'yes';
+cfg.lpfilttype = 'firws';
+cfg.lpfreq = 30;
+cfg.lpfiltdir = 'onepass-reverse-zerophase';
+cfg.preproc.demean = 'yes';
+cfg.preproc.baselinewindow = [-0.1 0];
+data = ft_preprocessing(cfg, data);
+cfg.lpfilter = 'yes';
+cfg.lpfilttype = 'firws';
+cfg.lpfreq = 30;
+cfg.lpfiltdir = 'onepass-reverse-zerophase';
+cfg.preproc.demean = 'yes';
+cfg.preproc.baselinewindow = [-0.1 0];
+data = ft_preprocessing(cfg, data);
     cfg.latency = [-0.5 0];
     active = ft_selectdata(cfg, data);
 else
@@ -112,8 +129,8 @@ if ~strcmp(erfoi, 'motor')
     baseline.time = active.time;
 end
 
-design = [gammaPow; ones(size(gammaPow))];
-
+design = [gammaPow;((data.trialinfo(:,5)-data.trialinfo(:,4))/1200)'];
+% design = gammaPow;
 cfg=[];
 cfg.glm.statistic = 'beta';
 cfg.glm.standardise = false;

@@ -21,11 +21,11 @@ for subj=allsubs
     tfa{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj,freqRange, zeropoint));
     if strcmp(zeropoint, 'reversal')
         baseline{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_onset.mat', subj, freqRange), 'baseline');
-        baseline{subj} = baseline{subj}.baseline;
+        baseline{subj} = rmfield(baseline{subj}.baseline, 'cfg');
     else
-        baseline{subj} = tfa{subj}.baseline;
+        baseline{subj} = rmfield(tfa{subj}.baseline, 'cfg');
     end
-    tfa{subj} = tfa{subj}.tfa;
+    tfa{subj} = rmfield(tfa{subj}.tfa, 'cfg');
 end
 
 for subj=allsubs

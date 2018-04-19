@@ -47,7 +47,7 @@ else
 end
 %% if no data_dss cleaning is done beforehand, do this
 if ~doDSS
-     data = dataClean;
+    data = dataClean;
 
     idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
     nTrials = length(idxM);
@@ -90,6 +90,8 @@ fs=data.fsample;
 nTrials = length(data.trial);
 
 %% select p1 amplitude for regression
+% find parieto-occipital channel with maximum amplitude in the 60-120 ms
+% window.
 cfg=[];
 cfg.vartrllength=2;
 cfg.keeptrials = 'yes';
@@ -121,6 +123,8 @@ time = tlck.time;
 maxchanid = tlck.label(maxchan);
 maxchanidx = find(strcmp(maxchanid, data.label));
 halfwindowlength = 8;
+
+% find window within 60-120ms where amplitude peaks at this channel
 i=1;
 for ntrl = halfwindowlength+1:length(time)-halfwindowlength
     win(i,:) = [time(ntrl-8), time(ntrl+8)];
@@ -130,6 +134,7 @@ end
 [~, window] = max(abs(avg));
 lat = win(window,:);
 
+% select parieto-occipital channels in the peak latency
 cfg=[];
 cfg.latency = lat;
 cfg.avgovertime = 'yes';
