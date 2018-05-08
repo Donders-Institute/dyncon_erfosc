@@ -1,6 +1,7 @@
 
 if ~exist('doglm_parc', 'var'), doglm_parc = false; end
 if ~exist('dosplitpow_source', 'var'), dosplitpow_source = false; end
+if ~exist('doresplocked', 'var'), doresplocked = false; end
 
 ft_diary('on')
 datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
@@ -24,75 +25,60 @@ if doglm_parc
     
     k = 1;
     for subj = allsubs
-        tmp{k} = load(fullfile([datadir, sprintf('sub-%03d_glm_parcel.mat', subj)]));
-        tmp2{k} = load(fullfile([datadir, sprintf('sub-%03d_parcel_blstd.mat', subj)]));
-        k=k+1;
+        if doresplocked
+            tmp{k} = load(fullfile([datadir, sprintf('sub-%03d_glm_parcelresp.mat', subj)]));
+        else
+            tmp{k} = load(fullfile([datadir, sprintf('sub-%03d_glm_parcel.mat', subj)]));
+        end
+    tmp2{k} = load(fullfile([datadir, sprintf('sub-%03d_parcel_blstd.mat', subj)])); %baseline correction not needed; was already done before GLM.
+    tmp3{k} = tmp2{k}.baseline_std;
+    k=k+1;
     end
     
     for k=1:32
         betas{k} = tmp{k}.betas;
         tlck{k} = tmp{k}.tlck;
-        baseline_std{k} = tmp2{k}.baseline_std;
     end
-    clear tmp
+    
     
     cfg=[];
     cfg.appenddim = 'rpt';
     tlck_all  = ft_appendtimelock(cfg, tlck{:});
     betas_all  = ft_appendtimelock(cfg, betas{:});
-    baseline_std = cat(2, baseline_std{:});
-    clear tlck betas
     
-    % save average as reference
-    cfg=[];
-    cfg.avgoverrpt = 'yes';
-    tlck_orig = ft_selectdata(cfg, tlck_all);
-    
-    %% Align parcels over subjects using SVD
-    
-    for k = 1:length(tlck_all.label);
-        erf = squeeze(tlck_all.trial(:,k,:));
-        erf = diag(1./std(erf,[],2))*erf; % normalize before SVD
-        
-        [u,s,v]=svd(erf);
-        u2(:,k) = sign(u(:,1));
+    if ~doresplocked
+        baselinestd = permute(cat(2, tmp3{:}),[2,1]); % standard deviation over concatenated single trial baselines BEFORE any SVD
+        tb1 = nearest(tlck_all.time, -.1);
+        tb2 = nearest(tlck_all.time, 0);
+        mu_erf = mean(tlck_all.trial(:,:,tb1:tb2),3);
+        mu_betas_all = mean(betas_all.trial(:,:,tb1:tb2),3);    
     end
-    u2 = repmat(u2, [1,1, length(tlck_all.time)]);
+    clear tlck betas tmp*
     
-    tlck_all.trial = u2.*tlck_all.trial;
-    betas_all.trial = u2.*tlck_all.trial;
-    
+    % realign the betas in the direction of the effect. If the ERF is
+    % positive and the beta as well, the effect is positive. The same goes
+    % for a negative ERF and negative beta. If the sign of the ERF and of
+    % the betas is opposite, the effect is negative (stronger gamma power
+    % leads so weaker ERF).
     cfg=[];
-    cfg.avgoverrpt = 'yes';
-    tlck_svd1 = ft_selectdata(cfg, tlck_all);
-    betas_svd1 = ft_selectdata(cfg, betas_all);
-
-    %% Align ambiguous polarity over parcels using SVD
-    if strcmp(erfoi, 'early')
-        t1 = 0;
-        t2 = 0.2;
-    elseif strcmp(erfoi, 'late')
-        t1 = 0.2;
-        t2 = 0.5;
+    cfg.parameter = 'trial';
+    cfg.operation = 'sign(x1).*x2';
+    betas_align = ft_math(cfg, tlck_all, betas_all);
+    
+    if ~doresplocked
+    mu_betas_align = mean(betas_align.trial(:,:,tb1:tb2),3);
+    
+    tlck_norm = tlck_all;
+    tlck_norm.trial = (tlck_norm.trial.*repmat(mu_erf, [1,1, length(tlck_norm.time)]))./repmat(baselinestd, [1,1,length(tlck_norm.time)]);
+    betas_all_norm = betas_all;
+    betas_all_norm.trial = (betas_all_norm.trial.*repmat(mu_betas_all, [1,1, length(betas_all_norm.time)]))./repmat(baselinestd, [1,1,length(betas_all_norm.time)]);
+    betas_align_norm = betas_align;
+    betas_align_norm.trial = (betas_align_norm.trial.*repmat(mu_betas_align, [1,1, length(betas_align_norm.time)]))./repmat(baselinestd, [1,1,length(betas_align_norm.time)]);
     end
-    t1_svd = nearest(tlck_all.time, t1);
-    t2_svd = nearest(tlck_all.time, t2);
     
-    erf = squeeze(mean(tlck_all.trial,1));
-    [u,s,v]=svd(erf(:,t1_svd:t2_svd),'econ');
-    
-    tlck_all.trial = permute(repmat(sign(u(:,1)),[1, size(tlck_all.trial,1), length(tlck_all.time)]),[2,1,3]).*tlck_all.trial;
-    betas_all.trial = permute(repmat(sign(u(:,1)),[1, size(betas_all.trial,1), length(betas_all.time)]),[2,1,3]).*betas_all.trial;
-    
-    cfg=[];
-    cfg.avgoverrpt = 'yes';
-    tlck_svd2 = ft_selectdata(cfg, tlck_all);
-    betas_svd2 = ft_selectdata(cfg, betas_all);    
-
-
     %% do statistics
     
-    ref = betas_all;
+    ref = betas_align;
     ref.trial = ref.trial*0;
     
     
@@ -100,11 +86,18 @@ if doglm_parc
     cfgs.clusteralpha = 0.05;
     load parcellation374_neighb
     cfgs.neighbours = neighbours;
-    cfgs.latency = [t1 t2];
-    cfgs.avgovertime = 'yes';
-    stat = ft_timelockstatistics(cfgs, betas_all, ref);
+    if doresplocked
+        cfgs.latency = [-0.5 0];
+    else
+        cfgs.latency = [0 0.5];
+    end
+    stat = ft_timelockstatistics(cfgs, betas_align, ref);
     
-    save(fullfile([savedir, sprintf('stat_glm_parcel_%s.mat', erfoi)]), 'stat', 'tlck_orig', 'tlck_svd1', 'tlck_svd2', 'betas_svd2', 'betas_svd1', 't1', 't2');
+    if doresplocked
+        save(fullfile([savedir, 'stat_glm_parcelresp.mat']), 'stat', 'tlck_all', 'betas_all', 'betas_align');
+    else
+        save(fullfile([savedir, 'stat_glm_parcel.mat']), 'stat', 'tlck_all', 'betas_all', 'betas_align', 'tlck_norm', 'betas_all_norm', 'betas_align_norm', 'mu_erf', 'mu_betas_all', 'mu_betas_align');
+    end
     ft_diary('off')
     
 elseif dosplitpow_source
