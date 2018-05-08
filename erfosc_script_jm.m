@@ -34,6 +34,7 @@ if ~exist('doPlanar', 'var'), doPlanar = false; end
 if ~exist('doglm', 'var'), doglm = false; end
 if ~exist('dosplitpow_source', 'var'), dosplitpow_source = false; end
 if ~exist('doparcel_erf', 'var'), doparcel_erf = false; end
+if ~exist('doresplocked', 'var'), doresplocked = false; end
 
 if doparcel_erf, dolcmv_parc = true; end
 if dodics_gamma, dofreq  = true; end
@@ -174,8 +175,8 @@ if dolcmv_parc
     load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
     [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel);
     
-%     savedir = '/home/language/jansch/erfosc';
-%     save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
+    %     savedir = '/home/language/jansch/erfosc';
+    %     save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
 end
 
 if dolcmv_norm
@@ -386,7 +387,7 @@ if dosplitpow_lcmv
     end
 end
 if doglm
-load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
+    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
     
     parceldata_shift = data_shift;
     
@@ -396,48 +397,66 @@ load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.ma
     end
     parceldata_shift.trial = spatfilter_parcel*parceldata_shift.trial;
     
-cfg=[];
-cfg.lpfilter = 'yes';
-cfg.lpfilttype = 'firws';
-cfg.lpfreq = 30;
-cfg.lpfiltdir = 'onepass-reverse-zerophase';
-cfg.preproc.demean = 'yes';
-cfg.preproc.baselinewindow = [-0.1 0];
-parceldata_shift = ft_preprocessing(cfg, parceldata_shift);
+    cfg=[];
+    cfg.lpfilter = 'yes';
+    cfg.lpfilttype = 'firws';
+    cfg.lpfreq = 30;
+    cfg.lpfiltdir = 'onepass-reverse-zerophase';
+    cfg.preproc.demean = 'yes';
+    if ~doresplocked
+        cfg.preproc.baselinewindow = [-0.1 0];
+    end
+    parceldata_shift = ft_preprocessing(cfg, parceldata_shift);
     
-cfg=[];
-cfg.latency = [-0.1 0.5];
-erfdata = ft_selectdata(cfg, parceldata_shift);
-
-cfg=[];
-cfg.vartrllength = 2;
-tlck = ft_timelockanalysis(cfg, erfdata);
-
-erfdata.trial = cat(3,erfdata.trial{:});
-erfdata.trial = permute(erfdata.trial, [3,1,2]);
-erfdata.time = erfdata.time{1};
-
-design = [gammaPow;((data_shift.trialinfo(:,5)-data_shift.trialinfo(:,4))/1200)'];
-cfg=[];
-cfg.glm.statistic = 'beta';
-cfg.glm.standardise = false;
-
-for k=1:length(erfdata.label)
-    dat = [squeeze(erfdata.trial(:,k,:))]';
-    dat = (dat - repmat(mean(dat,2),[1 length(erfdata.trialinfo)]));
-    tmp = statfun_glm(cfg, dat, design);
-    betas_tmp(k,:) = tmp.stat(:,1);
+    if doresplocked
+        cfg=[];
+        cfg.latency = [-0.5 0];
+        erfdata = ft_selectdata(cfg, parceldata_shift);
+    else
+        cfg=[];
+        cfg.latency = [-0.1 0.5];
+        erfdata = ft_selectdata(cfg, parceldata_shift);
+        
+        cfg=[];
+        cfg.latency = [-0.1 0];
+        tmp = ft_selectdata(cfg, erfdata);
+        tmp.trial = cat(2, tmp.trial{:});
+        baseline_std = std(tmp.trial, [], 2);
+    end
+    
+    cfg=[];
+    cfg.vartrllength = 2;
+    tlck = ft_timelockanalysis(cfg, erfdata);
+    
+    erfdata.trial = cat(3,erfdata.trial{:});
+    erfdata.trial = permute(erfdata.trial, [3,1,2]);
+    erfdata.time = erfdata.time{1};
+    
+    design = [gammaPow;((data_shift.trialinfo(:,5)-data_shift.trialinfo(:,4))/1200)'; ones(size(gammaPow))];
+    cfg=[];
+    cfg.glm.statistic = 'beta';
+    cfg.glm.standardise = false;
+    
+    for k=1:length(erfdata.label)
+        dat = [squeeze(erfdata.trial(:,k,:))]';
+        dat = (dat - repmat(mean(dat,2),[1 length(erfdata.trialinfo)]));
+        tmp = statfun_glm(cfg, dat, design);
+        betas_tmp(k,:) = tmp.stat(:,1);
+    end
+    
+    betas        = rmfield(erfdata,{'trial', 'cfg'});
+    betas.avg    = betas_tmp;
+    betas.time   = erfdata.time;
+    betas.dimord = 'chan_time';
+    
+    savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
+    if doresplocked
+        save(fullfile([savedir, sprintf('sub-%03d_glm_parcelresp', subj)]), 'betas', 'tlck');
+    else
+        save(fullfile([savedir, sprintf('sub-%03d_parcel_blstd', subj)]), 'baseline_std');
+        save(fullfile([savedir, sprintf('sub-%03d_glm_parcel', subj)]), 'betas', 'tlck');
+    end
 end
-
-betas        = rmfield(erfdata,{'trial', 'cfg'});
-betas.avg    = betas_tmp;
-betas.time   = erfdata.time;
-betas.dimord = 'chan_time';
-
-savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
-save(fullfile([savedir, sprintf('sub-%03d_glm_parcel', subj)]), 'betas', 'tlck');
-end
-
 if dosplitpow_source
     datadir1 = '/home/language/jansch/erfosc';
     datadir2 = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
@@ -507,10 +526,10 @@ if doparcel_erf
     
     [~, idx] = sort(parceldata_shift.trialinfo(:,6)-parceldata_shift.trialinfo(:,5), 'ascend');
     parceldata_shift.trial = parceldata_shift.trial(idx);
-    parceldata_shift.trialinfo = parceldata_shift.trialinfo(idx);    
+    parceldata_shift.trialinfo = parceldata_shift.trialinfo(idx);
     
     savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
     save(fullfile(savedir, sprintf('sub-%03d_erfparc', subj)), 'parceldata_shift');
     
 end
-    
+
