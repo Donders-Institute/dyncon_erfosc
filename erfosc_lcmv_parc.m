@@ -1,9 +1,10 @@
 function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas)
+load('atlas_subparc374_8k.mat')
 
 cfg         = [];
 cfg.latency = [-0.1 inf];
 data_shift  = ft_selectdata(cfg, data_shift);
-cfg.latency = [-0.05 0.25];
+cfg.latency = [-0.1 0.6];
 data_shift_short = ft_selectdata(cfg, data_shift);
 
 cfg = [];
@@ -47,8 +48,9 @@ cfg                       = [];
 cfg.method                = 'pca';
 
 tmp     = rmfield(data_shift, {'elec' 'grad'});
-%selparc = setdiff(1:numel(atlas.parcellationlabel),[1 2 188 189]); % hard coded exclusion of midline and ???
 selparc = 1:numel(atlas.parcellationlabel);
+exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'});
+selparc = setdiff(1:numel(atlas.parcellationlabel),exclude_label); % hard coded exclusion of midline and ???
 
 source_parc.label = atlas.parcellationlabel(selparc);
 source_parc.time  = tlck.time;
@@ -60,10 +62,11 @@ source_parc.dimord = 'chan_time';
 for k = 1:numel(selparc)
   tmpF = F(atlas.parcellation==selparc(k),:);
   tmp.trial = tmpF*data_shift.trial;
-  tmp.label = cell(size(tmpF,1),1);
-  for m = 1:numel(tmp.label)
-    tmp.label{m} = sprintf('vertex%03d',m);
+  for l=1:size(tmpF,1)
+      tmplabel{l} = sprintf('loc%03d', l);
   end
+  tmp.label = tmplabel;
+  clear tmplabel
   tmpcomp   = ft_componentanalysis(cfg, tmp);
 
   tmpL = L(:,atlas.parcellation==selparc(k));

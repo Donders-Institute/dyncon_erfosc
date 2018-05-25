@@ -1,4 +1,4 @@
-function [data_onset, data_shift] = erfosc_getdata(data, comp, channel)
+function [data_onset, data_shift, data_response] = erfosc_getdata(data, comp, channel)
 
 if nargin<3
   channel = 'MEG';
@@ -60,6 +60,15 @@ clear data_reversal_tmp
 cfg         = [];
 cfg.latency = [-0.75 0.75-1/fsorig];
 data_onset  = ft_selectdata(cfg, data);
+
+% get the response locked data
+cfg           = [];
+cfg.offset    = -(data.trialinfo(:,6)-data.trialinfo(:,4));
+data_response = ft_redefinetrial(cfg, data);
+
+cfg           = [];
+cfg.latency   = [-0.5 0];
+data_response = ft_selectdata(cfg, data_response);
 
 % get the shift aligned data
 cfg        = [];

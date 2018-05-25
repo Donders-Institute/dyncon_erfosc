@@ -74,20 +74,22 @@ cfg.preproc.lpfilttype = 'firws';
 cfg.preproc.lpfreq = 30;
 cfg.preproc.demean = 'yes';
 cfg.preproc.baselinewindow = [-0.1 0];
-% tlck             = ft_timelockanalysis(cfg, dataShift);
-tl          = ft_timelockanalysis(cfg, data);
+tlck = ft_timelockanalysis(cfg, data);
 
+cfg=[];
+cfg.latency = [-0.1 0.5];
+tlck = ft_selectdata(cfg, tlck);
+
+%{
 %planar gradient transformation
 cfg                 = [];
 cfg.feedback        = 'no';
 cfg.method          = 'template';
-cfg.neighbours      = ft_prepare_neighbours(cfg, tl);
+cfg.neighbours      = ft_prepare_neighbours(cfg, tlck);
 
 cfg.planarmethod    = 'sincos';
-% tl_planar           = ft_megplanar(cfg, tlck);
-tl_planar      = ft_megplanar(cfg, tl);
+tl_planar      = ft_megplanar(cfg, tlck);
 
-% tl_plcmb            = ft_combineplanar([], tl_planar);
 tl_plcmb       = ft_combineplanar([], tl_planar);
 
 load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
@@ -104,13 +106,13 @@ end
 q1 = ft_selectdata(cfg, tl_plcmb);
 cfg.trials = idx(end-qSize+1:end);
 q4 = ft_selectdata(cfg, tl_plcmb);
-
+%}
 
 %% save
 
     filename = sprintf('/project/3011085.02/results/erf/sub-%03d/timelock_%s', subj, erfoi);
 
-save(fullfile([filename '.mat']), 'q1','q4', '-v7.3')
+save(fullfile([filename '.mat']), 'tlck', '-v7.3')
 ft_diary('off')
 
 end
