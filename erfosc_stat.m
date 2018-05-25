@@ -53,7 +53,7 @@ if doglm_parc
         mu_erf = mean(tlck_all.trial(:,:,tb1:tb2),3);
         mu_betas_all = mean(betas_all.trial(:,:,tb1:tb2),3);    
     end
-    clear tlck betas tmp*
+%     clear tlck betas tmp*
     
     % realign the betas in the direction of the effect. If the ERF is
     % positive and the beta as well, the effect is positive. The same goes
@@ -66,14 +66,14 @@ if doglm_parc
     betas_align = ft_math(cfg, tlck_all, betas_all);
     
     if ~doresplocked
-    mu_betas_align = mean(betas_align.trial(:,:,tb1:tb2),3);
-    
-    tlck_norm = tlck_all;
-    tlck_norm.trial = (tlck_norm.trial.*repmat(mu_erf, [1,1, length(tlck_norm.time)]))./repmat(baselinestd, [1,1,length(tlck_norm.time)]);
-    betas_all_norm = betas_all;
-    betas_all_norm.trial = (betas_all_norm.trial.*repmat(mu_betas_all, [1,1, length(betas_all_norm.time)]))./repmat(baselinestd, [1,1,length(betas_all_norm.time)]);
-    betas_align_norm = betas_align;
-    betas_align_norm.trial = (betas_align_norm.trial.*repmat(mu_betas_align, [1,1, length(betas_align_norm.time)]))./repmat(baselinestd, [1,1,length(betas_align_norm.time)]);
+        mu_betas_align = mean(betas_align.trial(:,:,tb1:tb2),3);
+
+        tlck_norm = tlck_all;
+        tlck_norm.trial = (tlck_norm.trial.*repmat(mu_erf, [1,1, length(tlck_norm.time)]))./repmat(baselinestd, [1,1,length(tlck_norm.time)]);
+        betas_all_norm = betas_all;
+        betas_all_norm.trial = (betas_all_norm.trial.*repmat(mu_betas_all, [1,1, length(betas_all_norm.time)]))./repmat(baselinestd, [1,1,length(betas_all_norm.time)]);
+        betas_align_norm = betas_align;
+        betas_align_norm.trial = (betas_align_norm.trial.*repmat(mu_betas_align, [1,1, length(betas_align_norm.time)]))./repmat(baselinestd, [1,1,length(betas_align_norm.time)]);
     end
     
     %% do statistics
@@ -87,7 +87,7 @@ if doglm_parc
     load parcellation374_neighb
     cfgs.neighbours = neighbours;
     if doresplocked
-        cfgs.latency = [-0.5 0];
+        cfgs.latency = [-0.5 0.4];
     else
         cfgs.latency = [0 0.5];
     end
