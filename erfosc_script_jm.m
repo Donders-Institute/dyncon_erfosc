@@ -74,7 +74,7 @@ if getdata
     else
         comp = [];
     end
-    [data_onset, data_shift] = erfosc_getdata(dataClean, comp);
+    [data_onset, data_shift, data_resp] = erfosc_getdata(dataClean, comp);
     clear dataClean;
 end
 
@@ -173,10 +173,13 @@ end
 if dolcmv_parc
     load(fullfile(subject.mridir,'preproc','headmodel.mat'));
     load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
-    [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel);
-    
-    %     savedir = '/home/language/jansch/erfosc';
-    %     save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
+    if doresplocked
+        [source_parc] = erfosc_lcmv_parc(data_resp, headmodel, sourcemodel, doresplocked);
+    else
+        [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel);
+        savedir = '/home/language/jansch/erfosc';
+        save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
+    end
 end
 
 if dolcmv_norm
@@ -389,7 +392,11 @@ end
 if doglm
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
     
-    parceldata_shift = data_shift;
+    if doresplocked
+        parceldata_shift = data_resp;
+    else
+        parceldata_shift = data_shift;
+    end
     
     parceldata_shift.label = source_parc.label
     for k=1:length(source_parc.F);
@@ -409,9 +416,20 @@ if doglm
     parceldata_shift = ft_preprocessing(cfg, parceldata_shift);
     
     if doresplocked
+        % add nans for short trials
+        tend = zeros(numel(parceldata_shift.time),1);
+        for k=1:numel(parceldata_shift.time);
+            tend(k,1) = parceldata_shift.time{k}(end); % save the last time point for each trial
+            parceldata_shift.time{k} = [parceldata_shift.time{k}, parceldata_shift.time{k}(end)+1/parceldata_shift.fsample:1/parceldata_shift.fsample:0.4];
+            parceldata_shift.trial{k} = [parceldata_shift.trial{k}, nan(numel(parceldata_shift.label), numel(parceldata_shift.time{k})-size(parceldata_shift.trial{k},2))];
+        end
         cfg=[];
-        cfg.latency = [-0.5 0];
+        cfg.latency = [-0.5 0.4];
         erfdata = ft_selectdata(cfg, parceldata_shift);
+        tlck=rmfield(erfdata,{'trial', 'time', 'trialinfo'});
+        tlck.avg = nanmean(cat(3,erfdata.trial{:}),3);
+        tlck.dimord = 'chan_time';
+        tlck.time = erfdata.time{1};
     else
         cfg=[];
         cfg.latency = [-0.1 0.5];
@@ -422,11 +440,12 @@ if doglm
         tmp = ft_selectdata(cfg, erfdata);
         tmp.trial = cat(2, tmp.trial{:});
         baseline_std = std(tmp.trial, [], 2);
+        cfg=[];
+        cfg.vartrllength = 2;
+        tlck = ft_timelockanalysis(cfg, erfdata);
     end
     
-    cfg=[];
-    cfg.vartrllength = 2;
-    tlck = ft_timelockanalysis(cfg, erfdata);
+    
     
     erfdata.trial = cat(3,erfdata.trial{:});
     erfdata.trial = permute(erfdata.trial, [3,1,2]);
@@ -439,7 +458,12 @@ if doglm
     
     for k=1:length(erfdata.label)
         dat = [squeeze(erfdata.trial(:,k,:))]';
-        dat = (dat - repmat(mean(dat,2),[1 length(erfdata.trialinfo)]));
+        if doresplocked
+            dat = (dat - repmat(nanmean(dat,2),[1 length(erfdata.trialinfo)]));
+            dat(isnan(dat))=0;
+        else
+            dat = (dat - repmat(mean(dat,2),[1 length(erfdata.trialinfo)]));
+        end
         tmp = statfun_glm(cfg, dat, design);
         betas_tmp(k,:) = tmp.stat(:,1);
     end
@@ -451,7 +475,7 @@ if doglm
     
     savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
     if doresplocked
-        save(fullfile([savedir, sprintf('sub-%03d_glm_parcelresp', subj)]), 'betas', 'tlck');
+        save(fullfile([savedir, sprintf('sub-%03d_glm_parcelresp', subj)]), 'betas', 'tlck','tend');
     else
         save(fullfile([savedir, sprintf('sub-%03d_parcel_blstd', subj)]), 'baseline_std');
         save(fullfile([savedir, sprintf('sub-%03d_glm_parcel', subj)]), 'betas', 'tlck');

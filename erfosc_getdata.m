@@ -66,10 +66,6 @@ cfg           = [];
 cfg.offset    = -(data.trialinfo(:,6)-data.trialinfo(:,4));
 data_response = ft_redefinetrial(cfg, data);
 
-cfg           = [];
-cfg.latency   = [-0.5 0];
-data_response = ft_selectdata(cfg, data_response);
-
 % get the shift aligned data
 cfg        = [];
 cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));

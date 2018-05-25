@@ -1,19 +1,23 @@
-function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel)
+function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, doresplocked)
 load('atlas_subparc374_8k.mat')
+if ~exist('doresplocked'); doresplocked=false; end
 
 cfg         = [];
-cfg.latency = [-0.1 inf];
-data_shift  = ft_selectdata(cfg, data_shift);
-cfg.latency = [-0.1 0.6];
-data_shift_short = ft_selectdata(cfg, data_shift);
+if doresplocked
+    cfg.latency = [-0.5 0.4];
+else
+    cfg.latency = [-0.1 0.6];
+end
+data_shift = ft_selectdata(cfg, data_shift);
 
 cfg = [];
 cfg.preproc.demean = 'yes';
-cfg.preproc.baselinewindow = [-0.1 0];
+if ~doresplocked
+    cfg.preproc.baselinewindow = [-0.1 0];
+    cfg.removemean = 'no';
+end
 cfg.covariance = 'yes';
-cfg.removemean = 'no';
-tlck = ft_timelockanalysis(cfg, data_shift_short);
-tlck_long = ft_timelockanalysis(cfg, data_shift);
+tlck = ft_timelockanalysis(cfg, data_shift);
 
 if ~isfield(sourcemodel, 'leadfield')
   cfg           = [];
