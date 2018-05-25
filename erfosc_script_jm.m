@@ -178,24 +178,17 @@ end
 
 if dolcmv_parc
 <<<<<<< HEAD
+<<<<<<< HEAD
     load(fullfile(subject.mridir,'preproc','headmodel.mat'));
     load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
+    load('atlas_subparc374_8k.mat');
     if doresplocked
-        [source_parc] = erfosc_lcmv_parc(data_resp, headmodel, sourcemodel, doresplocked);
+        [source_parc] = erfosc_lcmv_parc(data_resp, headmodel, sourcemodel, atlas, doresplocked);
     else
         [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel);
         savedir = '/home/language/jansch/erfosc';
         save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
     end
-=======
-  load(fullfile(subject.mridir,'preproc','headmodel.mat'));
-  load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
-  load('atlas_subparc374_8k.mat');
-  [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas);
-  
-  savedir = '/home/language/jansch/erfosc';
-  save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
->>>>>>> d08b5f8d9e123b2c33bad01e30c52fe8afd7daae
 end
 
 if dolcmv_norm

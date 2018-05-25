@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, doresplocked)
-=======
-function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas)
->>>>>>> d08b5f8d9e123b2c33bad01e30c52fe8afd7daae
+function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas, doresplocked)
+
 load('atlas_subparc374_8k.mat')
 if ~exist('doresplocked'); doresplocked=false; end
 
@@ -21,11 +18,7 @@ if ~doresplocked
     cfg.removemean = 'no';
 end
 cfg.covariance = 'yes';
-<<<<<<< HEAD
-=======
-cfg.removemean = 'no';
-%tlck = ft_timelockanalysis(cfg, data_shift_short);
->>>>>>> d08b5f8d9e123b2c33bad01e30c52fe8afd7daae
+
 tlck = ft_timelockanalysis(cfg, data_shift);
 
 if ~isfield(sourcemodel, 'leadfield')
