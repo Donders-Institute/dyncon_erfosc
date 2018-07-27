@@ -20,11 +20,13 @@ end
 
 if ~exist('dodics_gamma', 'var'), dodics_gamma = false; end
 if ~exist('dodics_alpha', 'var'), dodics_alpha = false; end
+if ~exist('dodics_beta', 'var'), dodics_beta = false; end
 if ~exist('dofreq', 'var'),       dofreq = false;       end
 if ~exist('docomp', 'var'),       docomp = false;       end
 if ~exist('getdata', 'var'),      getdata = false;      end
 if ~exist('dofreq_short', 'var'), dofreq_short = false; end
 if ~exist('dofreq_short_alpha', 'var'), dofreq_short_alpha = false; end
+if ~exist('dofreq_short_beta', 'var'), dofreq_short_beta = false; end
 if ~exist('docorrelation', 'var'), docorrelation = false; end
 if ~exist('docorrelation_alpha', 'var'), docorrelation_alpha = false; end
 if ~exist('dolcmv_parc', 'var'),  dolcmv_parc = false; end
@@ -38,21 +40,28 @@ if ~exist('doglm', 'var'), doglm = false; end
 if ~exist('dosplitpow_source', 'var'), dosplitpow_source = false; end
 if ~exist('doparcel_erf', 'var'), doparcel_erf = false; end
 if ~exist('doresplocked', 'var'), doresplocked = false; end
+if ~exist('docorrpow_lcmv_alpha', 'var'), docorrpow_lcmv_alpha = false; end
+if ~exist('docorrpow_lcmv_beta', 'var'), docorrpow_lcmv_beta = false; end
 
 if doparcel_erf, dolcmv_parc = true; end
 if dodics_gamma, dofreq  = true; end
 if dodics_alpha, dofreq  = true; end
+if dodics_beta, dofreq  = true; end
 if dofreq,       getdata = true; end
 if docomp,       getdata = true; end
 if dofreq_short, getdata = true; end
 if dofreq_short_alpha, getdata = true; end
+if dofreq_short_beta, getdata = true; end
 if dolcmv_parc,  getdata = true; end
 if dolcmv_parc_msmall, getdata = true; end
 if dolcmv_norm,  getdata = true; end
 if dosplitpow_lcmv, getdata = true; end
 if docorrpow_lcmv, getdata = true; end
+if docorrpow_lcmv_alpha, getdata = true; end
+if docorrpow_lcmv_beta, getdata = true; end
 if doglm,     getdata = true; dolcmv_parc = true; end
 if dosplitpow_source, getdata = true; end
+
 
 % this chunk creates 2 data structures [-0.75 0.5]
 if getdata
@@ -94,41 +103,53 @@ end
 
 % this chunk does spectral decomposition
 if dofreq_short
-  %erfosc_comppeaks; % this script has the latency peaks of the handpicked components
-  erfosc_lcmvpeaks;
-  latency = peaks(subj,1).*[1 1] - 0.02 - [0.20 1./600];
-  
-  foi     = subject.gammapeak(end).*[1 1];
-  smo     = max(10, diff(subject.gammaband(end,:))./2);
-  
-  [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
-
-  if ~exist('savefreq', 'var')
-    savefreq = false;
-  end
-  if savefreq
-    savedir = '/home/language/jansch/erfosc';
-    save(fullfile(savedir, sprintf('sub-%03d_freqshort', subj)), 'freq_shift', 'P', 'latency');
-  end
-end
-
-% this chunk does spectral decomposition
-if dofreq_short_alpha
-    latency = [-0.4 -1./600];
-    foi     = [10 10];
-    smo     = 2.5;
+    peakpicking;%MvE
+    latency = peaks(subj,1).*[1 1] - 0.02 - [0.20 1./600];%MvE
     
+    foi     = subject.gammapeak(end).*[1 1];
+    smo     = max(10, diff(subject.gammaband(end,:))./2);
     [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
-    
     if ~exist('savefreq', 'var')
         savefreq = false;
     end
     if savefreq
-        savedir = '/home/language/jansch/erfosc';
-        save(fullfile(savedir, sprintf('sub-%03d_freqshort_alpha', subj)), 'freq_shift', 'P', 'latency');
+        %     savedir = '/home/language/jansch/erfosc';%JM
+        savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';%MvE
+        save(fullfile(savedir, sprintf('sub-%03d_freqshort_mve', subj)), 'freq_shift', 'P', 'latency');
     end
 end
 
+% this chunk does spectral decomposition
+if dofreq_short_alpha
+    peakpicking;
+    latency = peaks(subj,1).*[1 1] - 0.02 - [0.4 1./600];%MvE
+    %     latency = [-0.4 -1./600]; %JM
+    foi     = [10 10];
+    smo     = 2.5;
+    [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
+    if ~exist('savefreq', 'var')
+        savefreq = false;
+    end
+    if savefreq
+        savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+        save(fullfile(savedir, sprintf('sub-%03d_freqshort_alpha', subj)), 'freq_shift', 'P', 'latency');
+    end
+end
+if dofreq_short_beta
+    peakpicking;
+    latency = peaks(subj,1).*[1 1] - 0.02 - [0.4 1./600];%MvE
+    %     latency = [-0.4 -1./600]; %JM
+    foi     = [16 16];
+    smo     = 4;
+    [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
+    if ~exist('savefreq', 'var')
+        savefreq = false;
+    end
+    if savefreq
+        savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+        save(fullfile(savedir, sprintf('sub-%03d_freqshort_beta', subj)), 'freq_shift', 'P', 'latency');
+    end
+end
 % this chunk does spectral decomposition
 if dofreq
     
@@ -137,6 +158,10 @@ if dofreq
     end
     if dodics_alpha
         foi = [10 10]; smo = 2;
+        [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
+    elseif dodics_beta
+        foi = [16 16]; smo = 4;
+        latency = [-0.75+1./data_onset.fsample 0-1./data_onset.fsample];
         [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
     else
         [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject);
@@ -172,20 +197,27 @@ if dodics_alpha
     source_onset = rmfield(source_onset, 'cfg');
     source_shift = rmfield(source_shift, 'cfg');
     
-    savedir = '/home/language/jansch/erfosc';
-    save(fullfile(savedir, sprintf('sub-%03d_source_alpha', subj)), 'source_onset', 'source_shift', 'Tval', 'F');
+    savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+    save(fullfile(savedir, sprintf('sub-%03d_source_alpha', subj)), 'source_shift', 'Tval', 'F');
 end
-
+if dodics_beta
+    load(fullfile(subject.mridir,'preproc','headmodel.mat'));
+    load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
+    [source_onset, source_shift, Tval, F] = erfosc_dics_alpha(freq_onset, freq_shift, headmodel, sourcemodel);
+    source_onset = rmfield(source_onset, 'cfg');
+    source_shift = rmfield(source_shift, 'cfg');
+    
+    savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+    save(fullfile(savedir, sprintf('sub-%03d_source_beta', subj)), 'source_shift', 'Tval', 'F');
+end
 if dolcmv_parc
-<<<<<<< HEAD
-<<<<<<< HEAD
     load(fullfile(subject.mridir,'preproc','headmodel.mat'));
     load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
     load('atlas_subparc374_8k.mat');
     if doresplocked
         [source_parc] = erfosc_lcmv_parc(data_resp, headmodel, sourcemodel, atlas, doresplocked);
     else
-        [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel);
+        [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas, doresplocked);
         savedir = '/home/language/jansch/erfosc';
         save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
     end
@@ -215,36 +247,36 @@ if dolcmv_norm
 end
 
 if dolcmv_parc_msmall
-  load(fullfile(subject.mridir,'preproc','headmodel.mat'));
-  load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
-  load('atlas_MSMAll_8k_subparc.mat');
-  [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas);
-  
-  savedir = '/home/language/jansch/erfosc';
-  save(fullfile(savedir, sprintf('sub-%03d_lcmv_msmall', subj)), 'source_parc');
+    load(fullfile(subject.mridir,'preproc','headmodel.mat'));
+    load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
+    load('atlas_MSMAll_8k_subparc.mat');
+    [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas);
+    
+    savedir = '/home/language/jansch/erfosc';
+    save(fullfile(savedir, sprintf('sub-%03d_lcmv_msmall', subj)), 'source_parc');
 end
 
 if dolcmv_norm_msmall
-  datadir  = '/home/language/jansch/erfosc';
-  filename = fullfile(datadir, sprintf('sub-%03d_lcmv_msmall', subj));
-  load(filename);
-  
-  tmpcfg = [];
-  tmpcfg.latency = [-0.2 -1./600];
-  data_shift = ft_selectdata(tmpcfg, data_shift);
-  
-  tmpcfg = [];
-  tmpcfg.covariance = 'yes';
-  tmp = ft_timelockanalysis(tmpcfg, data_shift);
-  
-  noise = zeros(numel(source_parc.label),1);
-  for k = 1:numel(source_parc.label)
-    tmpF = source_parc.F{k}(1,:);
-    tmpC = sqrt(tmpF*tmp.cov*tmpF');
-    noise(k) = tmpC;
-  end
-  save(filename, 'noise', '-append');
-  
+    datadir  = '/home/language/jansch/erfosc';
+    filename = fullfile(datadir, sprintf('sub-%03d_lcmv_msmall', subj));
+    load(filename);
+    
+    tmpcfg = [];
+    tmpcfg.latency = [-0.2 -1./600];
+    data_shift = ft_selectdata(tmpcfg, data_shift);
+    
+    tmpcfg = [];
+    tmpcfg.covariance = 'yes';
+    tmp = ft_timelockanalysis(tmpcfg, data_shift);
+    
+    noise = zeros(numel(source_parc.label),1);
+    for k = 1:numel(source_parc.label)
+        tmpF = source_parc.F{k}(1,:);
+        tmpC = sqrt(tmpF*tmp.cov*tmpF');
+        noise(k) = tmpC;
+    end
+    save(filename, 'noise', '-append');
+    
 end
 
 % this chunk extracts single trial power and amplitude of
@@ -598,76 +630,260 @@ if doparcel_erf
     
 end
 
+
 if docorrpow_lcmv
-  erfosc_lcmvpeaks;
-  
-  datadir = '/home/language/jansch/erfosc';
-  load(fullfile(datadir, sprintf('sub-%03d_lcmv',    subj)));
-  source_parc.avg = diag(1./noise)*source_parc.avg;
-  
-  ix1 = nearest(source_parc.time, peaks(subj,1));
-  ix2 = nearest(source_parc.time, peaks(subj,2));
+    peakpicking;
     
-  tmpcfg = [];
-  tmpcfg.latency = [-0.1 0.5-1./600];
-  datapst = ft_selectdata(tmpcfg, data_shift);
-  tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02; %0.01;
-  datapre = ft_selectdata(tmpcfg, data_shift);
-  %clear data_shift;
+    datadir = '/home/language/jansch/erfosc';
+    load(fullfile(datadir, sprintf('sub-%03d_lcmv',    subj)));
+    source_parc.avg = diag(1./noise)*source_parc.avg;
+    
+    %   ix1 = nearest(source_parc.time, peaks(subj,1));%JM
+    %   ix2 = nearest(source_parc.time, peaks(subj,2));%JM
+    ix1 = nearest(source_parc.time, peaks(subj,1));
+    ix2 = nearest(source_parc.time, peaks(subj,2));
+    
+    tmpcfg = [];
+    tmpcfg.latency = [-0.1 0.5-1./600];
+    datapst = ft_selectdata(tmpcfg, data_shift);
+    %   tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02; %0.01;%JM
+    tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02; %0.01;%MvE
+    datapre = ft_selectdata(tmpcfg, data_shift);
+    %clear data_shift;
+    
+    source_parc.avg  = ft_preproc_baselinecorrect(source_parc.avg, 1, 60);
+    [maxval, maxidx] = max(abs(mean(source_parc.avg(:,ix1:ix2),2)));
+    signpeak         = sign(mean(source_parc.avg(maxidx,ix1:ix2),2));
+    fprintf('parcel with max amplitude = %s\n', source_parc.label{maxidx});
+    
+    for k = 1:numel(source_parc.label)
+        F(k,:) = source_parc.F{k}(1,:);
+    end
+    datapst.trial = F*datapst.trial;
+    datapst.label = source_parc.label;
+    
+    tmpcfg = [];
+    tmpcfg.demean = 'yes';
+    tmpcfg.baselinewindow = [-inf 0];
+    tmpcfg.lpfilter = 'yes';
+    tmpcfg.lpfreq = 30;
+    tmpcfg.lpfilttype = 'firws';
+    tmpcfg.lpfiltdir = 'onepass-reverse-zerophase'
+    datapst = ft_preprocessing(tmpcfg, datapst);
+    %{
+  cfg=[];
+  cfg.bpfilter = 'yes';
+  cfg.bpfreq = [60 120];
+  cfg.bpfilttype = 'firws';
+  cfg.hilbert = 'complex';
+  h = ft_preprocessing(cfg, datapst);
   
-  source_parc.avg  = ft_preproc_baselinecorrect(source_parc.avg, 1, 60);
-  [maxval, maxidx] = max(abs(mean(source_parc.avg(:,ix1:ix2),2)));
-  signpeak         = sign(mean(source_parc.avg(maxidx,ix1:ix2),2));
-  fprintf('parcel with max amplitude = %s\n', source_parc.label{maxidx});
-  
-  for k = 1:numel(source_parc.label)
-    F(k,:) = source_parc.F{k}(1,:);
+  for k=1:numel(h.trial)
+      h.trial{k} = h.trial{k}./abs(h.trial{k});
   end
-  datapst.trial = F*datapst.trial;
-  datapst.label = source_parc.label;
+  x = cat(3, h.trial{:});
+  y = abs(mean(x, 3));
   
-  tmpcfg = [];
-  tmpcfg.demean = 'yes';
-  tmpcfg.baselinewindow = [-inf 0];
-  datapst = ft_preprocessing(tmpcfg, datapst);
-  
-  tmpcfg = [];
-  tmpcfg.latency = peaks(subj,:);
-  tmpcfg.avgovertime = 'yes';
-  datapeak = ft_selectdata(tmpcfg,datapst);
-  
-  X = cat(2,datapeak.trial{:});
-  Xpow = abs(mean(X,2));
-  signswap = diag(sign(mean(X,2)));
-  X = signswap*X; % let the amplitude be on average positive
-  X = standardise(X,2);
- 
-  tmpcfg = [];
-  tlckpst = ft_timelockanalysis(tmpcfg, datapst);
-  tlckpst.avg = signswap*tlckpst.avg;
-  
-  load(fullfile(datadir, sprintf('sub-%03d_source',    subj)));
-  load(fullfile(datadir, sprintf('sub-%03d_freqshort', subj)));
-  [m, idx] = max(Tval);
-  pow      = (abs(F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
-  pow      = standardise(log10(pow(:)));
-  
-  rho      = (X*pow)./sqrt(sum(X.^2,2).*sum(pow.^2));
-  
-  load atlas_subparc374_8k
-  
-  source = [];
-  source.brainordinate = atlas;
-  source.label         = atlas.parcellationlabel;
-  source.rho           = zeros(374,1);
-  source.pow           = zeros(374,1);
-  source.dimord        = 'chan';
-  
-  indx = 1:374;
-  indx([1 2 188 189]) = [];
-  source.rho(indx)    = rho;
-  source.pow(indx)    = Xpow(:);
-  
-  datadir = '/home/language/jansch/erfosc';
-  save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv', subj)), 'source', 'pow', 'X', 'tlckpst');
+  subplot(1,2,2); plot(h.time{1}, mean(y));xlim([0 0.5])
+  subplot(1,2,1);
+  cfg=[];
+cfg.channel = {'L_17_*', 'R_17_*'};
+tlck = ft_timelockanalysis(cfg, datapst);
+ft_singleplotER([], tlck)
+    %}
+    
+    tmpcfg = [];
+    tmpcfg.latency = peaks(subj,:);%JM
+    %   tmpcfg.latency = [datapst.time{1}(ix1) datapst.time{1}(ix2)];
+    tmpcfg.avgovertime = 'yes';
+    datapeak = ft_selectdata(tmpcfg,datapst);
+    
+    X = cat(2,datapeak.trial{:});
+    Xpow = abs(mean(X,2));
+    signswap = diag(sign(mean(X,2)));
+    X = signswap*X; % let the amplitude be on average positive
+    X = standardise(X,2);
+    
+    tmpcfg = [];
+    tlckpst = ft_timelockanalysis(tmpcfg, datapst);
+    tlckpst.avg = signswap*tlckpst.avg;
+    
+    load(fullfile(datadir, sprintf('sub-%03d_source',    subj)));
+    load(fullfile(datadir, sprintf('sub-%03d_freqshort', subj)));
+    [m, idx] = max(Tval);
+    pow      = (abs(F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
+    pow      = standardise(log10(pow(:)));
+    
+    rho = corr(X', pow, 'type', 'spearman'); %MvE
+    load atlas_subparc374_8k
+    exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
+    
+    source = [];
+    source.brainordinate = atlas;
+    source.label         = atlas.parcellationlabel;
+    source.rho           = zeros(374,1);
+    source.pow           = zeros(374,1);
+    source.dimord        = 'chan';
+    
+    indx = 1:374;
+    indx(exclude_label) = [];
+    source.rho(indx)    = rho;
+    source.pow(indx)    = Xpow(:);
+    
+    datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+    save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv_mvepeaks3', subj)), 'source', 'pow', 'X', 'tlckpst');
+end
+if docorrpow_lcmv_alpha
+    peakpicking;
+    
+    datadir = '/home/language/jansch/erfosc';
+    load(fullfile(datadir, sprintf('sub-%03d_lcmv',    subj)));
+    source_parc.avg = diag(1./noise)*source_parc.avg;
+    
+    ix1 = nearest(source_parc.time, peaks(subj,1));
+    ix2 = nearest(source_parc.time, peaks(subj,2));
+    
+    tmpcfg = [];
+    tmpcfg.latency = [-0.1 0.5-1./600];
+    datapst = ft_selectdata(tmpcfg, data_shift);
+    tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+    
+    source_parc.avg  = ft_preproc_baselinecorrect(source_parc.avg, 1, 60);
+    [maxval, maxidx] = max(abs(mean(source_parc.avg(:,ix1:ix2),2)));
+    signpeak         = sign(mean(source_parc.avg(maxidx,ix1:ix2),2));
+    fprintf('parcel with max amplitude = %s\n', source_parc.label{maxidx});
+    
+    for k = 1:numel(source_parc.label)
+        F(k,:) = source_parc.F{k}(1,:);
+    end
+    datapst.trial = F*datapst.trial;
+    datapst.label = source_parc.label;
+    
+    tmpcfg = [];
+    tmpcfg.demean = 'yes';
+    tmpcfg.baselinewindow = [-inf 0];
+    tmpcfg.lpfilter = 'yes';
+    tmpcfg.lpfreq = 30;
+    tmpcfg.lpfilttype = 'firws';
+    tmpcfg.lpfiltdir = 'onepass-reverse-zerophase';
+    datapst = ft_preprocessing(tmpcfg, datapst);
+    
+    tmpcfg = [];
+    tmpcfg.latency = peaks(subj,:);
+    tmpcfg.avgovertime = 'yes';
+    datapeak = ft_selectdata(tmpcfg,datapst);
+    
+    X = cat(2,datapeak.trial{:});
+    Xpow = abs(mean(X,2));
+    signswap = diag(sign(mean(X,2)));
+    X = signswap*X; % let the amplitude be on average positive
+    X = standardise(X,2);
+    
+    tmpcfg = [];
+    tlckpst = ft_timelockanalysis(tmpcfg, datapst);
+    tlckpst.avg = signswap*tlckpst.avg;
+    
+    datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+    load(fullfile(datadir, sprintf('sub-%03d_source_alpha',    subj)));
+    load(fullfile(datadir, sprintf('sub-%03d_freqshort_alpha', subj)));
+    [m, idx] = min(Tval);
+    pow      = (abs(F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
+    pow      = standardise(log10(pow(:)));
+    
+    rho = corr(X', pow, 'type', 'spearman'); %MvE
+    load atlas_subparc374_8k
+    exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
+    
+    source = [];
+    source.brainordinate = atlas;
+    source.label         = atlas.parcellationlabel;
+    source.rho           = zeros(374,1);
+    source.pow           = zeros(374,1);
+    source.dimord        = 'chan';
+    
+    indx = 1:374;
+    indx(exclude_label) = [];
+    source.rho(indx)    = rho;
+    source.pow(indx)    = Xpow(:);
+    
+    
+    datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+    save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv_alpha', subj)), 'source', 'pow', 'X', 'tlckpst');
+end
+if docorrpow_lcmv_beta
+    peakpicking;
+    
+    datadir = '/home/language/jansch/erfosc';
+    load(fullfile(datadir, sprintf('sub-%03d_lcmv',    subj)));
+    source_parc.avg = diag(1./noise)*source_parc.avg;
+    
+    ix1 = nearest(source_parc.time, peaks(subj,1));
+    ix2 = nearest(source_parc.time, peaks(subj,2));
+    
+    tmpcfg = [];
+    tmpcfg.latency = [-0.1 0.5-1./600];
+    datapst = ft_selectdata(tmpcfg, data_shift);
+    tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+    
+    source_parc.avg  = ft_preproc_baselinecorrect(source_parc.avg, 1, 60);
+    [maxval, maxidx] = max(abs(mean(source_parc.avg(:,ix1:ix2),2)));
+    signpeak         = sign(mean(source_parc.avg(maxidx,ix1:ix2),2));
+    fprintf('parcel with max amplitude = %s\n', source_parc.label{maxidx});
+    
+    for k = 1:numel(source_parc.label)
+        F(k,:) = source_parc.F{k}(1,:);
+    end
+    datapst.trial = F*datapst.trial;
+    datapst.label = source_parc.label;
+    
+    tmpcfg = [];
+    tmpcfg.demean = 'yes';
+    tmpcfg.baselinewindow = [-inf 0];
+    tmpcfg.lpfilter = 'yes';
+    tmpcfg.lpfreq = 30;
+    tmpcfg.lpfilttype = 'firws';
+    tmpcfg.lpfiltdir = 'onepass-reverse-zerophase';
+    datapst = ft_preprocessing(tmpcfg, datapst);
+    
+    tmpcfg = [];
+    tmpcfg.latency = peaks(subj,:);
+    tmpcfg.avgovertime = 'yes';
+    datapeak = ft_selectdata(tmpcfg,datapst);
+    
+    X = cat(2,datapeak.trial{:});
+    Xpow = abs(mean(X,2));
+    signswap = diag(sign(mean(X,2)));
+    X = signswap*X; % let the amplitude be on average positive
+    X = standardise(X,2);
+    
+    tmpcfg = [];
+    tlckpst = ft_timelockanalysis(tmpcfg, datapst);
+    tlckpst.avg = signswap*tlckpst.avg;
+    
+    datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+    load(fullfile(datadir, sprintf('sub-%03d_source_beta',    subj)));
+    load(fullfile(datadir, sprintf('sub-%03d_freqshort_beta', subj)));
+    [m, idx] = min(Tval);
+    pow      = (abs(F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
+    pow      = standardise(log10(pow(:)));
+    
+    rho = corr(X', pow, 'type', 'spearman'); %MvE
+    load atlas_subparc374_8k
+    exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
+    
+    source = [];
+    source.brainordinate = atlas;
+    source.label         = atlas.parcellationlabel;
+    source.rho           = zeros(374,1);
+    source.pow           = zeros(374,1);
+    source.dimord        = 'chan';
+    
+    indx = 1:374;
+    indx(exclude_label) = [];
+    source.rho(indx)    = rho;
+    source.pow(indx)    = Xpow(:);
+    
+    
+    datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+    save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv_beta', subj)), 'source', 'pow', 'X', 'tlckpst');
 end
