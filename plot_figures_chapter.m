@@ -5,6 +5,232 @@
 %%%%%%%%%%%%
 % FIGURE 2 %
 %%%%%%%%%%%%
+%% Gamma Time-Frequency plot + Topography (Channel level)
+
+load /project/3011085.02/results/TFR_all.mat
+
+clear all
+erf_osc_datainfo;
+
+% Subject grand average
+% TFR
+cfgp=[];
+cfgp.layout='CTF275_helmet.mat';
+cfgp.xlim = [0 1.5];
+cfgp.zlim=[-1 1];
+n=11;
+cmap = flipud(brewermap(2*n-1,'RdBu'));
+cfgp.colormap=(cmap([2:n n:end-1],:));
+cfgp.channel = {'MLO21', 'MLO22', 'MLO31', 'MRO21', 'MRO22', 'MRO31', 'MZO02'};
+ft_singleplotTFR(cfgp, d);
+
+% Topography
+cfgp=[];
+cfgp.layout='CTF275_helmet.mat';
+cfgp.xlim = [0.15 1.05];
+cfgp.ylim=[48 64];
+cfgp.zlim=[-0.8 0.8];
+cfgp.marker = 'off';
+cfgp.highlight = 'on';
+cfgp.highlightchannel = {'MLO21', 'MLO22', 'MLO31', 'MRO21', 'MRO22', 'MRO31', 'MZO02'};
+cfgp.highlightsymbol = 'O';
+cfgp.highlightsize = 8;
+n=9;
+cmap = flipud(brewermap(2*n-1,'RdBu'));
+cfgp.colormap=(cmap([2:n n:end-1],:));
+cfgp.colorbar='yes';
+cfgp.numcontour = 0;
+cfgp.gridscale = 250;
+ft_topoplotTFR(cfgp, d);
+
+%% Gamma power on 2D sourcemodel (which is used in correlation with ERF)
+
+erf_osc_datainfo;
+datadir = '/home/language/jansch/erfosc';
+load cortex_inflated_shifted;
+
+k=1;
+for sub=allsubs
+    if k==1;
+        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source',    sub)), 'source_shift', 'Tval');
+        source_shift = tmp{k}.source_shift;
+    else
+        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source',    sub)), 'Tval','source_shift');
+    end
+    Tval(:,k) = tmp{k}.Tval;
+    k=k+1;
+end
+
+source_shift.pos = ctx.pos;
+source_shift.Tval = mean(Tval,2);
+
+cfgx = [];
+cfgx.method='surface';
+cfgx.funparameter='Tval';
+cfgx.funcolorlim = 'maxabs';%[-25 25];
+cfgx.maskstyle='colormix';
+cfgx.maskparameter = cfgx.funparameter;
+cfgx.camlight = 'no';
+cfgx.colorbar = 'no';
+cfgx.opacitylim = 'zeromax';
+n=11;
+cmap = flipud(brewermap(2*n-1,'RdBu'));
+cfgx.funcolormap=(cmap([2:n n:end-1],:));
+ft_sourceplot(cfgx,source_shift)
+h = light('position', [-1 0 -0.1]);
+h2=light; set(h2, 'position', [1 0 -0.1]);
+material dull;
+view([64 16])
+view([124 14])
+view([-48 5])
+view([-120 9])
+
+%% Gamma-power boxplots + power spectra
+erf_osc_datainfo;
+
+k=1;
+for subj=allsubs
+tmp{k} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj));
+k=k+1;
+end
+
+
+for k=1:32
+peakFreq(k) = tmp{k}.peakFreq_gamma;
+ratio_broadband(k) = tmp{k}.gamRatio; % mean power increase over channel and frequency
+powRatio{k} = tmp{k}.powRatio;
+end
+
+for k=1:32
+    rat(k,:) = mean(powRatio{k}.powspctrm,1);
+end
+figure; plot(powRatio{1}.freq, rat, 'gray'); hold on; plot(powRatio{k}.freq, mean(rat,1), 'LineWidth', 4);
+
+for k=1:32
+f(k) = find(powRatio{k}.freq==peakFreq(k));
+ratio_maxchan(k) = max(powRatio{k}.powspctrm(:,f(k))); % power at max channel at peak frequency
+k=k+1;
+end
+
+ratio_maxchan_GA = mean(ratio_maxchan);
+ratio_maxchan_SD = std(ratio_maxchan);
+
+addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
+figure; iosr.statistics.boxPlot(ratio_maxchan'-1, 'showScatter', true, 'scatterMarker', '.')
+figure; iosr.statistics.boxPlot(peakFreq', 'showScatter', true, 'scatterMarker', '.')
+
+
+
+%%%%%%%%%%%%
+% FIGURE 3 %
+%%%%%%%%%%%%
+%% low frequency TFR + topo
+load /project/3011085.02/results/TFR_all_low.mat
+
+clear all
+erf_osc_datainfo;
+
+% Subject grand average
+% TFR
+cfgp=[];
+cfgp.layout='CTF275_helmet.mat';
+cfgp.xlim = [0 1.5];
+cfgp.zlim=[-0.3 0.3];
+n=7;
+cmap = flipud(brewermap(2*n-1,'RdBu'));
+cfgp.colormap=(cmap([2:n n:end-1],:));
+cfgp.channel = {'MLO23', 'MLO32', 'MLO33', 'MRO23', 'MRO24', 'MRO32', 'MRO33', 'MRO34', 'MRO43', 'MRO44', 'MRO53', 'MRT57'};
+ft_singleplotTFR(cfgp, d);
+
+% Topography
+cfgp=[];
+cfgp.layout='CTF275_helmet.mat';
+cfgp.xlim = [0.5 1.5];
+cfgp.ylim=[8 20];
+cfgp.zlim=[-0.3 0.3];
+cfgp.marker = 'off';
+cfgp.highlight = 'on';
+cfgp.highlightchannel = {'MLO23', 'MLO32', 'MLO33', 'MRO23', 'MRO24', 'MRO32', 'MRO33', 'MRO34', 'MRO43', 'MRO44', 'MRO53', 'MRT57'};
+cfgp.highlightsymbol = 'O';
+cfgp.highlightsize = 8;
+n=7;
+cmap = flipud(brewermap(2*n-1,'RdBu'));
+cfgp.colormap=(cmap([2:n n:end-1],:));
+cfgp.colorbar='yes';
+cfgp.numcontour = 0;
+cfgp.gridscale = 250;
+ft_topoplotTFR(cfgp, d);
+
+
+%% low frequency power on 2D sourcemodel
+erf_osc_datainfo;
+datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+load cortex_inflated_shifted;
+
+k=1;
+for sub=allsubs
+    if k==1;
+        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source_low',    sub)), 'source_shift', 'Tval');
+        source_shift = tmp{k}.source_shift;
+    else
+        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source_low',    sub)), 'Tval');
+    end
+    Tval(:,k) = tmp{k}.Tval;
+    k=k+1;
+end
+
+source_shift.pos = ctx.pos;
+
+cfgx = [];
+cfgx.method='surface';
+cfgx.funparameter='Tval';
+cfgx.funcolorlim = [-8 8];
+cfgx.maskstyle='colormix';
+cfgx.maskparameter = cfgx.funparameter;
+cfgx.camlight = 'no';
+cfgx.colorbar = 'no';
+cfgx.opacitylim = 'minzero';
+n=9;
+cmap = flipud(brewermap(2*n-1,'RdBu'));
+cfgx.funcolormap=(cmap([2:n n:end-1],:));
+ft_sourceplot(cfgx,source_shift)
+h = light('position', [-1 0 -0.1]);
+h2=light; set(h2, 'position', [1 0 -0.1]);
+material dull;
+view([64 16])
+view([119 15])
+view([-48 5])
+view([-120 9])
+
+
+%% low frequency power boxplots and powerspectra
+erf_osc_datainfo;
+
+k=1;
+for subj=allsubs
+tmp{k} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow_low.mat', subj));
+k=k+1;
+end
+
+for k=1:32
+    spectrum(k,:) = tmp{k}.powratio_occipital;
+end
+plot(2:2:30, spectrum); hold on; plot(2:2:30, mean(spectrum,1), 'LineWidth', 4);
+
+
+for k=1:32
+peakfreq(k) = tmp{k}.peakfreq;
+ratio(k) = tmp{k}.powratio_min; % mean power increase over channel and frequency
+end
+
+addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
+figure; iosr.statistics.boxPlot(ratio', 'showScatter', true, 'scatterMarker', '.'); ylim([-0.6 0]);
+figure; iosr.statistics.boxPlot(peakfreq', 'showScatter', true, 'scatterMarker', '.')
+
+
+%%%%%%%%%%%%
+% FIGURE 4 %
+%%%%%%%%%%%%
 %% Single trial ERF (SNR)
 subj = 13;
 
@@ -138,202 +364,11 @@ view([-120 2])
 
 
 
-
-
-
 %%%%%%%%%%%%
-% FIGURE 3 %
-%%%%%%%%%%%%
-%% Time-Frequency plot + Topography (Channel level)
-
-load /project/3011085.02/results/TFR_all.mat
-
-clear all
-erf_osc_datainfo;
-
-% subject 26
-% TFR
-cfgp=[];
-cfgp.layout='CTF275_helmet.mat';
-cfgp.xlim = [0 1.5];
-cfgp.zlim=[-2.5 2.5];
-n=11;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgp.colormap=(cmap([2:n n:end-1],:));
-cfgp.channel = {'MZO02', 'MRO11', 'MRO21', 'MRO22', 'MRO23', 'MRO31', 'MRO32'};
-cfgp.trials = 25;
-ft_singleplotTFR(cfgp, d);
-
-% topography
-cfgp=[];
-cfgp.layout='CTF275_helmet.mat';
-cfgp.xlim = [0.16 1.6];
-cfgp.ylim=[43 56];
-cfgp.zlim=[-1.5 1.5];
-cfgp.marker = 'off';
-cfgp.highlight = 'on';
-cfgp.highlightchannel = {'MZO02','MRO11', 'MRO21', 'MRO22', 'MRO23', 'MRO31', 'MRO32'};
-cfgp.highlightsymbol = 'O';
-cfgp.highlightsize = 8;
-n=7;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgp.colormap=(cmap([2:n n:end-1],:));
-cfgp.trials = 25;
-cfgp.colorbar='yes';
-cfgp.numcontour = 0;
-cfgp.gridscale=250;
-ft_topoplotTFR(cfgp, d);
-
-
-% Subject grand average
-% TFR
-cfgp=[];
-cfgp.layout='CTF275_helmet.mat';
-cfgp.xlim = [0 1.5];
-cfgp.zlim=[-1 1];
-n=11;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgp.colormap=(cmap([2:n n:end-1],:));
-cfgp.channel = {'MLO21', 'MLO22', 'MLO31', 'MRO21', 'MRO22', 'MRO31', 'MZO02'};
-ft_singleplotTFR(cfgp, d);
-
-% Topography
-cfgp=[];
-cfgp.layout='CTF275_helmet.mat';
-cfgp.xlim = [0.15 1.05];
-cfgp.ylim=[48 64];
-cfgp.zlim=[-0.8 0.8];
-cfgp.marker = 'off';
-cfgp.highlight = 'on';
-cfgp.highlightchannel = {'MLO21', 'MLO22', 'MLO31', 'MRO21', 'MRO22', 'MRO31', 'MZO02'};
-cfgp.highlightsymbol = 'O';
-cfgp.highlightsize = 8;
-n=9;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgp.colormap=(cmap([2:n n:end-1],:));
-cfgp.colorbar='yes';
-cfgp.numcontour = 0;
-cfgp.gridscale = 250;
-ft_topoplotTFR(cfgp, d);
-
-
-
-%% Gamma-power source plot
-
-erf_osc_datainfo;
-sub=26;
-mri = ft_read_mri(fullfile([subjects(sub).mridir, '/preproc/mni_resliced.mgz']));
-transform = ft_read_mri(fullfile([subjects(sub).mridir, '/preproc/transform_vox2ctf.mat']));
-mri.coordsys                = 'ctf';
-mri.transform               = transform;
-
-k=1;
-for subj=allsubs
-tmp = load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj), 'sourceDiff');
-sourceDiff{k} = tmp.sourceDiff;
-[val, idx] = sort(sourceDiff{k}.avg.pow, 'descend');
-idx(isnan(val))=[];
-val(isnan(val))=[];
-k=k+1;
-end
-
-
-% Grand average
-s=sourceDiff{1};
-tmp=[];
-for k=1:32
-tmp(:, k) = sourceDiff{k}.avg.pow;
-end
-s.avg.pow = mean(tmp,2);
-
-mri_template = ft_read_mri('/project/3011085.02/scripts/fieldtrip/template/anatomy/single_subj_T1_1mm.nii');
-load('/project/3011085.02/scripts/fieldtrip/template/sourcemodel/standard_sourcemodel3d6mm.mat');
-s.pos = sourcemodel.pos;
-cfg            = [];
-cfg.downsample = 2;
-cfg.parameter = 'avg.pow';
-sourceInt  = ft_sourceinterpolate(cfg, s , mri_template);
-
-cfg = [];
-cfg.method        = 'slice';
-cfg.funparameter  = 'pow';
-cfg.funcolorlim   = [-1 1];
-cfg.maskparameter = cfg.funparameter;
-cfg.opacitymap    = 'rampup'; 
-cfg.slicerange = [30 35];
-cfg.nslices=1;
-cfg.renderer = 'painter';
-cfg.gridscale = 250;
-n=11;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfg.funcolormap=(cmap([2:n n:end-1],:));
-ft_sourceplot(cfg, sourceInt);
-
-
-% subject 26
-cfg            = [];
-cfg.downsample = 2;
-cfg.parameter = 'avg.pow';
-sourceInt  = ft_sourceinterpolate(cfg, sourceDiff{25} , mri);
-
-cfg = [];
-cfg.method        = 'slice';
-cfg.funparameter  = 'pow';
-cfg.maskparameter = cfg.funparameter;
-cfg.opacitymap    = 'rampup'; 
-cfg.funcolorlim   = [-3 3];
-cfg.slicerange = [55 60];
-cfg.nslices=1;
-cfg.renderer = 'painter';
-cfg.gridscale = 250;
-n=9;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfg.funcolormap=(cmap([1:n n:end],:));
-ft_sourceplot(cfg, sourceInt);
-
-
-
-%% Gamma-power boxplots
-erf_osc_datainfo;
-
-k=1;
-for subj=allsubs
-tmp{k} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj));
-k=k+1;
-end
-
-
-for k=1:32
-peakFreq(k) = tmp{k}.peakFreq_gamma;
-ratio_broadband(k) = tmp{k}.gamRatio; % mean power increase over channel and frequency
-powRatio{k} = tmp{k}.powRatio;
-end
-
-
-for k=1:32
-f(k) = find(powRatio{k}.freq==peakFreq(k));
-ratio_maxchan(k) = max(powRatio{k}.powspctrm(:,f(k))); % power at max channel at peak frequency
-k=k+1;
-end
-
-ratio_maxchan_GA = mean(ratio_maxchan);
-ratio_maxchan_SD = std(ratio_maxchan);
-
-addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
-iosr.statistics.boxPlot(ratio_maxchan'-1, 'showScatter', true, 'scatterMarker', '.')
-iosr.statistics.boxPlot(peakFreq', 'showScatter', true, 'scatterMarker', '.')
-
-
-
-
-
-
-
-%%%%%%%%%%%%
-% Figure 4 %
+% Figure 5 %
 %%%%%%%%%%%%
 %% Correlation Gamma ERF
-load('/project/3011085.02/results/stat_peakpicking3.mat', 'stat','S');
+load('/project/3011085.02/results/stat_peakpicking_gamma.mat', 'stat','S');
 load atlas_subparc374_8k.mat
 load cortex_inflated_shifted; atlas.pos=ctx.pos;
 stat.brainordinate=atlas;
@@ -348,6 +383,7 @@ cfgx.maskstyle='colormix';
 cfgx.maskparameter = cfgx.funparameter;
 cfgx.camlight = 'no';
 cfgx.colorbar = 'no';
+cfgx.opacitylim = 'zeromax';
 ft_sourceplot(cfgx,stat)
 
 h = light('position', [-1 0 -0.1]);
@@ -362,10 +398,16 @@ view([-120 2])
 % that contribute to cluster)
 x=find(stat.mask==1);
 y = mean(S.rho(:,x),2);
-scatter(1:32, sort(y),'.');
+figure; scatter(1:32, sort(y),'.');
 addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
-figure; iosr.statistics.boxPlot(y)
+figure; iosr.statistics.boxPlot(y,'showScatter',true,'scatterMarker', '.')
 
+
+
+
+%%%%%%%%%%%%
+% Figure 6 %
+%%%%%%%%%%%%
 %% Correlation ERF-rt
 
 load('/project/3011085.02/results/stat_corr_peakpicking_rt.mat');
@@ -388,15 +430,29 @@ h = light('position', [-1 0 -0.1]);
 h2=light; set(h2, 'position', [1 0 -0.1]);
 material dull;
 view([64 16])
-view([130 16])
+view([123 16])
 view([-53 2])
 view([-130 2])
 
-R = cat(2,rho{:});
+R = source.rho;
 x=find(stat.negclusterslabelmat==1);
 y = mean(R(:,x),2);
 scatter(1:32, sort(y),'.');
 addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
-figure; iosr.statistics.boxPlot(y)
+figure; iosr.statistics.boxPlot(y,'showScatter',true,'scatterMarker','.')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
