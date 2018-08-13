@@ -7,36 +7,20 @@ k=1;
 for subj = allsubs
     tmp = load(d(k).name,'pow', 'X');% load gamma power and ERF amplitude for single trials
     X{k} = tmp.X;
+    for m = 1:size(X{k},1)
+        [~,~,rnkX{k}(m,:)] = unique(X{k}(m,:)); % rank transform ERF amplitude
+    end
     pow{k} = tmp.pow;
+    [~,~,rnkpow{k}] = unique(pow{k}); % rank transform gamma power
     tmp = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load reaction times
     rt{k} = tmp.rt;
+    [~,~,rnkrt{k}] = unique(rt{k}); % rank transform RT
     k=k+1;
 end
 
 % Add mediation toolbox
 addpath(genpath('/project/3011085.02/scripts/MediationToolbox'));
 addpath(genpath('/project/3011085.02/scripts/CanlabCore'));
-%% single parcel
-% take, per subject, the ERF amplitude in the parcel with the highest 
-% effect size (gamma-erf), of only those parcels contributing to this
-% effect
-%{
-load('/project/3011085.02/results/stat_peakpicking3.mat')
-y= S.rho(:,stat.mask);
-[~,maxeffect_idx] = max(y');
-
-chans = stat.label(stat.mask);
-chanidx = match_str(stat.label, chans);
-
-for k=1:32
-    [result,stat1,stat2] = mediation(pow{k}, rt{k}, X{k}(chanidx(maxeffect_idx(k)),:)');
-    ab(1,k) = stat1.t(5);
-    cp(1,k) = stat1.t(3);
-end
-
-% how to test this?
-% ttest(ab)?
-%}
 
 %% all parcels
 
@@ -64,8 +48,8 @@ end
 % combination. Save the first level t-values.
 for m=1:32
     for k=1:370
-        [result, stat1,stat2] = mediation(pow{m}, rt{m}, X{m}(k,:)');
-        ab(m,k) = stat1.t(5); % can be 'stat1.mean(5)' for beta weight instead of tval.
+        [result, stat1,stat2] = mediation(rnkpow{m}, rnkrt{m}, rnkX{m}(k,:)');
+        ab(m,k) = stat1.mean(5); % product of beta values a (X->M) and b (M->Y)
     end
 end
 
@@ -83,41 +67,45 @@ idx = 1:374;
 idx(exclude_label)=[];
 source.ab(:,idx) = ab;
 source.ab(:,exclude_label) = nan;
-
+    
 ref=source;
 ref.ab(:)=0;
 n=32;
 
-% QUESTION:
-% I don't know if we can test this similarly as the correlation between
-% gamma power and ERF amplitude?
+gamma_erf_stat = load('/project/3011085.02/results/stat_peakpicking3.mat');
+
+% not entirely sure
+
 cfgs = [];
 cfgs.method='montecarlo';
 cfgs.design=[ones(1,n) ones(1,n)*2;1:n 1:n];
-cfgs.statistic='ft_statfun_wilcoxon';
+cfgs.statistic='ft_statfun_depsamplesT';
 cfgs.numrandomization=10000;
+cfgs.alpha = 0.05;
+cfgs.clusteralpha = 0.05;
 cfgs.ivar=1;
 cfgs.uvar=2;
 cfgs.parameter='ab';
 cfgs.correctm='cluster';
-cfgs.clusterthreshold='nonparametric_individual';
-cfgs.connectivity = parcellation2connectivity(atlas);
+cfgs.connectivity = parcellation2connectivity_midline(atlas);
 cfgs.neighbours = cfgs.connectivity;
 cfgs.correcttail = 'prob';
-cd /project/3011085.02/lastround
+cfgs.clustertail = 1;
+cfgs.tail = 1;
 stat=ft_freqstatistics(cfgs, source, ref);
 
-
+save('/project/3011085.02/results/stat_mediation_erf.mat', 'stat', 'source','rnkrt', 'rnkpow', 'rnkX')
 %% plot
-stat.brainordinate = atlas;
 load cortex_inflated_shifted; atlas.pos=ctx.pos;
+stat.brainordinate = atlas;
+
 cfgx = [];
 cfgx.method='surface';
 cfgx.funparameter='stat';
 cfgx.funcolormap = flipud(brewermap(64, 'RdBu'));
 cfgx.funcolorlim = 'maxabs';
 cfgx.maskstyle='colormix';
-cfgx.maskparameter = cfgx.funparameter;
+% cfgx.maskparameter = cfgx.funparameter;
 cfgx.camlight = 'no';
 stat.brainordinate=atlas;
 ft_sourceplot(cfgx,stat)
