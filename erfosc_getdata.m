@@ -72,7 +72,7 @@ cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
 data       = ft_redefinetrial(cfg, data);
 
 cfg         = [];
-cfg.latency = [-0.75 0.75-1/fsorig];
+cfg.latency = [-1 0.7];
 data_shift  = ft_selectdata(cfg, data);
 
 if ~isempty(comp)
