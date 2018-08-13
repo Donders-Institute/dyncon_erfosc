@@ -107,7 +107,6 @@ if dofreq_short
         savefreq = false;
     end
     if savefreq
-        %     savedir = '/home/language/jansch/erfosc';%JM
         savedir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';%MvE
         save(fullfile(savedir, sprintf('sub-%03d_freqshort_mve', subj)), 'freq_shift', 'P', 'latency');
     end
@@ -118,8 +117,6 @@ if dofreq_short_lowfreq
     load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow_low.mat',subj));
     peakpicking;
     latency = peaks(subj,1).*[1 1] - 0.02 - [0.4 1./600];%MvE
-    %     latency = [-0.4 -1./600]; %JM
-%     foi     = [10 10];
     foi = [peakfreq peakfreq];
     smo     = 2.5;
     [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
@@ -291,12 +288,10 @@ if docorrelation
 end
 
 if docorrelation_lowfreq
-    %     erfosc_comppeaks;
     erfosc_lcmvpeaks;
     datadir1 = '/home/language/jansch/erfosc';
     datadir2 = '/project/3011085.02/scripts/erfosc/analysis_JM_data/'
     load(fullfile(datadir1, sprintf('sub-%03d_source_alpha',    subj)));
-    %     load(fullfile(datadir, sprintf('sub-%03d_comp',            subj)));
     load(fullfile(datadir2, sprintf('sub-%03d_splitpow', subj)), 'datapst')
     load(fullfile(datadir1, sprintf('sub-%03d_lcmv', subj)));
     load(fullfile(datadir1, sprintf('sub-%03d_freqshort_alpha', subj)));
@@ -307,11 +302,7 @@ if docorrelation_lowfreq
     
     [m, idx] = min(Tval);
     pow      = (abs(F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
-    %pow      = log10(pow);
-    
-    %     erf      = cellrowselect(comp_shift.trial, comp_id(subj));
-    %     erf      = cat(1,erf{:});
-    %     erf      = polarity(subj).*ft_preproc_baselinecorrect(erf, 1, 61);
+
     erf = cat(1, datapst.trial{:});
     
     ix1 = nearest(datapst.time{1}, peaks(subj,1));
@@ -319,8 +310,7 @@ if docorrelation_lowfreq
     signpeak = sign(mean(mean(erf(:,ix1:ix2),2)));
     erf = signpeak.*erf;
     
-    %     ix1 = nearest(comp_shift.time{1}, peaks(subj,1));
-    %     ix2 = nearest(comp_shift.time{1}, peaks(subj,2));
+
     amp = mean(erf(:,ix1:ix2), 2);
     
     [rho, pval] = corr(log10(pow(:)), amp(:), 'type', 'spearman');
@@ -611,18 +601,14 @@ if docorrpow_lcmv
     load(fullfile(datadir, sprintf('sub-%03d_lcmv',    subj)));
     source_parc.avg = diag(1./noise)*source_parc.avg;
     
-    %   ix1 = nearest(source_parc.time, peaks(subj,1));%JM
-    %   ix2 = nearest(source_parc.time, peaks(subj,2));%JM
     ix1 = nearest(source_parc.time, peaks(subj,1));
     ix2 = nearest(source_parc.time, peaks(subj,2));
     
     tmpcfg = [];
     tmpcfg.latency = [-0.1 0.5-1./600];
     datapst = ft_selectdata(tmpcfg, data_shift);
-    %   tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02; %0.01;%JM
-    tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02; %0.01;%MvE
+    tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02; 
     datapre = ft_selectdata(tmpcfg, data_shift);
-    %clear data_shift;
     
     source_parc.avg  = ft_preproc_baselinecorrect(source_parc.avg, 1, 60);
     [maxval, maxidx] = max(abs(mean(source_parc.avg(:,ix1:ix2),2)));
@@ -643,31 +629,9 @@ if docorrpow_lcmv
     tmpcfg.lpfilttype = 'firws';
     tmpcfg.lpfiltdir = 'onepass-reverse-zerophase'
     datapst = ft_preprocessing(tmpcfg, datapst);
-    %{
-  cfg=[];
-  cfg.bpfilter = 'yes';
-  cfg.bpfreq = [60 120];
-  cfg.bpfilttype = 'firws';
-  cfg.hilbert = 'complex';
-  h = ft_preprocessing(cfg, datapst);
-  
-  for k=1:numel(h.trial)
-      h.trial{k} = h.trial{k}./abs(h.trial{k});
-  end
-  x = cat(3, h.trial{:});
-  y = abs(mean(x, 3));
-  
-  subplot(1,2,2); plot(h.time{1}, mean(y));xlim([0 0.5])
-  subplot(1,2,1);
-  cfg=[];
-cfg.channel = {'L_17_*', 'R_17_*'};
-tlck = ft_timelockanalysis(cfg, datapst);
-ft_singleplotER([], tlck)
-    %}
     
     tmpcfg = [];
     tmpcfg.latency = peaks(subj,:);%JM
-    %   tmpcfg.latency = [datapst.time{1}(ix1) datapst.time{1}(ix2)];
     tmpcfg.avgovertime = 'yes';
     datapeak = ft_selectdata(tmpcfg,datapst);
     
