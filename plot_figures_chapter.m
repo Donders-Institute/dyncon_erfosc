@@ -178,7 +178,7 @@ for sub=allsubs
     Tval(:,k) = tmp{k}.Tval;
     k=k+1;
 end
-
+source_shift.Tval = mean(Tval,2);
 source_shift.pos = ctx.pos;
 
 cfgx = [];
@@ -398,13 +398,15 @@ view([-120 2])
 % that contribute to cluster)
 x=find(stat.mask==1);
 y = mean(S.rho(:,x),2);
-figure; scatter(1:32, sort(y),'.');
+
+load('/project/3011085.02/results/stat_peakpicking_gamma.mat', 'stat_eye','S_eye');
+x2=find(stat_eye.mask==1);
+y2 = mean(S_eye.rho(:,x),2);
+
+figure; scatter(1:32, sort(y),'.'); hold on; scatter(1:32, sort(y2), '.');
 addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
-figure; iosr.statistics.boxPlot(y,'showScatter',true,'scatterMarker', '.')
-
-
-
-
+figure; iosr.statistics.boxPlot(y,'showScatter',false,'scatterMarker', '.'); 
+figure; iosr.statistics.boxPlot(y2,'showScatter',false,'scatterMarker', '.')
 %%%%%%%%%%%%
 % Figure 6 %
 %%%%%%%%%%%%
