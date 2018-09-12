@@ -39,6 +39,7 @@ if ~exist('dosplitpow_source', 'var'), dosplitpow_source = false; end
 if ~exist('doparcel_erf', 'var'), doparcel_erf = false; end
 if ~exist('doresplocked', 'var'), doresplocked = false; end
 if ~exist('docorrpow_lcmv_lowfreq', 'var'), docorrpow_lcmv_lowfreq = false; end
+if ~exist('docorr_lcmv_eye', 'var'), docorr_lcmv_eye = false; end
 
 if doparcel_erf, dolcmv_parc = true; end
 if dodics_gamma, dofreq  = true; end
@@ -53,6 +54,7 @@ if dolcmv_norm,  getdata = true; end
 if dosplitpow_lcmv, getdata = true; end
 if docorrpow_lcmv, getdata = true; end
 if docorrpow_lcmv_lowfreq, getdata = true; end
+if docorr_lcmv_eye, getdata = true; end
 if doglm,     getdata = true; dolcmv_parc = true; end
 if dosplitpow_source, getdata = true; end
 
@@ -646,12 +648,45 @@ if docorrpow_lcmv
     tlckpst.avg = signswap*tlckpst.avg;
     
     load(fullfile(datadir, sprintf('sub-%03d_source',    subj)));
-    load(fullfile(datadir, sprintf('sub-%03d_freqshort', subj)));
+%     load(fullfile(datadir, sprintf('sub-%03d_freqshort',    subj)));
     [m, idx] = max(Tval);
     pow      = (abs(F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
     pow      = standardise(log10(pow(:)));
     
     rho = corr(X', pow, 'type', 'spearman'); %MvE
+
+    tmp = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/eyedata.mat', subj));
+    % get gamma-ERF correlation, accounting for pupil diameter, without confounding eye position.
+    cfg=[];
+    cfg.vartrllength = 2;
+    cfg.keeptrials = 'yes';
+    eye = ft_timelockanalysis(cfg,tmp.data_shift);
+    cfg=[];
+    cfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+    pupild = erfosc_regress_eye(ft_selectdata_new(cfg, eye), {'UADC007'}, {'visAngleX', 'visAngleY'});
+    cfg=[];
+    cfg.avgovertime = 'yes';
+    pupild = ft_selectdata(cfg, pupild);
+    pupild = standardise(pupild.trial);
+    partialrho1 = partialcorr(X', pow, pupild, 'type', 'spearman'); 
+    
+    % get correlation gamma-ERF, accounting for eye position, without confound pupil diameter
+    idx = match_str(eye.label, {'visAngleX', 'visAngleY'});
+    eye.trial(:,end+1,:) = (eye.trial(:,idx(1),:).^2 + eye.trial(:,idx(2),:).^2).^0.5;
+    eye.label{end+1} = 'distance';
+    cfg=[];
+    cfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+    eyepos = erfosc_regress_eye(ft_selectdata_new(cfg, eye), {'distance'}, {'UADC007'});
+    cfg=[];
+    cfg.avgovertime = 'yes';
+    distance = ft_selectdata(cfg, eyepos);
+    distance = standardise(distance.trial);    
+    partialrho2 = partialcorr(X', pow, distance, 'type', 'spearman');
+    
+    % get correlation gamma-ERF, accounting for eye position and pupil
+    % diameter (both not confounded by the other)
+    partialrho3 = partialcorr(X', pow, [distance, pupild], 'type', 'spearman'); 
+        
     load atlas_subparc374_8k
     exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
     
@@ -659,16 +694,20 @@ if docorrpow_lcmv
     source.brainordinate = atlas;
     source.label         = atlas.parcellationlabel;
     source.rho           = zeros(374,1);
+    source.partialrho    = zeros(374,1);
     source.pow           = zeros(374,1);
     source.dimord        = 'chan';
     
     indx = 1:374;
     indx(exclude_label) = [];
     source.rho(indx)    = rho;
+    source.partialrho(indx,1) = partialrho1;
+    source.partialrho(indx,2) = partialrho2;
+    source.partialrho(indx,3) = partialrho3;
     source.pow(indx)    = Xpow(:);
     
     datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
-    save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv_mvepeaks3', subj)), 'source', 'pow', 'X', 'tlckpst');
+    save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv_gamma', subj)), 'source', 'pow', 'X', 'tlckpst', 'pupild', 'distance');
 end
 if docorrpow_lcmv_lowfreq
     peakpicking;
@@ -746,4 +785,83 @@ if docorrpow_lcmv_lowfreq
     
     datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
     save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv_low', subj)), 'source', 'pow', 'X', 'tlckpst');
+end
+if docorr_lcmv_eye
+    peakpicking;
+    
+    datadir = '/home/language/jansch/erfosc';
+    load(fullfile(datadir, sprintf('sub-%03d_lcmv',    subj)));
+    source_parc.avg = diag(1./noise)*source_parc.avg;
+    
+    ix1 = nearest(source_parc.time, peaks(subj,1));
+    ix2 = nearest(source_parc.time, peaks(subj,2));
+    
+    tmpcfg = [];
+    tmpcfg.latency = [-0.1 0.5-1./600];
+    datapst = ft_selectdata(tmpcfg, data_shift);
+    tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+    
+    source_parc.avg  = ft_preproc_baselinecorrect(source_parc.avg, 1, 60);
+    [maxval, maxidx] = max(abs(mean(source_parc.avg(:,ix1:ix2),2)));
+    signpeak         = sign(mean(source_parc.avg(maxidx,ix1:ix2),2));
+    fprintf('parcel with max amplitude = %s\n', source_parc.label{maxidx});
+    
+    for k = 1:numel(source_parc.label)
+        F(k,:) = source_parc.F{k}(1,:);
+    end
+    datapst.trial = F*datapst.trial;
+    datapst.label = source_parc.label;
+    
+    tmpcfg = [];
+    tmpcfg.demean = 'yes';
+    tmpcfg.baselinewindow = [-inf 0];
+    tmpcfg.lpfilter = 'yes';
+    tmpcfg.lpfreq = 30;
+    tmpcfg.lpfilttype = 'firws';
+    tmpcfg.lpfiltdir = 'onepass-reverse-zerophase';
+    datapst = ft_preprocessing(tmpcfg, datapst);
+    
+    tmpcfg = [];
+    tmpcfg.latency = peaks(subj,:);
+    tmpcfg.avgovertime = 'yes';
+    datapeak = ft_selectdata(tmpcfg,datapst);
+    
+    X = cat(2,datapeak.trial{:});
+    Xpow = abs(mean(X,2));
+    signswap = diag(sign(mean(X,2)));
+    X = signswap*X; % let the amplitude be on average positive
+    X = standardise(X,2);
+    
+    tmpcfg = [];
+    tlckpst = ft_timelockanalysis(tmpcfg, datapst);
+    tlckpst.avg = signswap*tlckpst.avg;
+    
+    eye = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/eyedata.mat', subj), 'data_shift');
+    eye = eye.data_shift;
+    cfg=[];
+    cfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+    eye = erfosc_regress_eye(ft_selectdata(cfg, eye), {'UADC007'}, {'visAngleX', 'visAngleY'});
+    cfg=[];
+    cfg.avgovertime = 'yes';
+    eye = ft_selectdata(cfg, eye);
+    pupild = eye.trial; 
+    
+    rho = corr(X', pupild, 'type', 'spearman');
+    load atlas_subparc374_8k
+    exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
+    
+    source = [];
+    source.brainordinate = atlas;
+    source.label         = atlas.parcellationlabel;
+    source.rho           = zeros(374,1);
+    source.diameter      = zeros(374,1);
+    source.dimord        = 'chan';
+    
+    indx = 1:374;
+    indx(exclude_label) = [];
+    source.rho(indx,1)  = rho;
+
+    
+    datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+    save(fullfile(datadir, sprintf('sub-%03d_corrlcmv_eye', subj)), 'source', 'rho','pupild');
 end
