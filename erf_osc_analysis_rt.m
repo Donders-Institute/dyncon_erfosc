@@ -1,5 +1,14 @@
-function erf_osc_analysis_rt(subj)
-% estimate reaction times from trigger information and save
+function [rt, idx_trials] = erf_osc_analysis_rt(subj)
+% calculate reaction times from trigger information and save on disk.
+%
+% INPUT
+%   subj (int): subject ID, ranging from 1 to 33, excluding 10.
+%
+% OUTPUT
+%   saves data on disk.
+%   rt: reaction times (ms), after stimulus change
+%   idx_trials: trial numbers of reaction time estimates
+
 if nargin<1
     subj=1;
 end

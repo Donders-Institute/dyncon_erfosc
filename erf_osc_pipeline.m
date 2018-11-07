@@ -1,63 +1,117 @@
-erf_osc_datainfo;
+%% Set up
+% setting up the environment by running the startup script.
+startup
 
-%% erf_osc_pipeline
-% this script contains the full pipeline for the analysis of the ERF-
-% oscillation experiment.
-subj = 1;
-isPilot = false;
+erf_osc_datainfo; % get subject specific information
 
 %% preprocessing
-% preproces MEG data: remove artifacts, apply filters etc.
-% preproces MRI data: realign MRI and segment.
+% preprocessing is done semi-automatically; bad channels/trials,
+% jump/muscle and eye blink artifacts have to be manually verified.
+% ICA decomposition should be inspected and components to be deleted should
+% be specified in erf_osc_datainfo, under subjects(subj).ecgcomp/eyecomp
+% before continuing. This function saves the multiple files: one containing
+% sample information on artifacts, one with ICA spatial filters, one with
+% headmotion data and one with the preprocessed MEG data.
+for subj=allsubs
+    erf_osc_preprocessing_artifact(subj, false, false, 5)
+end
+
+% seperately, preprocess the eyetracker data. Transform X- and Y-gaze
+% positions to visual degrees relative to fixation. Save it on disk
+% together with pupil diameter data, both for data time locked to stimulus
+% onset and stimulus change.
+for subj=allsubs
+    erf_osc_preprocessing_eyedata(subj);
+end
+
+% seperately preprocess the MRI data using fieldtrip, freesurfer and
+% workbench. Do coregistration, segmentation and create 2D and 3D
+% sourcemodels and a headmodel. This script cannot be automatized and
+% should be done interactively by walking through the steps.
+for subj=allsubs
+    erfosc_execute_pipeline('erf_osc_preprocessing_mri', subj);
+end
 
 
-% interactive function: one has to inspect trial/channel variability, jump,
-% muscle and blink artifacts and ICA components
-existArtifact = false; % have the artifacts already been defined?
-erf_osc_preprocessing_artifact(subj, isPilot, existArtifact)
+
+%% Analysis
+%% Reaction times
+for subj=allsubs
+    erf_osc_analysis_rt(subj);
+end
 
 
-% pipeline in itself, using freesurfer, workbench and realigning with
-% different coordinate systems
-erf_osc_preprocessing_mri
+%% Stimulus induced effects
+for subj=allsubs
+    erf_osc_analysis_tfa(subj, false, 'low', 'onset') % low frequencies
+    erf_osc_analysis_tfa(subj, false, 'high', 'onset') % high frequencies
+end
 
-%% TFA
-
-erf_osc_analysis_tfa(subj, isPilot, 'onset');
-erf_osc_analysis_tfa(subj, isPilot, 'reversal');
-
-%% Gamma power
-% estimate gamma peak frequency; create virtual gamma channel; calculate
-% gamma power and gamma phase pre stimulus reversal.
-
-erf_osc_analysis_gamma_pow(subj, isPilot);
-erf_osc_analysis_gamma_freq(subj, isPilot);
-erf_osc_analysis_gamma_virtualchan(subj, isPilot);
+% combine them for all subjects and make a relative contrast with the
+% average baseline
+erf_osc_analysis_tfa_allsubs('low', 'onset');
+erf_osc_analysis_tfa_allsubs('high', 'onset');
 
 
+%% power spectra
+% compute channel level induced power spectra in low and high frequencies.
+for subj=allsubs
+    erf_osc_analysis_pow(subj, false);
+end
 
-%% GLM erf
+%% Source contrast
+for subj=allsubs
+    erfosc_execute_pipeline('erfosc_script_jm', subj, {'dodics_gamma', true}, {'dodics_lowfreq', true});
+end
 
-erf_osc_analysis_glm_gamma_time(subj, isPilot); % gamma power estimated at virtual gamma channel as regressor over timelocked data.
+%% Correlation with RT
+% computing correlations and partial correlations between jitter, gamma
+% power and rt.
+erf_osc_analysis_corr([],[],'gamma_rt')
 
-% linear regression with p1 amplitude as regressor over time-frequency
-% data.
-erf_osc_analysis_glm_erf_tfch(subj, isPilot, 'onset', 'onset'); % timelocked to stimulus onset, p1 amplitude of stimulus onset
-erf_osc_analysis_glm_erf_tfch(subj, isPilot, 'onset', 'reversal'); % timelocked to stimulus onset, p1 amplitude of stimulus reversal
-erf_osc_analysis_glm_erf_tfch(subj, isPilot, 'reversal', 'onset'); % timelocked to stimulus reversal, p1 amplitude of stimulus onset
-erf_osc_analysis_glm_erf_tfch(subj, isPilot, 'reversal', 'reversal'); % timelocked to stimulus reversal, p1 amplitude of stimulus reversal
-% erf_osc_analysis_erf(subj, isPilot);
+% correlation of rt with gamma in 3D sourcespace
+for subj=allsubs
+    erfosc_execute_pipeline('erfosc_script_jm', subj, {'docorr_gamma_rt', true});
+end
+
+%% Correlation Gamma ERF
+for subj=allsubs
+    erfosc_execute_pipeline('erfosc_script_jm', subj, {'docorrpow_lcmv',1}, {'dofreq_short', 1});
+    erfosc_execute_pipeline('erfosc_script_jm', subj, {'docorrpow_lcmv_lowfreq',1}, {'dofreq_short_lowfreq', 1});
+end
+
+% do group statistics
+erfosc_execute_pipeline('erfosc_script_jm', 1, {'dostat_pow_erf',1}, {'GA', 1}, {'whichFreq', 1});
+erfosc_execute_pipeline('erfosc_script_jm', 1, {'dostat_pow_erf',1}, {'GA', 1}, {'whichFreq', 2});
 
 
-% erf_osc_analysis_erf_dss_aseo(subj, isPilot)
+%% Correlation ERF RT
+erfosc_execute_pipeline('erfosc_script_jm', 1, {dostat_erf_rt, 'true'});
 
-%% statistics
-% erf_osc_analysis_corr(subj, isPilot)
-erf_osc_analysis_stat_glm_gamma
-erf_osc_analysis_stat_tfr('high', 'onset');
-erf_osc_analysis_stat_tfr('high', 'reversal');
-erf_osc_analysis_stat_glm_erf('high', 'onset', 'onset');
-erf_osc_analysis_stat_glm_erf('high', 'onset', 'reversal');
-erf_osc_analysis_stat_glm_erf('high', 'reversal', 'onset');
-erf_osc_analysis_stat_glm_erf('high', 'reversal', 'reversal');
+
+
+
+%% Plotting
+plot_figures_chapter
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

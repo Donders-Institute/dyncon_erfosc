@@ -1,4 +1,20 @@
-function erf_osc_analysis_corr(subj, isPilot, correlation, freqRange, zeropoint, erfoi, doDSS, compareQuartile)
+function erf_osc_analysis_corr(subj, isPilot, correlation, freqRange, zeropoint, doDSS, compareQuartile)
+% Calculates correlations between various variables. 
+%
+% INPUT
+%   subj (int): subject ID, ranging from 1 to 33, excluding 10 (default=1)
+%   isPilot (logical): whether or not to apply on pilot data (default=0)
+%   correlation (string): which variables you want to calculate the
+%       correlation between. Can be 'gamma_rt' (default), 'gamma_erf', 
+%       'gamma_erf_virtualchan' or 'amp_tfr'.
+%   freRange (string): 'low' or 'high' (default), frequency range (below or 
+%       above 30 Hz.
+%   zeropoint (string): 'onset' (default) or 'reversal', what to time lock 
+%       the data to. if 'onset' a seperate baseline estimate is saved.
+%   doDSS (logical): in correlations with erf, whether or not to apply DSS
+%       cleaning.
+%   compareQuartile (logical): only works for some implementations. Whether
+%       to do a single trial correlation or to contrast quartiles.
 
 if nargin<1 || isempty(subj)
     subj = 1;
@@ -7,7 +23,7 @@ if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
 if nargin<3 || isempty(correlation);
-    correlation = input('which correlation do you want to compute? choose *gamma_rt*, *gamma_erf*, *gamma_erf_virtualchan* or *amp_tfr*')
+    correlation = input('which correlation do you want to compute? choose *gamma_rt*, *gamma_erf*, *gamma_erf_virtualchan* or *amp_tfr*');
 end
 if nargin<4 || isempty(freqRange)
     freqRange = 'high';
@@ -15,13 +31,10 @@ end
 if nargin<5 || isempty(zeropoint)
     zeropoint = 'reversal';
 end
-if nargin<6 || isempty(erfoi)
-    erfoi = 'reversal';
-end
-if nargin<7 || isempty(doDSS)
+if nargin<6 || isempty(doDSS)
     doDSS = 0;
 end
-if nargin<8 || isempty(compareQuartile)
+if nargin<7 || isempty(compareQuartile)
     compareQuartile = false;
 end
 
@@ -36,8 +49,6 @@ erf_osc_datainfo;
 if strcmp(correlation, 'gamma_rt');
     for subj=allsubs
         load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj), 'peakFreq_gamma');
-%         gammaPow{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow'); % load gamma power
-%         gammaPow{subj} = gammaPow{subj}.gammaPow;
         gammaPow{subj} = load(sprintf('/project/3011085.02/scripts/erfosc/analysis_JM_data/sub-%03d_corrpowlcmv_mvepeaks3.mat', subj), 'pow'); % load gamma power
         gammaPow{subj} = gammaPow{subj}.pow';
         rt{subj} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load reaction time power
@@ -143,7 +154,7 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
     if isPilot
         load(sprintf('/project/3011085.02/results/erf/pilot-%03d/dss.mat', subj), 'data_dss');
     else
-        if strcmp(erfoi, 'reversal')
+        if strcmp(zeropoint, 'reversal')
             if doDSS
                 [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
             else
@@ -192,11 +203,11 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
         data = ft_selectdata(cfg, data);
         clear data_reversal_tmp
         
-        if strcmp(erfoi, 'reversal')
+        if strcmp(zeropoint, 'reversal')
             cfg=[];
             cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
             data = ft_redefinetrial(cfg, data);
-        elseif strcmp(erfoi, 'motor')
+        elseif strcmp(zeropoint, 'motor')
             cfg=[];
             cfg.offset = -(data.trialinfo(:,6)-data.trialinfo(:,4));
             data=ft_redefinetrial(cfg, data);
@@ -373,7 +384,7 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
     end
 elseif strcmp(correlation, 'gamma_erf_virtualchan')
         load(sprintf('/project/3011085.02/results/freq/sub-%03d/allori/gamma_virtual_channel.mat', subj), 'gammaPow');
-        lcmvData = erf_osc_analysis_lcmv_orientation(subj, erfoi); 
+        lcmvData = erf_osc_analysis_lcmv_orientation(subj, zeropoint); 
 
 end
     %% save
@@ -387,7 +398,7 @@ end
         filename = sprintf('/project/3011085.02/results/freq/sub-%03d/corr_amp_tfr_quartile', subj);
         save(fullfile([filename '.mat']), 'tfa_q1', 'tfa_q4', 'lat', 'p1amp', 'maxchanid','p1chans_id', 'val', 'idx', 'q1', 'q4');
     elseif strcmp(correlation, 'gamma_erf') && compareQuartile
-        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/corr_gamma_erf_quartile_%s', subj, erfoi);
+        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/corr_gamma_erf_quartile_%s', subj, zeropoint);
         save(fullfile([filename '.mat']), 'tlck_q1', 'tlck_q4', 'gammaPow', 'val', 'idx', 'q1', 'q4');
     end
 ft_diary('off')

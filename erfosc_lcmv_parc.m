@@ -1,4 +1,23 @@
 function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas, doresplocked)
+% Model time courses on the source level using a LCMV beamformer. By
+% default the evoked activity is estimated at stimulus change, but can be
+% done at response onset. dipoles are combined into anatomically defined
+% parcels.
+%
+% INPUT 
+%   data_shift: data, timing relative to stimulus change
+%   headmodel: volume conduction model of the head, output of
+%       ft_prepare_headmodel
+%   sourcemodel: 2D or 3D sourcemodel
+%   atlas: anatomical or functional atlas describing how to combine dipole
+%      locations. Only implemented for HBM anatomical atlas (374parc)
+%   doresplocked (logical): true when lcmv should be optimized for response
+%       locked activity.
+% 
+% OUTPUT
+%   source_parc: channel level fieldtrip data structure, containing single
+%       trial time courses for each parcel defined in the atlas.
+
 
 load('atlas_subparc374_8k.mat')
 if ~exist('doresplocked'); doresplocked=false; end

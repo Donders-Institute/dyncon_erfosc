@@ -1,12 +1,20 @@
-function erf_osc_analysis_tfa(subj, isPilot, freqRange, zeropoint)
+function [tfa, baseline] = erf_osc_analysis_tfa(subj, isPilot, freqRange, zeropoint)
+% Time frequency analysis.
 %
-% trialinfo columns:
-% 1: trialnumber
-% 2: position (-1=left, 0=middle, 1=right)
-% 3: sample of baseline onset
-% 4: sample of grating onset
-% 5: sample of grating shift (=0 if no shift)
-% 6: sample of response (=0 if no response or if response too early)
+% INPUT
+%   subj (int): subject ID, ranging from 1 to 33, excluding 10 (default=1)
+%   isPilot (logical): whether or not to apply on pilot data (default=0)
+%   freRange (string): 'low' (default) or 'high', frequency range (below or 
+%       above 30 Hz; affects configuration settings).
+%   zeropoint (string): 'onset' (default) or 'reversal', what to time lock 
+%       the data to. if 'onset' a seperate baseline estimate is saved.
+%
+% OUTPUT
+%   saves result on disk.
+%   tfa: time frequency estimate
+%   baseline: baseline of time frequency estimate (only when
+%       zeropoint='low').
+
 if nargin<1 || isempty(subj)
     subj = 1;
 end
@@ -14,7 +22,7 @@ if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
 if nargin<3 || isempty(freqRange)
-    freqRange = 'onset';
+    freqRange = 'low';
 end
 if nargin<4 || isempty(zeropoint)
     zeropoint = 'onset';% other option 'reversal': redefine time axis to stimulus reversal or keep it at stimulus onset

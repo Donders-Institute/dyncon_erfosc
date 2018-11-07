@@ -1,5 +1,20 @@
 function [source_onset, source_shift, Tval, F] = erfosc_dics_alpha(freq_onset, freq_shift, headmodel, sourcemodel)
-
+% Compute power in the low frequencies on the source level using a DICS
+% beamformer (Gross et al, 2001). Also estimates the location with the 
+% highest increase from baseline.
+%
+% INPUT 
+%   freq_onset: frequency estimate, timing relative to stimulus onset
+%   freq_shift: frequency estimate, timing relative to stimulus change
+%   headmodel: volume conduction model of the head, output of
+%       ft_prepare_headmodel
+%   sourcemodel: 2D or 3D sourcemodel
+% 
+% OUTPUT
+%   source_onset: source estimate, timing relative to stimulus onset
+%   source_shift: source estimate, timing relative to stimulus change
+%   Tval: T values in source space of the comparisson vs baseline
+%   F: spatial filters
 cfg           = [];
 cfg.appenddim = 'rpt';
 cfg.parameter = 'fourierspctrm';

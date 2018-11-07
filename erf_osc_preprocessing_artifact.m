@@ -10,9 +10,11 @@ function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact, visDegOffF
 %
 % use:
 % subj, specify subject number (default = 1)
-% isPilot, true if datasets belong to pilot subjects (default = true)
+% isPilot, true if datasets belong to pilot subjects (default = false)
 % existArtifact, true if artficats were already selected and saved (default
 % = false)
+% visDegOffFixation: threshold for deleting trials based on excessive eye
+% movements (default: delete trials if deviation>5 visual degrees).
 
 if nargin<1 || isempty(subj)
     subj = 1;

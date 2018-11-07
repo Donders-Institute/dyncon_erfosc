@@ -1,4 +1,17 @@
 function [data_onset, data_shift, data_response] = erfosc_getdata(data, comp, channel)
+% Manipulates processed MEG data, including trial selection, time locking
+% to different zero point and resampling.
+%
+% INPUT
+%   data (struct): FieldTrip data structure
+%   comp (struct): output of componentanalysis
+%   channel (string): which channels to include in the selection
+%       (default='MEG'). 
+%
+%   OUTPUT
+%   data_onset: data, time locked to stimulus onset
+%   data_shift: data, time locked to stimulus change
+%   data_response: data, time locked to behavioral response
 
 if nargin<3
   channel = 'MEG';
@@ -19,6 +32,7 @@ fsorig   = data.fsample;
 
 % select only shift trials, with valid response
 idxM    = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
+% idxM    = find(data.trialinfo(:,5)>0); % include trials independent of response, for neuroimage reviewer 2.
 nTrials = length(idxM);
 
 cfg         = [];
