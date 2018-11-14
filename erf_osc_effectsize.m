@@ -1,6 +1,6 @@
 
 %% GLM gamma
-load('/project/3011085.02/results/stat_glm_gamma_time_reversal.mat')
+load('/project/3011085.02/analysis/stat_glm_gamma_time_reversal.mat')
 x1 = betas_plcmb_GA.trial.*(permute(repmat(stat.posclusterslabelmat==1,[1 1 32]),[3,1,2]));
 x2 = betas_bl_plcmb_GA.trial.*(permute(repmat(stat.posclusterslabelmat==1,[1 1 32]),[3,1,2]));
 x1 = (x1(find(x1(:)~=0)));

@@ -16,7 +16,7 @@ end
 if isPilot
     load(sprintf('/project/3011085.02/processed/pilot-00%d/ses-beh01/pilot_headposition_0%d.mat', subj, subj));
 else
-    load(sprintf('/project/3011085.02/processed/subj-00%d/ses-beh01/headposition_0%d.mat', subj, subj));
+    load(sprintf('/project/3011085.02/processed/sub-00%d/ses-beh01/sub-%03d_headposition.mat', subj, subj));
 end
 
 figure;

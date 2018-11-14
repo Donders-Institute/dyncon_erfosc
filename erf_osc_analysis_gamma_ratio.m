@@ -6,7 +6,7 @@ erf_osc_datainfo;
 
 k=1;
 for subj=allsubs
-tmp{k} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj));
+tmp{k} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow.mat', subj, subj));
 k=k+1;
 end
 
@@ -28,7 +28,7 @@ ratio_maxchan_GA = mean(ratio_maxchan);
 %% reaction times
 k=1;
 for subj=allsubs
-    load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj));
+    load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat', subj, subj));
     RT{k} = rt;
     clear rt;
     k=k+1;

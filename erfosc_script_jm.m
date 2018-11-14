@@ -68,11 +68,11 @@ if getdata
     end
     [p,f,e]       = fileparts(subject.dataset);
     basedir       = strrep(p, 'raw', 'processed');
-    filename_data = fullfile(basedir, 'cleandata.mat');
+    filename_data = fullfile(basedir, sprintf('sub-%03d_cleandata.mat', subj));
     load(filename_data);
     
     if undocomp
-        filename_comp = fullfile(basedir, 'icaComp.mat');
+        filename_comp = fullfile(basedir, sprintf('sub-%03d_icaComp.mat', subj));
         load(filename_comp);
         sel = zeros(0,1);
         if ~isempty(subject.ecgcomp)
@@ -95,8 +95,8 @@ end
 if docomp
     [comp_onset, comp_shift, comp_shift2] = erfosc_dss_onset(data_onset, data_shift);
     
-    savedir = '/project/3011085.02/results/analysis';
-    save(fullfile(savedir, sprintf('sub-%03d_comp', subj)), 'comp_onset', 'comp_shift', 'comp_shift2');
+    savedir = '/project/3011085.02/analysis/';
+    save(fullfile(savedir, 'comp/', sprintf('sub-%03d/sub-%03d_comp', subj,subj)), 'comp_onset', 'comp_shift', 'comp_shift2');
 end
 
 % this chunk does spectral decomposition
@@ -111,14 +111,14 @@ if dofreq_short
         savefreq = false;
     end
     if savefreq
-        savedir = '/project/3011085.02/results/analysis';%MvE
-        save(fullfile(savedir, sprintf('sub-%03d_freqshort_mve', subj)), 'freq_shift', 'P', 'latency');
+        savedir = '/project/3011085.02/analysis/freq/';%MvE
+        save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_freqshort_mve', subj,subj)), 'freq_shift', 'P', 'latency');
     end
 end
 
 % this chunk does spectral decomposition
 if dofreq_short_lowfreq
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow_low.mat',subj));
+    load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj));
     peakpicking;
     latency = peaks(subj,1).*[1 1] - 0.02 - [0.4 1./600];%MvE
     foi = [peakfreq peakfreq];
@@ -128,8 +128,8 @@ if dofreq_short_lowfreq
         savefreq = false;
     end
     if savefreq
-        savedir = '/project/3011085.02/results/analysis';
-        save(fullfile(savedir, sprintf('sub-%03d_freqshort_low', subj)), 'freq_shift', 'P', 'latency');
+        savedir = '/project/3011085.02/analysis/freq';
+        save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_freqshort_low', subj,subj)), 'freq_shift', 'P', 'latency');
     end
 end
 
@@ -141,7 +141,7 @@ if dofreq
     end
     if dodics_lowfreq
         if ~exist('peakfreq', 'var')
-            load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow_low.mat',subj));
+            load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj));
         end
         foi = [peakfreq peakfreq]; smo = 2;
         latency = [-0.75+1./data_onset.fsample 0-1./data_onset.fsample];
@@ -154,8 +154,8 @@ if dofreq
         savefreq = false;
     end
     if savefreq
-        savedir = '/project/3011085.02/results/analysis';
-        save(fullfile(savedir, sprintf('sub-%03d_freq', subj)), 'freq_shift', 'P', 'latency');
+        savedir = '/project/3011085.02/analysis/freq';
+        save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_freq', subj,subj)), 'freq_shift', 'P', 'latency');
     end
     
 end
@@ -168,8 +168,8 @@ if dodics_gamma
     source_onset = rmfield(source_onset, 'cfg');
     source_shift = rmfield(source_shift, 'cfg');
     
-    savedir = '/project/3011085.02/results/analysis';
-    save(fullfile(savedir, sprintf('sub-%03d_source', subj)), 'source_onset', 'source_shift', 'Tval', 'F');
+    savedir = '/project/3011085.02/analysis/source';
+    save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_source', subj,subj)), 'source_onset', 'source_shift', 'Tval', 'F');
 end
 
 if dodics_lowfreq
@@ -179,8 +179,8 @@ if dodics_lowfreq
     source_onset = rmfield(source_onset, 'cfg');
     source_shift = rmfield(source_shift, 'cfg');
     
-    savedir = '/project/3011085.02/results/analysis';
-    save(fullfile(savedir, sprintf('sub-%03d_source_low', subj)), 'source_shift', 'Tval', 'F');
+    savedir = '/project/3011085.02/analysis/source/';
+    save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_source_low', subj,subj)), 'source_shift', 'Tval', 'F');
 end
 
 if dolcmv_parc
@@ -191,14 +191,14 @@ if dolcmv_parc
         [source_parc] = erfosc_lcmv_parc(data_resp, headmodel, sourcemodel, atlas, doresplocked);
     else
         [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas, doresplocked);
-        savedir = '/project/3011085.02/results/analysis';
-        save(fullfile(savedir, sprintf('sub-%03d_lcmv', subj)), 'source_parc');
+        savedir = '/project/3011085.02/analysis/source';
+        save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_lcmv',subj, subj)), 'source_parc');
     end
 end
 
 if dolcmv_norm
-    datadir  = '/project/3011085.02/results/analysis';
-    filename = fullfile(datadir, sprintf('sub-%03d_lcmv', subj));
+    datadir  = '/project/3011085.02/analysis/source';
+    filename = fullfile(datadir, sprintf('sub-%03d/sub-%03d_lcmv', subj,subj));
     load(filename);
     
     tmpcfg = [];
@@ -225,13 +225,13 @@ if dolcmv_parc_msmall
     load('atlas_MSMAll_8k_subparc.mat');
     [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas);
     
-    savedir = '/project/3011085.02/results/analysis';
-    save(fullfile(savedir, sprintf('sub-%03d_lcmv_msmall', subj)), 'source_parc');
+    savedir = '/project/3011085.02/analysis/source/';
+    save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_lcmv_msmall', subj, subj)), 'source_parc');
 end
 
 if dolcmv_norm_msmall
-    datadir  = '/project/3011085.02/results/analysis';
-    filename = fullfile(datadir, sprintf('sub-%03d_lcmv_msmall', subj));
+    datadir  = '/project/3011085.02/analysis/source/';
+    filename = fullfile(datadir, sprintf('sub-%03d/sub-%03d_lcmv_msmall', subj, subj));
     load(filename);
     
     tmpcfg = [];
@@ -257,11 +257,11 @@ if docorrelation
     %     erfosc_comppeaks;
 %     erfosc_lcmvpeaks
 peakpicking;
-    datadir = '/project/3011085.02/results/analysis/'
-    load(fullfile(datadir, sprintf('sub-%03d_source',    subj)));
-    load(fullfile(datadir, sprintf('sub-%03d_splitpow', subj)), 'datapst')
-    load(fullfile(datadir, sprintf('sub-%03d_lcmv', subj)));
-    load(fullfile(datadir, sprintf('sub-%03d_freqshort', subj)));
+    datadir = '/project/3011085.02/analysis//'
+    load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source',  subj,  subj)));
+    load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_splitpow', subj, subj)), 'datapst')
+    load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_lcmv', subj, subj)));
+    load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_freqshort', subj, subj)));
     
     [val1 idx1] = sort(datapst.trialinfo(:,1));
     datapst.trial = datapst.trial(idx1);
@@ -286,16 +286,16 @@ peakpicking;
     
     [rho, pval] = corr(log10(pow(:)), amp(:), 'type', 'spearman');
     
-    save(fullfile(datadir, sprintf('sub-%03d_corr', subj)), 'amp', 'pow', 'rho', 'pval', 'erf');
+    save(fullfile(datadir, sprintf('corr/sub-%03d/sub-%03d_corr', subj,subj)), 'amp', 'pow', 'rho', 'pval', 'erf');
 end
 
 if docorrelation_lowfreq
     erfosc_lcmvpeaks;
-    datadir = '/project/3011085.02/results/analysis/'
-    load(fullfile(datadir, sprintf('sub-%03d_source_alpha',    subj)));
-    load(fullfile(datadir, sprintf('sub-%03d_splitpow', subj)), 'datapst')
-    load(fullfile(datadir, sprintf('sub-%03d_lcmv', subj)));
-    load(fullfile(datadir, sprintf('sub-%03d_freqshort_alpha', subj)));
+    datadir = '/project/3011085.02/analysis/'
+    load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_source_alpha',  subj,  subj)));
+    load(fullfile(datadir, 'freq/', sprintf('sub-%03d/sub-%03d_splitpow', subj, subj)), 'datapst')
+    load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_lcmv', subj, subj)));
+    load(fullfile(datadir, 'freq/', sprintf('sub-%03d/sub-%03d_freqshort_alpha', subj, subj)));
     
     [val1 idx1] = sort(datapst.trialinfo(:,1));
     datapst.trial = datapst.trial(idx1);
@@ -316,14 +316,14 @@ if docorrelation_lowfreq
     
     [rho, pval] = corr(log10(pow(:)), amp(:), 'type', 'spearman');
     
-    save(fullfile(datadir, sprintf('sub-%03d_corr_alpha', subj)), 'amp', 'pow', 'rho', 'pval', 'erf');
+    save(fullfile(datadir,'corr/', sprintf('sub-%03d/sub-%03d_corr_alpha', subj, subj)), 'amp', 'pow', 'rho', 'pval', 'erf');
 end
 
 if dosplitpow_lcmv
 %     erfosc_lcmvpeaks;
     peakpicking;
-    datadir = '/project/3011085.02/results/analysis';
-    load(fullfile(datadir, sprintf('sub-%03d_lcmv',    subj)));
+    datadir = '/project/3011085.02/analysis/source/';
+    load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_lcmv',  subj,  subj)));
     source_parc.avg = diag(1./noise)*source_parc.avg;
     
     ix1 = nearest(source_parc.time, peaks(subj,1));
@@ -417,17 +417,17 @@ if dosplitpow_lcmv
         tfr2 = ft_freqanalysis(cfg, data_shift);
     end
     
-    datadir = '/project/3011085.02/results/analysis/';
+    datadir = '/project/3011085.02/analysis/freq';
     if doPlanar
-        save(fullfile(datadir, sprintf('sub-%03d_splitpow_plcmb', subj)), 'f1', 'f2', 'datapst','idx');
-        save(fullfile(datadir, sprintf('sub-%03d_splitpow_tfr_plcmb', subj)), 'tfr1', 'tfr2');
+        save(fullfile(datadir, sprintf('sub-%03d/sub-%03d_splitpow_plcmb',subj,  subj)), 'f1', 'f2', 'datapst','idx');
+        save(fullfile(datadir, sprintf('sub-%03d/sub-%03d_splitpow_tfr_plcmb',subj,  subj)), 'tfr1', 'tfr2');
     else
-        save(fullfile(datadir, sprintf('sub-%03d_splitpow', subj)), 'f1', 'f2', 'datapst');
-        save(fullfile(datadir, sprintf('sub-%03d_splitpow_tfr', subj)), 'tfr1', 'tfr2');
+        save(fullfile(datadir, sprintf('sub-%03d/sub-%03d_splitpow', subj, subj)), 'f1', 'f2', 'datapst');
+        save(fullfile(datadir, sprintf('sub-%03d/sub-%03d_splitpow_tfr',subj, subj)), 'tfr1', 'tfr2');
     end
 end
 if doglm
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
+    load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat',subj, subj), 'gammaPow');
     
     if doresplocked
         parceldata_shift = data_resp;
@@ -510,17 +510,17 @@ if doglm
     betas.time   = erfdata.time;
     betas.dimord = 'chan_time';
     
-    savedir = '/project/3011085.02/results/analysis/';
+    savedir = '/project/3011085.02/analysis/';
     if doresplocked
-        save(fullfile([savedir, sprintf('sub-%03d_glm_parcelresp', subj)]), 'betas', 'tlck','tend');
+        save(fullfile([savedir, 'GLM/', sprintf('sub-%03d/sub-%03d_glm_parcelresp', subj, subj)]), 'betas', 'tlck','tend');
     else
-        save(fullfile([savedir, sprintf('sub-%03d_parcel_blstd', subj)]), 'baseline_std');
-        save(fullfile([savedir, sprintf('sub-%03d_glm_parcel', subj)]), 'betas', 'tlck');
+        save(fullfile([savedir, 'source/', sprintf('sub-%03d/sub-%03d_parcel_blstd', subj, subj)]), 'baseline_std');
+        save(fullfile([savedir, 'GLM/', sprintf('sub-%03d/sub-%03d_glm_parcel', subj, subj)]), 'betas', 'tlck');
     end
 end
 if dosplitpow_source
-    datadir = '/project/3011085.02/results/analysis/';
-    load(fullfile(datadir, sprintf('sub-%03d_splitpow_plcmb', subj)), 'datapst'); % take the trial indexes of sorted trials
+    datadir = '/project/3011085.02/analysis/freq/';
+    load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_splitpow_plcmb', subj, subj)), 'datapst'); % take the trial indexes of sorted trials
     
     load(fullfile(datadir, 'atlas_subparc374_8k.mat'))
     load(fullfile(subject.mridir,'preproc','headmodel.mat'));
@@ -571,8 +571,8 @@ if dosplitpow_source
     cfg.trials = numel(data_shift.trial)-100 + (1:100);
     tfr_low_2 = ft_freqanalysis(cfg, parceldata_shift); % high ERF amp
     
-    savedir = '/project/3011085.02/results/analysis/';
-    save(fullfile(savedir, sprintf('sub-%03d_splitpow_source', subj)), 'tfr_low_1','tfr_low_2','tfr_high_1', 'tfr_high_2')
+    savedir = '/project/3011085.02/analysis/source/';
+    save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_splitpow_source', subj, subj)), 'tfr_low_1','tfr_low_2','tfr_high_1', 'tfr_high_2')
 end
 
 if doparcel_erf
@@ -588,8 +588,8 @@ if doparcel_erf
     parceldata_shift.trial = parceldata_shift.trial(idx);
     parceldata_shift.trialinfo = parceldata_shift.trialinfo(idx);
     
-    savedir = '/project/3011085.02/results/analysis/';
-    save(fullfile(savedir, sprintf('sub-%03d_erfparc', subj)), 'parceldata_shift');
+    savedir = '/project/3011085.02/analysis/erf/';
+    save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_erfparc', subj, subj)), 'parceldata_shift');
     
 end
 
@@ -597,8 +597,8 @@ end
 if docorrpow_lcmv
     peakpicking;
     
-    datadir = '/project/3011085.02/results/analysis';
-    load(fullfile(datadir, sprintf('sub-%03d_lcmv',    subj)));
+    datadir = '/project/3011085.02/analysis/';
+    load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_lcmv',    subj, subj)));
     source_parc.avg = diag(1./noise)*source_parc.avg;
     
     ix1 = nearest(source_parc.time, peaks(subj,1));
@@ -645,9 +645,9 @@ if docorrpow_lcmv
     tlckpst = ft_timelockanalysis(tmpcfg, datapst);
     tlckpst.avg = signswap*tlckpst.avg;
     
-    load(fullfile(datadir, sprintf('sub-%03d_source',    subj)));
+    load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_source',   subj, subj)));
     if ~exist('freq_shift')
-        load(fullfile(datadir, sprintf('sub-%03d_freqshort',    subj)));
+        load(fullfile(datadir, 'freq/', sprintf('sub-%03d/sub-%03d_freqshort',  subj,  subj)));
     end
     [m, idx] = max(Tval);
     pow      = (abs(F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
@@ -656,7 +656,7 @@ if docorrpow_lcmv
     rho = corr(X', pow, 'type', 'spearman'); %MvE
     
     
-tmp = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/eyedata.mat', subj));
+tmp = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_eyedata.mat', subj, subj));
     % get gamma-ERF correlation, accounting for pupil diameter, without confounding eye position.
     cfg=[];
     cfg.vartrllength = 2;
@@ -707,14 +707,14 @@ tmp = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/eyedata.mat
     source.partialrho(indx,3) = partialrho3;
     source.pow(indx)    = Xpow(:);
     
-    datadir = '/project/3011085.02/results/analysis';
-    save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv_gamma', subj)), 'source', 'pow', 'X', 'tlckpst')%, 'pupild', 'distance');
+    datadir = '/project/3011085.02/analysis/corr/';
+    save(fullfile(datadir, sprintf('sub-%03d/sub-%03d_corrpowlcmv_gamma',subj,  subj)), 'source', 'pow', 'X', 'tlckpst')%, 'pupild', 'distance');
 end
 if docorrpow_lcmv_lowfreq
     peakpicking;
     
-    datadir = '/project/3011085.02/results/analysis';
-    load(fullfile(datadir, sprintf('sub-%03d_lcmv',    subj)));
+    datadir = '/project/3011085.02/analysis/';
+    load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_lcmv',  subj,  subj)));
     source_parc.avg = diag(1./noise)*source_parc.avg;
     
     ix1 = nearest(source_parc.time, peaks(subj,1));
@@ -760,9 +760,8 @@ if docorrpow_lcmv_lowfreq
     tlckpst = ft_timelockanalysis(tmpcfg, datapst);
     tlckpst.avg = signswap*tlckpst.avg;
     
-    datadir = '/project/3011085.02/results/analysis';
-    load(fullfile(datadir, sprintf('sub-%03d_source_low',    subj)));
-    load(fullfile(datadir, sprintf('sub-%03d_freqshort_low', subj)));
+    load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_source_low',  subj,  subj)));
+    load(fullfile(datadir, 'freq/', sprintf('sub-%03d/sub-%03d_freqshort_low', subj, subj)));
     [m, idx] = min(Tval);
     pow      = (abs(F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
     pow      = standardise(log10(pow(:)));
@@ -784,13 +783,13 @@ if docorrpow_lcmv_lowfreq
     source.pow(indx)    = Xpow(:);
     
     
-    datadir = '/project/3011085.02/results/analysis';
-    save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv_low', subj)), 'source', 'pow', 'X', 'tlckpst');
+    datadir = '/project/3011085.02/analysis/';
+    save(fullfile(datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_low', subj, subj)), 'source', 'pow', 'X', 'tlckpst');
 end
 if docorr_gamma_rt
-    load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj));
-    datadir = '/project/3011085.02/results/analysis';
-    load(fullfile(datadir, sprintf('sub-%03d_source',    subj)));
+    load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat',subj, subj));
+    datadir = '/project/3011085.02/analysis/';
+    load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_source',  subj,  subj)));
     
     pow      = (abs(F*transpose(freq_shift.fourierspctrm)).^2)*P;
     pow      = log10(pow);
@@ -801,7 +800,7 @@ if docorr_gamma_rt
     rho = corr(rt, pow', 'type', 'spearman'); %MvE
     rho=rho';
     
-    filename = sprintf('/project/3011085.02/results/analysis/sub-%03d_corr_3Dgamma_rt.mat', subj);
+    filename = sprintf('/project/3011085.02/analysis/corr/sub-%03d/sub-%03d_corr_3Dgamma_rt.mat', subj, subj);
     save(filename, 'rho')
 end
 if dostat_pow_erf
@@ -819,15 +818,16 @@ if dostat_pow_erf
     else
         load atlas_subparc374_8k.mat
         
-        cd /project/3011085.02/results/analysis
-        if whichFreq==1
-            d = dir('*corrpowlcmv_gamma.mat');
-        elseif whichFreq==2
-            d = dir('*corrpowlcmv_low.mat');
-        end
-        
-        for k = 1:32
-            load(d(k).name,'source');
+        datadir = '/project/3011085.02/analysis/';
+        erf_osc_datainfo;
+        k=1;
+        for subj = allsubs
+            if whichFreq==1
+                filename = fullfile([datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_gamma.mat', subj, subj)]);
+            elseif whichFreq==2
+                filename = fullfile([datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_low.mat', subj, subj)]);
+            end
+            load(filename,'source');
             if k==1
                 S=source;
                 S.rho = source.rho;
@@ -844,6 +844,7 @@ if dostat_pow_erf
                     S_eye.rho(:,k) = source.partialrho(:,3);
                 end
             end
+            k=k+1;
         end
         S.rho = S.rho';
         exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
@@ -892,10 +893,10 @@ if dostat_pow_erf
         
         
         if whichFreq==1;
-            filename = '/project/3011085.02/results/stat_peakpicking_gamma.mat';
+            filename = '/project/3011085.02/analysis/stat_peakpicking_gamma.mat';
             save(filename, 'stat', 'S', 'S_pupild', 'S_xy', 'stat_eye', 'stat_pupild', 'stat_xy');
         elseif whichFreq==2
-            filename = '/project/3011085.02/results/stat_peakpicking_lowfreq.mat';
+            filename = '/project/3011085.02/analysis/stat_peakpicking_lowfreq.mat';
             save(filename, 'stat','S');
         end
     end
@@ -903,16 +904,23 @@ end
 if dostat_erf_rt
     erf_osc_datainfo;
     load atlas_subparc374_8k
-    cd /project/3011085.02/results/analysis
-    d = dir('*corrpowlcmv_peakpicking_gamma.mat');
-    for k = 1:32
-        tmp = load(d(k).name,'X', 'pow');
+    
+    datadir = '/project/3011085.02/analysis/';
+    k=1;
+    
+   d = dir('*corrpowlcmv_peakpicking_gamma.mat');
+   
+   
+    for subj = allsubs
+        filename = fullfile([datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_peakpicking_gamma.mat', subj, subj)]);
+        tmp = load(filename,'X', 'pow');
         X{k}=tmp.X;
         pow{k}=tmp.pow;
+        k=k+1;
     end
     k=1;
     for subj=allsubs
-        tmp = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj));
+        tmp = load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat', subj,subj));
         rt{k} = tmp.rt;
         k=k+1;
     end
@@ -961,6 +969,6 @@ if dostat_erf_rt
     
     stat=ft_freqstatistics(cfgs,source, ref);
     
-    filename = '/project/3011085.02/results/stat_corr_peakpicking_rt.mat';
+    filename = '/project/3011085.02/analysis/stat_corr_peakpicking_rt.mat';
     save(filename, 'stat', 'source');
 end

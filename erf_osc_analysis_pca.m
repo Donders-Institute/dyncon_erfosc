@@ -25,7 +25,7 @@ if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-0%d/ses-meg01/cleandata.mat', subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/processed/subj-0%d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-0%d/ses-meg01/sub-%03d/cleandata.mat', subj,subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;

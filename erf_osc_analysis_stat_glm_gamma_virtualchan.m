@@ -12,13 +12,13 @@ ft_diary('on')
 erf_osc_datainfo;
 
 for subj=allsubs
-    tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_virtualchan_%s.mat', subj, erfoi));
+    tmp{subj} = load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_glm_gamma_virtualchan_%s.mat', subj, subj, erfoi));
     betas{subj} = tmp{subj}.betas;
 end
 clear tmp
 
 for subj=allsubs
-    tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/erf_virtualchan_%s.mat', subj, 'reversal'),'tlck');
+    tmp{subj} = load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_erf_virtualchan_%s.mat', subj, subj, 'reversal'),'tlck');
     tlck{subj} = ft_timelockanalysis([], tmp{subj}.tlck);
 end
 clear tmp
@@ -71,7 +71,7 @@ stat = ft_timelockstatistics(cfg, betas_GA, ref);
 stat.cfg = rmfield(stat.cfg, 'previous');
 
 % save
-filename = sprintf('/project/3011085.02/results/GLM/stat_glm_gamma_virtualchan_%s', erfoi);
+filename = sprintf('/project/3011085.02/analysis/stat_glm_gamma_virtualchan_%s', erfoi);
 save(fullfile([filename, '.mat']), 'stat');
 
 ft_diary('off')

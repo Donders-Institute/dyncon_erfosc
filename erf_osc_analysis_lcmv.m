@@ -26,11 +26,11 @@ ft_diary('on')
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subjm subj), 'dataClean');
     load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_peak', subj), 'peakFreq_gamma');
+    load(sprintf('/project/3011085.02/analysis/freq/pilot-%03d/sub-%03d_gamma_peak', subj, subj), 'peakFreq_gamma');
 else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
     load(fullfile([subjects(subj).mridir, 'preproc/headmodel.mat']));
     if strcmp(sourcemodel, '2d')
         load(fullfile([subjects(subj).mridir, 'preproc/sourcemodel2d.mat']));
@@ -147,9 +147,9 @@ cfg.method = 'ortho';
 ft_sourceplot(cfg,M1, mri);
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel', subj);
+    filename = sprintf('/project/3011085.02/analysis/freq/pilot-%03d/sub-%03d_gamma_virtual_channel', subj, subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel', subj);
+    filename = sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel', subj, subj);
 end
 save(fullfile([filename '.mat']), 'lcmvData', 'gammaFilter', 'gammaPow', 'sourceDiff', 'maxpowindx');
 ft_diary('off')

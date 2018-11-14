@@ -20,7 +20,7 @@ ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
-data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 
 data = data.dataClean;
 fs = data.fsample;
@@ -92,7 +92,7 @@ tl_planar      = ft_megplanar(cfg, tlck);
 
 tl_plcmb       = ft_combineplanar([], tl_planar);
 
-load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
+load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
 [val, idx] = sort(gammaPow, 'descend');
 qSize = round(length(gammaPow)/4);
 cfg=[];
@@ -110,7 +110,7 @@ q4 = ft_selectdata(cfg, tl_plcmb);
 
 %% save
 
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/timelock_%s', subj, erfoi);
+    filename = sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_timelock_%s', subj,subj, erfoi);
 
 save(fullfile([filename '.mat']), 'tlck', '-v7.3')
 ft_diary('off')

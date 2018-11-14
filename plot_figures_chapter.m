@@ -7,7 +7,7 @@
 %%%%%%%%%%%%
 %% Gamma Time-Frequency plot + Topography (Channel level)
 
-load /project/3011085.02/results/tfr_all_high_onset.mat
+load /project/3011085.02/analysis/tfr_all_high_onset.mat
 
 clear all
 erf_osc_datainfo;
@@ -46,16 +46,16 @@ ft_topoplotTFR(cfgp, d);
 %% Gamma power on 2D sourcemodel (which is used in correlation with ERF)
 
 erf_osc_datainfo;
-datadir = '/home/language/jansch/erfosc';
+datadir = '/project/3011085.02/analysis/source/';
 load cortex_inflated_shifted;
 
 k=1;
 for sub=allsubs
     if k==1;
-        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source',    sub)), 'source_shift', 'Tval');
+        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source',   sub, sub)), 'source_shift', 'Tval');
         source_shift = tmp{k}.source_shift;
     else
-        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source',    sub)), 'Tval','source_shift');
+        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source',  sub,  sub)), 'Tval','source_shift');
     end
     Tval(:,k) = tmp{k}.Tval;
     k=k+1;
@@ -87,11 +87,11 @@ view([-120 9])
 
 
 % include virtual channel positions
-datadir = '/home/language/jansch/erfosc';
+datadir = '/project/3011085.02/analysis/source/';
 k=1;
 for subj=allsubs;
-    tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source',    subj)));
-%     load(fullfile(datadir, sprintf('sub-%03d_freqshort',    subj)));
+    tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source', subj,   subj)));
+%     load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_freqshort',  subj,  subj)));
     [m, idx(k)] = max(tmp{k}.Tval);
     k=k+1;
 end
@@ -108,7 +108,7 @@ erf_osc_datainfo;
 
 k=1;
 for subj=allsubs
-tmp{k} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj));
+tmp{k} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow.mat', subj,subj));
 k=k+1;
 end
 
@@ -143,7 +143,7 @@ figure; iosr.statistics.boxPlot(peakFreq', 'showScatter', true, 'scatterMarker',
 % FIGURE 3 %
 %%%%%%%%%%%%
 %% low frequency TFR + topo
-load /project/3011085.02/results/tfr_all_low_onset.mat
+load /project/3011085.02/analysis/tfr_all_low_onset.mat
 
 clear all
 erf_osc_datainfo;
@@ -182,16 +182,16 @@ ft_topoplotTFR(cfgp, d);
 
 %% low frequency power on 2D sourcemodel
 erf_osc_datainfo;
-datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+datadir = '/project/3011085.02/analysis/source/';
 load cortex_inflated_shifted;
 
 k=1;
 for sub=allsubs
     if k==1;
-        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source_low',    sub)), 'source_shift', 'Tval');
+        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source_low',  sub,  sub)), 'source_shift', 'Tval');
         source_shift = tmp{k}.source_shift;
     else
-        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source_low',    sub)), 'Tval');
+        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source_low', sub,   sub)), 'Tval');
     end
     Tval(:,k) = tmp{k}.Tval;
     k=k+1;
@@ -221,10 +221,10 @@ view([-48 5])
 view([-120 9])
 
 % include virtual channel positions
- datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data';
+ datadir = '/project/3011085.02/analysis/source/';
 k=1;
 for subj=allsubs;
-    tmp{k} =     load(fullfile(datadir, sprintf('sub-%03d_source_low',    subj)));
+    tmp{k} =     load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source_low',  subj,  subj)));
     [m, idx(k)] = min(tmp{k}.Tval);
     k=k+1;
 end
@@ -241,7 +241,7 @@ erf_osc_datainfo;
 
 k=1;
 for subj=allsubs
-tmp{k} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow_low.mat', subj));
+tmp{k} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d/pow_low.mat', subj,subj));
 k=k+1;
 end
 
@@ -270,9 +270,7 @@ subj = 13;
 erf_osc_datainfo;
 subject = subjects(subj);
 
-[p,f,e]       = fileparts(subject.dataset);
-basedir       = strrep(p, 'raw', 'processed');
-filename_data = fullfile(basedir, 'cleandata.mat');
+filename_data = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj);
 load(filename_data);
 
 [data_onset, data_shift] = erfosc_getdata(dataClean, []);
@@ -289,8 +287,8 @@ tlck = ft_timelockanalysis(cfg, data_shift);
 % indx 221
 
 % identify parcel-of-interest
-loaddir = '/home/language/jansch/erfosc';
-load(fullfile(loaddir, sprintf('sub-%03d_lcmv', subj)), 'source_parc', 'noise');
+loaddir = '/project/3011085.02/analysis/scource/';
+load(fullfile(loaddir, sprintf('sub-%03d/sub-%03d_lcmv',subj, subj)), 'source_parc', 'noise');
 % I selected R_18_B05_04, indx 360
 
 dat1 = cellrowselect(data_shift.trial, 221);
@@ -313,9 +311,7 @@ subj = 13;
 erf_osc_datainfo;
 subject = subjects(subj);
 
-[p,f,e]       = fileparts(subject.dataset);
-basedir       = strrep(p, 'raw', 'processed');
-filename_data = fullfile(basedir, 'cleandata.mat');
+filename_data = sprintf('/project/3011085.03/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj);
 load(filename_data);
 
 [data_onset, data_shift] = erfosc_getdata(dataClean, []);
@@ -401,7 +397,7 @@ view([-120 2])
 % Figure 5 %
 %%%%%%%%%%%%
 %% Correlation Gamma ERF
-load('/project/3011085.02/results/stat_peakpicking_gamma.mat', 'stat','S');
+load('/project/3011085.02/analysis/stat_peakpicking_gamma.mat', 'stat','S');
 load atlas_subparc374_8k.mat
 load cortex_inflated_shifted; atlas.pos=ctx.pos;
 stat.brainordinate=atlas;
@@ -432,7 +428,7 @@ view([-120 2])
 x=find(stat.mask==1);
 y = mean(S.rho(:,x),2);
 
-load('/project/3011085.02/results/stat_peakpicking_gamma.mat', 'stat_eye','S_eye');
+load('/project/3011085.02/analysis/stat_peakpicking_gamma.mat', 'stat_eye','S_eye');
 x2=find(stat_eye.mask==1);
 y2 = mean(S_eye.rho(:,x),2);
 
@@ -447,7 +443,7 @@ figure; iosr.statistics.boxPlot(y2,'showScatter',false,'scatterMarker', '.')
 %%%%%%%%%%%%
 %% Correlation ERF-rt
 
-load('/project/3011085.02/results/stat_corr_peakpicking_rt.mat');
+load('/project/3011085.02/analysis/stat_corr_peakpicking_rt.mat');
 load atlas_subparc374_8k.mat
 load cortex_inflated_shifted; atlas.pos=ctx.pos;
 
@@ -497,7 +493,7 @@ cfg.channel                 = {'HLC0011','HLC0012','HLC0013', ...
                               'HLC0031','HLC0032','HLC0033'};
 k=1;
 for subj=allsubs
-tmp{k} = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/headmotion.mat', subj));
+tmp{k} = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_headmotion.mat',subj, subj));
 headpos{k} = ft_selectdata(cfg, tmp{k}.headmotion);
 k=k+1;
 end
@@ -531,10 +527,10 @@ histogram(coil1avg(:,3), 9, 'BinLimits', [min(coil1avg(:,3)), max(coil1avg(:,3))
 
 %% reviewer 1, comment 3
 erf_osc_datainfo;
-datadir = '/home/language/jansch/erfosc';
+datadir = '/project/3011085.02/analysis/source/';
 k=1;
 for subj=allsubs;
-    tmp{k} = load(fullfile(datadir, sprintf('sub-%03d_source',    subj)));
+    tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source',  subj,  subj)));
 %     load(fullfile(datadir, sprintf('sub-%03d_freqshort',    subj)));
     [m, idx(k)] = max(tmp{k}.Tval);
     k=k+1;
@@ -588,9 +584,9 @@ ft_plot_sens(grad,'coilshape','sphere')
 erf_osc_datainfo;
 k=1;
 for subj=allsubs
-trl{k} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/trialinfo.mat', subj));
+trl{k} = load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_trialinfo.mat', subj,subj));
 trl{k} = [trl{k}.trialinfo(:,4), (trl{k}.trialinfo(:,9)-trl{k}.trialinfo(:,8))/1200];
-rt{k} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj));
+rt{k} = load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat', subj,subj));
 rt{k} = rt{k}.rt;
 k=k+1;
 end
@@ -632,7 +628,7 @@ erf_osc_datainfo;
 % get power at maximum channel and peak frequency.
 k=1;
 for subj=allsubs
-tmp{k} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj));
+tmp{k} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow.mat', subj,subj));
 k=k+1;
 end
 
@@ -654,7 +650,7 @@ ratio_maxchan_GA = mean(ratio_maxchan);
 % get reaction times
 k=1;
 for subj=allsubs
-    load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj));
+    load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat', subj,subj));
     RT{k} = rt;
     clear rt;
     k=k+1;
@@ -677,7 +673,7 @@ age(badsubjects)=[]; % get rid of the bad subject
 erf_osc_datainfo;
 k=1;
 for subj=allsubs
-trl{k} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/trialinfo.mat', subj));
+trl{k} = load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_trialinfo.mat', subj,subj));
 k=k+1;
 end
 
@@ -694,17 +690,21 @@ u = mean(deleted_based_on_resp);
 
 
 load atlas_subparc374_8k.mat
-cd /project/3011085.02/scripts/erfosc/analysis_JM_data
-d = dir('*corrpowlcmv_gamma_alltrials.mat');
-for k = 1:32
-load(d(k).name,'source');
+erf_osc_datainfo;
+k=1;
+datadir = 'project/3011085.02/analysis/corr/';
+for subj=allsubs
+    filename = fullfile([datadir sprintf('sub-%03d/sub-%03d_corrpowlcmv_gamma_alltrials.mat', subj, subj)]);
+    load(filename, 'source');
 if k==1
 S=source;
 S.rho = source.rho;
 else
 S.rho(:,k)=source.rho;
 end
+k=k+1;
 end
+
 S.rho = S.rho';
 exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
 S.rho(:, exclude_label) = nan; %MvE
@@ -739,7 +739,7 @@ u = mean(mean(S.rho(:,stat.mask),2));
 erf_osc_datainfo;
 k=1;
 for subj=allsubs
-    load(sprintf('/project/3011085.02/scripts/erfosc/analysis_JM_data/sub-%03d_corr_3Dgamma_rt.mat', subj));
+    load(sprintf('/project/3011085.02/analysis/corr/sub-%03d/sub-%03d_corr_3Dgamma_rt.mat', subj,subj));
     r(:,k) = rho;
     k=k+1;
     clear rho

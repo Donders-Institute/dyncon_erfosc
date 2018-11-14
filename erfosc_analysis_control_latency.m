@@ -7,8 +7,8 @@ for k=1:32
 s = hanning(100)';
 % load gammaPow and reaction times
 
-    load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', allsubs(k)), 'rt');
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', allsubs(k)), 'gammaPow');
+    load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat', allsubs(k), allsubs(k)), 'rt');
+    load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/gamma_virtual_channel.mat', allsubs(k), allsubs(k)), 'gammaPow');
 
     g=gammaPow';
 
@@ -65,4 +65,4 @@ cfgs.parameter = 'trial';
 cfgs.clusteralpha = 0.05;
 stat=ft_timelockstatistics(cfgs, betas, ref);
 
-save('/project/3011085.02/results/stat_control_simulation.mat', 'stat')
+save('/project/3011085.02/analysis/stat_control_simulation.mat', 'stat')

@@ -24,13 +24,13 @@ ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
-load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'lcmvData');
-load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj), 'peakFreq_gamma');
+load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj), 'lcmvData');
+load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow.mat', subj, subj), 'peakFreq_gamma');
 
 data_lp = erf_osc_analysis_lcmv_orientation(subj, erfoi, 'reverse', 'lp'); % optimal dipole orientation is chosen based on [0 0.5] after stimulus-reversal.
 % data is timelocked to reversal or behavioral response, and low pass
 % filtered. 
-data = erf_osc_analysis_lcmv_orientation(subj, erfoi, 'reverse', 'no'); % no filtering/project/3011085.02/results/freq/sub-00$i/tzero/gamma_angle_all.mat
+data = erf_osc_analysis_lcmv_orientation(subj, erfoi, 'reverse', 'no'); % no filtering/project/3011085.02/analysis/freq/sub-00$i/tzero/gamma_angle_all.mat
 
 fs=data.fsample;
 %% ITC
@@ -190,7 +190,7 @@ if ~ischar(freqoistr)
         freqoistr = num2str(freqoistr);
     end
 end
-filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tneg/gamma_angle_%s', subj, freqoistr);
+filename = sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_angle_%s', subj, subj, freqoistr);
 
 save(fullfile([filename '.mat']), 'angle_rad', 'inputTime','s', 'srand', 'allampstat', 'allanglestat', 'allampstatrand', 'allanglestatrand', 'peakFreq_gamma', 'binAngles');
 

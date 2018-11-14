@@ -31,9 +31,9 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 end
 
 data = data.dataClean;
@@ -132,9 +132,9 @@ data_dss = ft_rejectcomponent(cfg, comp_orig, data);
 %% Save
 if doSave
     if isPilot
-        filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/dss', subj);
+        filename = sprintf('/project/3011085.02/analysis/erf/pilot-%03d/sub-%03d_dss', subj, subj);
     else
-        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/dss', subj);
+        filename = sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_dss', subj, subj);
     end
     save(fullfile([filename '.mat']), 'data_dss', 'nComp_keep', '-v7.3');
 %     ft_diary('off')

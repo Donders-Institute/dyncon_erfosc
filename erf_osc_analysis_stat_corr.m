@@ -24,16 +24,16 @@ erf_osc_datainfo;
 
 for subj=allsubs
     if ~compareQuartile
-        tmp{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/corr_amp_tfr.mat', subj));
+        tmp{subj} = load(sprintf('/project/3011085.02/analysis/corr/sub-%03d/sub-%03d_corr_amp_tfr.mat', subj, subj));
         z_act{subj} = tmp{subj}.z_act;
         z_bl{subj} = tmp{subj}.z_bl;
     else
         if strcmp(correlation, 'amp_tfr')
-            tmp{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/corr_amp_tfr_quartile.mat', subj));
+            tmp{subj} = load(sprintf('/project/3011085.02/analysis/corr/sub-%03d/sub-%03d_corr_amp_tfr_quartile.mat', subj, subj));
             q1{subj} = tmp{subj}.tfa_q1;
             q4{subj} = tmp{subj}.tfa_q4;
         elseif strcmp(correlation, 'gamma_erf_virtualchan')
-            tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/erf_virtualchan_%s.mat', subj, erfoi));
+            tmp{subj} = load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_erf_virtualchan_%s.mat', subj, subj, erfoi));
             q1{subj} = tmp{subj}.tl_q1;
             q4{subj} = tmp{subj}.tl_q4;
             tlck{subj} = ft_timelockanalysis([], tmp{subj}.tlck);
@@ -146,10 +146,10 @@ end
 
 %% save
 if ~compareQuartile
-    filename = '/project/3011085.02/results/stat_corr_amp_tfr';
+    filename = '/project/3011085.02/analysis/stat_corr_amp_tfr';
     save(fullfile([filename '.mat']), 'stat', 'diffZ_GA', 'z_bl_GA', 'z_act_GA', '-v7.3');
 else
-    filename = '/project/3011085.02/results/stat_corr_amp_tfr_quartile';
+    filename = '/project/3011085.02/analysis/stat_corr_amp_tfr_quartile';
     save(fullfile([filename '.mat']), 'stat', '-v7.3');
 end
 ft_diary('off')

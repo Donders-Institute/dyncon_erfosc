@@ -31,9 +31,9 @@ ft_diary('on')
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj,subj), 'dataClean');
 else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 end
 data=data.dataClean;
 fs = data.fsample;
@@ -71,7 +71,7 @@ cfg=[];
 % cfg.trl = [data.trialinfo(:,3), data.trialinfo(:,4) data.trialinfo(:,3)-data.trialinfo(:,4)];
 % the first column represents the start of the baseline period. Its sample
 % number is inaccurate w.r.t. the time axis in the data (possibly because
-% of previous use of ft_selectdata?). This results in NaNs in the data. 
+% of previous use of ft_selectdata?). This analysis in NaNs in the data. 
 % Thus, don't use the samplenumber provided by trialinfo, but calculate on 
 % the spot based on time axis.
 cfg.trl = [data.trialinfo(:,4)+blonset*fs, data.trialinfo(:,4)];
@@ -87,7 +87,7 @@ cfg         = [];
 cfg.length  = 0.5; % 0.5 second windows
 cfg.overlap = 0.5; % half overlap
 bl = ft_redefinetrial(cfg, dataBl); % PROBLEM!!
-% bl.trial contains NaNs. in ft_freqanalysis, this results in the whole
+% bl.trial contains NaNs. in ft_freqanalysis, this analysis in the whole
 % array becoming NaN. specifically in ft_preproc_polyremoval of
 % ft_specest_mtmfft
 act = ft_redefinetrial(cfg, dataAct);
@@ -132,9 +132,9 @@ lowfreqRatio    = ft_selectdata(cfg, powRatio);
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/pow', subj);
+    filename = sprintf('/project/3011085.02/analysis/freq/pilot-%03d/sub-%03d_pow', subj, subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/pow', subj);
+    filename = sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow', subj, subj);
 end
 save(fullfile([filename '.mat']), 'powRatio', 'peakFreq_gamma', 'gamRatio', 'maxP_gam');
 save(fullfile([filename '_low.mat']), 'powRatio', 'minP_low', 'peakFreq_low', 'lowfreqRatio');

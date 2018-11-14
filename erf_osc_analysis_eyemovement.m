@@ -1,7 +1,7 @@
 function erf_osc_analysis_eyemovement(subj)
 
 erf_osc_datainfo; % load subject specific info.
-load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 cfg=[];
 cfg.dataset = subjects(subj).dataset;%sprintf('/project/3011085.02/raw/sub-%03d/ses-meg01/sub11ses01_3011085.02_20170109_01.ds', subj);%subjects(subj).dataset;
 cfg.logfile = load(sprintf('/project/3011085.02/raw/sub-%03d/ses-beh01/sub%02dses01.mat', subj, subj));
@@ -25,7 +25,7 @@ cfg=[];
 cfg.channel = {'UADC005', 'UADC006'};
 data_eye = ft_selectdata(cfg, data);
 data_eye = rmfield(data_eye, 'cfg');
-save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/eyedata.mat', subj), 'data_eye', 'offset', 'stimulus');
+save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_eyedata.mat', subj, subj), 'data_eye', 'offset', 'stimulus');
 
 %% select trials and redefine time axis
 
@@ -68,7 +68,7 @@ X = ft_selectdata(cfg, dataShift_eye);
 cfg.channel = 'UADC006';
 Y = ft_selectdata(cfg, dataShift_eye);
 
-save(sprintf('/project/3011085.02/results/eye/sub%03d.mat', subj), 'X', 'Y');
+save(sprintf('/project/3011085.02/analysis/eye/sub%03d.mat', subj), 'X', 'Y');
 
 
 

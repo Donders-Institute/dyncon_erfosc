@@ -25,8 +25,8 @@ erf_osc_datainfo; % load subject specific info.
 
 cfg=[];
 [~, name, ext] = fileparts(subjects(subj).dataset);
-cfg.dataset = fullfile(['/project/3011085.03/erfosc/ses-meg01/', name, ext]);
-cfg.logfile = load(sprintf('/project/3011085.03/erfosc/ses-beh01/sub%02dses01.mat', subj));
+cfg.dataset = fullfile(['/project/3011085.02/erfosc/ses-meg01/', name, ext]);
+cfg.logfile = load(sprintf('/project/3011085.02/erfosc/ses-beh01/sub%02dses01.mat', subj));
 cfg.datafile = cfg.dataset;
 cfg.headerfile = cfg.dataset;
 cfg.trialfun = 'erf_osc_mytrialfun';
@@ -128,7 +128,7 @@ data = ft_appenddata([], data, tmp1, tmp2);
 
 
 %% load clean data
-load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subjk, subj));
 [data_onset, ~, ~] = erfosc_getdata(dataClean, []);
 
 % get the correct trials
@@ -149,4 +149,4 @@ data = rmfield(data,'cfg');
 data_shift = rmfield(data_shift, 'cfg');
 
 
-save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/eyedata.mat', subj),'data', 'data_shift');
+save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_eyedata.mat', subj, subj),'data', 'data_shift');

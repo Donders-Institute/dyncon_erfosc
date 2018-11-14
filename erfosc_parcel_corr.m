@@ -1,12 +1,12 @@
 clear
 erf_osc_datainfo;
-datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
+datadir = '/project/3011085.02/analysis/';
 
 k=1;
 for subj=allsubs
-    tmp{k} = load(fullfile([datadir, sprintf('sub-%03d_parcel_tlck', subj)]), 'erfdata');
+    tmp{k} = load(fullfile([datadir, 'erf/', sprintf('sub-%03d/sub-%03d_parcel_tlck', subj, subj)]), 'erfdata');
     tlck{k} = tmp{k}.erfdata;
-    tmp2{k} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
+    tmp2{k} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj), 'gammaPow');
     gammaPow{k} = tmp2{k}.gammaPow;
     k=k+1;
 end

@@ -9,7 +9,7 @@ ft_diary('on')
 erf_osc_datainfo;
 
 for subj=allsubs
-        tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock_%s.mat', subj, erfoi), 'q1', 'q4');
+        tmp{subj} = load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_timelock_%s.mat', subj,subj, erfoi), 'q1', 'q4');
         q1{subj} = tmp{subj}.q1;
         q4{subj} = tmp{subj}.q4;
 end
@@ -53,7 +53,7 @@ stat.cfg = rmfield(stat.cfg, 'previous');
 
 
 % save
-filename = sprintf('/project/3011085.02/results/stat_erf_%s', erfoi);
+filename = sprintf('/project/3011085.02/analysis/stat_erf_%s', erfoi);
 save(fullfile([filename, '.mat']), 'stat', '-v7.3');
 
 ft_diary('off')

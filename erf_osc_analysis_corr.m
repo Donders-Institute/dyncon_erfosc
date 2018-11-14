@@ -48,14 +48,14 @@ erf_osc_datainfo;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if strcmp(correlation, 'gamma_rt');
     for subj=allsubs
-        load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj), 'peakFreq_gamma');
-        gammaPow{subj} = load(sprintf('/project/3011085.02/scripts/erfosc/analysis_JM_data/sub-%03d_corrpowlcmv_mvepeaks3.mat', subj), 'pow'); % load gamma power
+        load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow.mat', subj, subj), 'peakFreq_gamma');
+        gammaPow{subj} = load(sprintf('/project/3011085.02/analysis/corr/sub-%03d/sub-%03d_corrpowlcmv_gamma.mat', subj, subj), 'pow'); % load gamma power
         gammaPow{subj} = gammaPow{subj}.pow';
-        rt{subj} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load reaction time power
+        rt{subj} = load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat', subj, ssubj)); % load reaction time power
         rt{subj} = rt{subj}.rt;
         
         
-        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj));
         data = dataClean;
         
         idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
@@ -152,13 +152,13 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
     %%%%%%%%%%%%%%%%%%%%%%
     %% load data
     if isPilot
-        load(sprintf('/project/3011085.02/results/erf/pilot-%03d/dss.mat', subj), 'data_dss');
+        load(sprintf('/project/3011085.02/analysis/erf/pilot-%03d/sub-%03d_dss.mat', subj, subj), 'data_dss');
     else
         if strcmp(zeropoint, 'reversal')
             if doDSS
                 [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
             else
-                load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+                load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj));
             end
         else
             if doDSS
@@ -168,10 +168,10 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
             end
         end
         if strcmp(correlation, 'amp_tfr')
-            load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, zeropoint), 'tfa');
-            load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, 'onset'), 'baseline');
+            load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s_%s.mat', subj, subj, freqRange, zeropoint), 'tfa');
+            load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s_%s.mat', subj, subj, freqRange, 'onset'), 'baseline');
         elseif strcmp(correlation, 'gamma_erf')
-            load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
+            load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj), 'gammaPow');
         end
     end
     %% if no data_dss cleaning is done beforehand, do this
@@ -383,22 +383,22 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
         
     end
 elseif strcmp(correlation, 'gamma_erf_virtualchan')
-        load(sprintf('/project/3011085.02/results/freq/sub-%03d/allori/gamma_virtual_channel.mat', subj), 'gammaPow');
+        load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/allori/gamma_virtual_channel.mat', subj), 'gammaPow');
         lcmvData = erf_osc_analysis_lcmv_orientation(subj, zeropoint); 
 
 end
     %% save
     if strcmp(correlation, 'gamma_rt');
-        filename = '/project/3011085.02/results/stat_partcorr_gamma_rt';
+        filename = '/project/3011085.02/analysis/stat_partcorr_gamma_rt';
         save(fullfile([filename '.mat']), 'r', 'partialr');
     elseif strcmp(correlation, 'amp_tfr') && ~compareQuartile
-        filename = sprintf('/project/3011085.02/results/freq/sub-%03d/corr_amp_tfr', subj);
+        filename = sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_corr_amp_tfr', subj, subj);
         save(fullfile([filename '.mat']), 'z_act', 'z_bl', 'r_act', 'r_bl', 'lat', 'p1amp', 'maxchanid','p1chans_id');
     elseif strcmp(correlation, 'amp_tfr') && compareQuartile
-        filename = sprintf('/project/3011085.02/results/freq/sub-%03d/corr_amp_tfr_quartile', subj);
+        filename = sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_corr_amp_tfr_quartile', subj, subj);
         save(fullfile([filename '.mat']), 'tfa_q1', 'tfa_q4', 'lat', 'p1amp', 'maxchanid','p1chans_id', 'val', 'idx', 'q1', 'q4');
     elseif strcmp(correlation, 'gamma_erf') && compareQuartile
-        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/corr_gamma_erf_quartile_%s', subj, zeropoint);
+        filename = sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_corr_gamma_erf_quartile_%s', subj, subj, zeropoint);
         save(fullfile([filename '.mat']), 'tlck_q1', 'tlck_q4', 'gammaPow', 'val', 'idx', 'q1', 'q4');
     end
 ft_diary('off')

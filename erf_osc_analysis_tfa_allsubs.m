@@ -1,5 +1,5 @@
 function erf_osc_analysis_tfa_allsubs(freqRange, zeropoint)
-% Loads results from erf_osc_analysis_tfa, makes a relative contrast with
+% Loads analysis from erf_osc_analysis_tfa, makes a relative contrast with
 % baseline and averages over subjects.
 %
 % INPUT
@@ -19,9 +19,9 @@ if ~exist(zeropoint); zeropoint = 'onset'; end
 erf_osc_datainfo;
 k=1;
 for subj=allsubs
-    tmp = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s', subj, freqRange, zeropoint), 'tfa');
+    tmp = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s_%s', subj, subj, freqRange, zeropoint), 'tfa');
     tfa{k} = tmp.tfa;
-    tmp = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s', subj, freqRange, 'onset'), 'baseline');
+    tmp = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s_%s', subj, subj, freqRange, 'onset'), 'baseline');
     baseline{k} = tmp.baseline;
     k=k+1;
 end
@@ -35,7 +35,7 @@ cfg=[];
 cfg.appenddim = 'rpt';
 d = ft_appendfreq(cfg, tfa{:});
 
-save(sprintf('/project/3011085.02/results/tfr_all_%s_%s.mat', freqRange, zeropoint), 'd', '-v7.3');
+save(sprintf('/project/3011085.02/analysis/tfr_all_%s_%s.mat', freqRange, zeropoint), 'd', '-v7.3');
 
 
 

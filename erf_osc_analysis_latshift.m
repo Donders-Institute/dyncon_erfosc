@@ -5,8 +5,8 @@
 % by two?). find the maxima of the convolved signal and correlate this with
 % the mean reaction time per bin.
 for subj=[1:9 11:15]
-load(sprintf('/project/3011085.02/scripts/erfosc/analysis_JM_data/sub-%03d_erfparc.mat', subj))
-load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj));
+load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_erfparc.mat', subj,subj))
+load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat', subj, subj));
 
 fs = parceldata_shift.fsample;
 
@@ -180,7 +180,7 @@ S_perm.pval(setdiff(1:374, exclude_label)) = pval_perm;
 % ft_sourceplot(cfgp, S);
 
 
-filename = sprintf('/project/3011085.02/scripts/erfosc/analysis_JM_data/sub-%03d_latshift.mat', subj);
+filename = sprintf('/project/3011085.02/analysis/latency/sub-%03d/sub-%03d_latshift.mat', subj,subj);
 save(filename, 'S', 'rtbin', 'S_perm');
 keep subj
 end

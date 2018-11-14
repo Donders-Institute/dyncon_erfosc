@@ -1,18 +1,18 @@
 
 erf_osc_datainfo;
-cd /project/3011085.02/scripts/erfosc/analysis_JM_data
-d = dir('*corrpowlcmv_mvepeaks3.mat');
+cd /project/3011085.02/analysis/
 
 k=1;
 for subj = allsubs
-    tmp = load(d(k).name,'pow', 'X');% load gamma power and ERF amplitude for single trials
+    filename = fullfile([datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_gamma.mat', subj, subj)]);
+    tmp = load(filename,'pow', 'X');% load gamma power and ERF amplitude for single trials
     X{k} = tmp.X;
     for m = 1:size(X{k},1)
         [~,~,rnkX{k}(m,:)] = unique(X{k}(m,:)); % rank transform ERF amplitude
     end
     pow{k} = tmp.pow;
     [~,~,rnkpow{k}] = unique(pow{k}); % rank transform gamma power
-    tmp = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load reaction times
+    tmp = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/sub-%03d_rt.mat', subj, subj)); % load reaction times
     rt{k} = tmp.rt;
     [~,~,rnkrt{k}] = unique(rt{k}); % rank transform RT
     k=k+1;

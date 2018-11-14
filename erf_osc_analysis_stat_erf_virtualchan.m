@@ -14,9 +14,9 @@ erf_osc_datainfo;
 cfg=[];
 cfg.keeptrials = 'yes';
 for subj=allsubs
-    tmp1{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/erf_virtualchan_%s.mat', subj, 'reversal'),'tlck');
+    tmp1{subj} = load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_erf_virtualchan_%s.mat', subj, subj, 'reversal'),'tlck');
     tlck{subj} = ft_timelockanalysis(cfg, tmp1{subj}.tlck);
-	tmp2{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj),'gammaPow'); % load gamma power
+	tmp2{subj} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj),'gammaPow'); % load gamma power
     g{subj} = tmp2{subj}.gammaPow;
 end
 clear tmp1 tmp2
@@ -85,7 +85,7 @@ stat = ft_timelockstatistics(cfg, q1_GA, q4_GA);
 stat.cfg = rmfield(stat.cfg, 'previous');
 
 % save
-filename = sprintf('/project/3011085.02/results/stat_erf_virtualchan_%s', erfoi);
+filename = sprintf('/project/3011085.02/analysis/stat_erf_virtualchan_%s', erfoi);
 save(fullfile([filename, '.mat']), 'stat');
 
 ft_diary('off')

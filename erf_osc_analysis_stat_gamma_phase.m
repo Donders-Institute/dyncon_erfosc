@@ -7,7 +7,7 @@ if ~ischar(option)
     option=num2str(option);
 end
 for subj=allsubs
-tmp{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_angle_%s.mat', subj, option));
+tmp{subj} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_angle_%s.mat', subj, subj, option));
 end
 k=1;
 for subj=allsubs

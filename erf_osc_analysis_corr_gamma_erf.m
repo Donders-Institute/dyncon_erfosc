@@ -4,7 +4,7 @@ erfoi='reversal';
 
 for subj=allsubs
 
-g{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/allori/gamma_virtual_channel.mat', subj), 'gammaPow');
+g{subj} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj), 'gammaPow');
 g{subj} = g{subj}.gammaPow;
 data{subj} = erf_osc_analysis_lcmv_orientation(subj, erfoi); 
 end

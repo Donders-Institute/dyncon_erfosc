@@ -4,8 +4,7 @@ if ~exist('dosplitpow_source', 'var'), dosplitpow_source = false; end
 if ~exist('doresplocked', 'var'), doresplocked = false; end
 
 ft_diary('on')
-datadir = '/project/3011085.02/scripts/erfosc/analysis_JM_data/';
-savedir = '/project/3011085.02/results/';
+datadir = '/project/3011085.02/analysis/';
 
 cfgs=[];
 cfgs.statistic        = 'ft_statfun_depsamplesT';
@@ -26,11 +25,11 @@ if doglm_parc
     k = 1;
     for subj = allsubs
         if doresplocked
-            tmp{k} = load(fullfile([datadir, sprintf('sub-%03d_glm_parcelresp.mat', subj)]));
+            tmp{k} = load(fullfile([datadir, 'GLM/', sprintf('sub-%03d/sub-%03d_glm_parcelresp.mat', subj,subj)]));
         else
-            tmp{k} = load(fullfile([datadir, sprintf('sub-%03d_glm_parcel.mat', subj)]));
+            tmp{k} = load(fullfile([datadir, 'GLM/', sprintf('sub-%03d/sub-%03d_glm_parcel.mat', subj,subj)]));
         end
-    tmp2{k} = load(fullfile([datadir, sprintf('sub-%03d_parcel_blstd.mat', subj)])); %baseline correction not needed; was already done before GLM.
+    tmp2{k} = load(fullfile([datadir,'erf/', sprintf('sub-%03d/sub-%03d_parcel_blstd.mat',subj, subj)])); %baseline correction not needed; was already done before GLM.
     tmp3{k} = tmp2{k}.baseline_std;
     k=k+1;
     end
@@ -94,19 +93,19 @@ if doglm_parc
     stat = ft_timelockstatistics(cfgs, betas_align, ref);
     
     if doresplocked
-        save(fullfile([savedir, 'stat_glm_parcelresp.mat']), 'stat', 'tlck_all', 'betas_all', 'betas_align');
+        save(fullfile([datadir, 'stat_glm_parcelresp.mat']), 'stat', 'tlck_all', 'betas_all', 'betas_align');
     else
-        save(fullfile([savedir, 'stat_glm_parcel.mat']), 'stat', 'tlck_all', 'betas_all', 'betas_align', 'tlck_norm', 'betas_all_norm', 'betas_align_norm', 'mu_erf', 'mu_betas_all', 'mu_betas_align');
+        save(fullfile([datadir, 'stat_glm_parcel.mat']), 'stat', 'tlck_all', 'betas_all', 'betas_align', 'tlck_norm', 'betas_all_norm', 'betas_align_norm', 'mu_erf', 'mu_betas_all', 'mu_betas_align');
     end
     ft_diary('off')
     
 elseif dosplitpow_source
     erf_osc_datainfo;
     for subj=allsubs
-        tmp1 = load(fullfile([datadir, sprintf('sub-%03d_splitpow_source_low.mat', subj)]), 'tfr_1', 'tfr_2');
+        tmp1 = load(fullfile([datadir, 'source/', sprintf('sub-%03d/sub-%03d_splitpow_source_low.mat', subj,subj)]), 'tfr_1', 'tfr_2');
         tfrl_1{subj} = tmp1.tfr_1;
         tfrl_2{subj} = tmp1.tfr_2;
-        tmp2 = load(fullfile([datadir, sprintf('/16 Hz smoothing/sub-%03d_splitpow_source_high.mat', subj)]), 'tfr_1', 'tfr_2');
+        tmp2 = load(fullfile([datadir, 'source/', sprintf('sub-%03d_splitpow_source_high.mat',subj, subj)]), 'tfr_1', 'tfr_2');
         tfrh_1{subj} = tmp2.tfr_1;
         tfrh_2{subj} = tmp2.tfr_2;
     end
@@ -127,5 +126,5 @@ elseif dosplitpow_source
     stat_l = ft_freqstatistics(cfgs, TFRl_2, TFRl_1);
     stat_h = ft_freqstatistics(cfgs, TFRh_2, TFRh_1);
     
-    save(fullfile([savedir, 'stat_splitpow_source']), 'stat_l', 'stat_h');
+    save(fullfile([datadir, 'stat_splitpow_source']), 'stat_l', 'stat_h');
 end

@@ -34,9 +34,9 @@ ft_diary('on')
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 end
 data = data.dataClean;
 % select only shift trials, with valid response
@@ -129,9 +129,9 @@ end
 %% save
 
 if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/tfa_%s_%s', subj, freqRange, zeropoint);
+    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/sub-%03d_tfa_%s_%s', subj, subj, freqRange, zeropoint);
 else
-    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s', subj, freqRange, zeropoint);
+    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/sub-%03d_tfa_%s_%s', subj, subj, freqRange, zeropoint);
 end
 if strcmp(zeropoint, 'onset')
     save(fullfile([filename '.mat']), 'tfa', 'baseline');
