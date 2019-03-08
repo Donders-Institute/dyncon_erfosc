@@ -38,6 +38,7 @@ if ~exist('doglm', 'var'), doglm = false; end
 if ~exist('dosplitpow_source', 'var'), dosplitpow_source = false; end
 if ~exist('doparcel_erf', 'var'), doparcel_erf = false; end
 if ~exist('doresplocked', 'var'), doresplocked = false; end
+if ~exist('dobdssp', 'var'), dobdssp = false; end
 
 if doparcel_erf, dolcmv_parc = true; end
 if dodics_gamma, dofreq  = true; end
@@ -53,7 +54,8 @@ if dosplitpow_lcmv, getdata = true; end
 if docorrpow_lcmv, getdata = true; end
 if doglm,     getdata = true; dolcmv_parc = true; end
 if dosplitpow_source, getdata = true; end
-
+if dobdssp, getdata = true; end
+  
 % this chunk creates 2 data structures [-0.75 0.5]
 if getdata
     if ~exist('undocomp','var')
@@ -644,4 +646,135 @@ if docorrpow_lcmv
   
   datadir = '/home/language/jansch/erfosc';
   save(fullfile(datadir, sprintf('sub-%03d_corrpowlcmv', subj)), 'source', 'pow', 'X', 'tlckpst');
+end
+
+if dobdssp
+  load(fullfile(subject.mridir,'preproc','headmodel.mat'));
+  load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
+  load('atlas_subparc374_8k.mat');
+  
+  cfg         = [];
+  cfg.latency = [-0.75 1-1./data_onset.fsample];
+  data_onset  = ft_selectdata(cfg, data_onset);
+  
+  
+  if ~isfield(sourcemodel, 'leadfield')
+    cfg           = [];
+    cfg.headmodel = ft_convert_units(headmodel, 'm');
+    cfg.grid      = ft_convert_units(sourcemodel, 'm');
+    cfg.grad      = ft_convert_units(data_onset.grad, 'm');
+    cfg.channel   = data_onset.label;
+    cfg.singleshell.batchsize = 2000;
+    sourcemodel   = ft_prepare_leadfield(cfg);
+  end
+  
+  indx = match_str(atlas.parcellationlabel,{'R_19_B05_07'});%;'R_18_B05_02';'R_18_B05_03';'R_18_B05_04'});
+  p_indx = ismember(atlas.parcellation,indx);
+  
+  s = sourcemodel;
+  outside = find(~p_indx);
+  for k = outside(:)'
+    s.leadfield{k} = [];
+  end
+  s.inside = p_indx;
+  
+  cfg = [];
+  cfg.grid = s;
+  cfg.dssp.n_space = min(sum(p_indx),50);
+  cfg.dssp.n_intersect = 0.7;
+  cfg.dssp.n_in = cfg.dssp.n_space;
+  cfg.dssp.n_out = 100;
+  data19 = ft_denoise_dssp(cfg, data_onset);
+  
+  indx = match_str(atlas.parcellationlabel,atlas.parcellationlabel(contains(atlas.parcellationlabel,'R_17')));%;'R_18_B05_02';'R_18_B05_03';'R_18_B05_04'});
+  p_indx = ismember(atlas.parcellation,indx);
+  
+  s = sourcemodel;
+  outside = find(~p_indx);
+  for k = outside(:)'
+    s.leadfield{k} = [];
+  end
+  s.inside = p_indx;
+  
+  cfg = [];
+  cfg.grid = s;
+  cfg.dssp.n_space = 'interactive';%min(sum(p_indx),50);
+  cfg.dssp.n_intersect = 'interactive';%0.7;
+  cfg.dssp.n_in = 'interactive';%cfg.dssp.n_space;
+  cfg.dssp.n_out = 'interactive';%100;
+  data17 = ft_denoise_dssp(cfg, data_onset);
+  
+  cfg = [];
+  cfg.vartrllength = 2;
+  cfg.preproc.demean = 'yes';
+  cfg.preproc.baselinewindow = [-0.1 0];
+  cfg.covariance = 'yes';
+  cfg.removemean = 'yes';
+  tlck   = ft_timelockanalysis(cfg, data_onset);
+  tlck19 = ft_timelockanalysis(cfg, data19);
+  tlck17 = ft_timelockanalysis(cfg, data17);
+  
+  s = sourcemodel;
+  cfg = [];
+  cfg.method = 'lcmv';
+  cfg.headmodel = headmodel;
+  cfg.grid      = s;
+  cfg.keepleadfield = 'yes';
+  cfg.lcmv.keepfilter = 'yes';
+  cfg.lcmv.fixedori   = 'yes';
+  cfg.lcmv.lambda     = '20%';
+  %cfg.lcmv.weightnorm = 'unitnoisegain'; % this confuses me in terms of the
+  %unit-gain inspection when keeping the leadfields: it's also just a scaling
+  cfg.lcmv.keepleadfield = 'yes';
+  cfg.lcmv.keepori = 'yes';
+  source   = ft_sourceanalysis(cfg, tlck);
+  source19 = ft_sourceanalysis(cfg, tlck19);
+  source17 = ft_sourceanalysis(cfg, tlck17);
+  
+  cfg = [];
+  cfg.latency = [-0.5 -1./600];
+  datapre = ft_selectdata(cfg, data_onset);
+  data19pre = ft_selectdata(cfg, data19);
+  data17pre = ft_selectdata(cfg, data17);
+  cfg.latency = [0.25 0.75-1./600];
+  datapst = ft_selectdata(cfg ,data_onset);
+  data19pst = ft_selectdata(cfg, data19);
+  data17pst = ft_selectdata(cfg, data17);
+  
+  F   = zeros(size(source.pos,1), numel(data19.label));
+  F19 = zeros(size(source19.pos,1), numel(data19.label));
+  F17 = zeros(size(source17.pos,1), numel(data19.label));
+  F(source.inside,:) = cat(1, source.avg.filter{:});
+  F19(source19.inside,:) = cat(1, source19.avg.filter{:});
+  F17(source17.inside,:) = cat(1, source17.avg.filter{:});
+  
+  cfg = [];
+  cfg.method = 'mtmfft';
+  %cfg.foilim = [30 100];
+  %cfg.pad    = 8;
+  %cfg.tapsmofrq = 16;
+  cfg.taper = 'hanning';
+  cfg.output = 'pow';
+  fpre = ft_freqanalysis(cfg, datapre);
+  fpst = ft_freqanalysis(cfg, datapst);
+  f19pre = ft_freqanalysis(cfg, data19pre);
+  f19pst = ft_freqanalysis(cfg, data19pst);
+  f17pre = ft_freqanalysis(cfg, data17pre);
+  f17pst = ft_freqanalysis(cfg, data17pst);
+  
+  f1pre = ft_checkdata(f1pre,'cmbrepresentation','fullfast');
+  f1pst = ft_checkdata(f1pst,'cmbrepresentation','fullfast');
+  f2pre = ft_checkdata(f2pre,'cmbrepresentation','fullfast');
+  f2pst = ft_checkdata(f2pst,'cmbrepresentation','fullfast');
+  
+  for k = 1:numel(f1pre.freq)
+    pow1pre(:,k) = abs(sum(F1.*(F1*f1pre.crsspctrm(:,:,k)),2));
+    pow1pst(:,k) = abs(sum(F1.*(F1*f1pst.crsspctrm(:,:,k)),2));
+    pow2pre(:,k) = abs(sum(F2.*(F2*f2pre.crsspctrm(:,:,k)),2));
+    pow2pst(:,k) = abs(sum(F2.*(F2*f2pst.crsspctrm(:,:,k)),2));
+  end
+  
+  
+  
+  
 end
