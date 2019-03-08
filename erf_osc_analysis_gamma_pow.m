@@ -21,9 +21,9 @@ ft_diary('on')
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 end
 data=data.dataClean;
 fs = data.fsample;
@@ -115,9 +115,9 @@ gamRatio        = gamRatio.powspctrm;
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/pow', subj);
+    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/sub-%03d_pow', subj, subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/pow', subj);
+    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/sub-%03d_pow', subj, subj);
 end
 save(fullfile([filename '.mat']), 'powRatio', 'gamRatio', 'peakFreq_gamma');
 ft_diary('off')

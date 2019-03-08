@@ -10,9 +10,11 @@ function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact, visDegOffF
 %
 % use:
 % subj, specify subject number (default = 1)
-% isPilot, true if datasets belong to pilot subjects (default = true)
+% isPilot, true if datasets belong to pilot subjects (default = false)
 % existArtifact, true if artficats were already selected and saved (default
 % = false)
+% visDegOffFixation: threshold for deleting trials based on excessive eye
+% movements (default: delete trials if deviation>5 visual degrees).
 
 if nargin<1 || isempty(subj)
     subj = 1;
@@ -254,12 +256,12 @@ if ~existArtifact
         if ~exist(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/', subj), 'dir');
             mkdir(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/', subj));
         end
-        save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
     else
         if ~exist(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/', subj), 'dir');
             mkdir(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/', subj));
         end
-        save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
     end
     
     
@@ -267,9 +269,9 @@ if ~existArtifact
     % if artifacts were selected before, load them.
 else
     if isPilot
-        load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
     else
-        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
     end
     if ~exist('artfctdef.eyesaccade')
         sprintf('WARNING: possibly eye saccade artifacts have not yet been marked. These do not appear in artfctdef.')
@@ -310,9 +312,9 @@ if ~existArtifact
     
     % save
     if isPilot
-        filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj);
     else
-        filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj);
     end
     save(filename, 'comp')
     
@@ -329,9 +331,9 @@ if ~existArtifact
     
 else
     if isPilot
-        filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj);
     else
-        filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/icaComp.mat', subj);
+        filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj);
     end
     load(filename, 'comp')
 end
@@ -406,15 +408,15 @@ end
 
 % save artifacts in existing artifact definition.
 if isPilot
-    load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+    load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
 else
-    load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+    load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
 end
 artfctdef.eyesaccade.artifact = artifact_EOG_saccade;
 if isPilot
-    save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+    save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
 else
-    save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/artifact.mat', subj), 'artfctdef');
+    save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
 end
 
 % reject eye movements from data
@@ -443,9 +445,9 @@ nTrialsValid = length(idxM);
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata', subj);
+    filename = sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata', subj, subj);
 else
-    filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata', subj);
+    filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata', subj, subj);
 end
 save(fullfile([filename '.mat']), 'dataClean','nTrialsPreClean','nTrialsPostClean','nTrialsValid', '-v7.3');
 save(fullfile([filename(1:end-9), 'headmotion', '.mat']), 'headmotion');

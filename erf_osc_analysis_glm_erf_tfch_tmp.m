@@ -27,21 +27,21 @@ ft_diary('on')
 %% load data
 erf_osc_datainfo;
 if isPilot
-    load(sprintf('/project/3011085.02/results/erf/pilot-%03d/dss.mat', subj), 'data_dss');
-    %load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
+    load(sprintf('/project/3011085.02/analysis/erf/pilot-%03d/dss.mat', subj), 'data_dss');
+    %load(sprintf('/project/3011085.02/analysis/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
 else
-    %load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
+    %load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
     if strcmp(erfoi, 'reversal')
         if doDSS
             [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
         else
-            load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+            load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj));
         end
     else
         if doDSS
             [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'onset', false);
         else
-            load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+            load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj));
         end
     end
 end
@@ -125,9 +125,9 @@ p1amp = multiplier(p1chans)'*p1amp_all(p1chans,:);
 
 % load TFA data
 if isPilot
-  load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaChan');
+  load(sprintf('/project/3011085.02/analysis/freq/pilot-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj), 'gammaChan');
 else
-  load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s.mat', subj, zeropoint));
+  load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s.mat', subj, subj, zeropoint));
 end
 if strcmp(freqRange, 'high')
   tfa = tfaHigh;
@@ -213,9 +213,9 @@ shufflesStdPlCmb.powspctrm = std_shuffles;
 %% Save
 
 if isPilot
-    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/analysis/GLM/pilot-%03d/sub-%03d_glm_tf_%s_%s_erf_%s', subj, subj, freqRange, zeropoint, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s', subj, freqRange, zeropoint, erfoi);
+    filename = sprintf('/project/3011085.02/analysis/GLM/sub-%03d/sub-%03d_glm_tf_%s_%s_erf_%s', subj, subj, freqRange, zeropoint, erfoi);
 end
 save(fullfile([filename '.mat']), 'betas','betasPlCmb', 'all_shuffles', 'shufflesAvgPlCmb', 'shufflesStdPlCmb', 'lat', 'p1amp', 'maxchanid','p1chans_id', '-v7.3');
 

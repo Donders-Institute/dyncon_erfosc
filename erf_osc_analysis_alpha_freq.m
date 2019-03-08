@@ -37,10 +37,10 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file
 else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
     load(subjects(subj).logfile);% load log file
 end
 data = data.dataClean;
@@ -87,9 +87,9 @@ peakFreq_alpha = powDiff.freq(maxIdx);
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/freq/pilot-%03d/alpha_peak', subj);
+    filename = sprintf('/project/3011085.02/analysis/freq/pilot-%03d/sub-%03d_alpha_peak', subj, subj);
 else
-    filename = sprintf('/project/3011085.02/results/freq/sub-%03d/alpha_peak', subj);
+    filename = sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_alpha_peak', subj, subj);
 end
 save(fullfile([filename '.mat']), 'peakFreq_alpha', 'alphaAvg');
 diary off

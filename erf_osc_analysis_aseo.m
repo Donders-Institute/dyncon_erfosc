@@ -57,14 +57,14 @@ end
 %% load data
 erf_osc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-    load(sprintf('/project/3011085.02/results/erf/pilot-%03d/timelock.mat', subj));
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
+    load(sprintf('/project/3011085.02/analysis/erf/pilot-%03d/sub-%03d_timelock.mat', subj, subj));
 else
     if doDSS
-        data = load(sprintf('/project/3011085.02/results/erf/sub-%03d/dss.mat', subj), 'data_dss');
+        data = load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_dss.mat', subj,subj), 'data_dss');
     else
-        data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
-        load(sprintf('/project/3011085.02/results/erf/sub-%03d/timelock.mat', subj));
+        data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj,subj), 'dataClean');
+        load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_timelock.mat', subj,subj));
     end
 end
 if doDSS
@@ -158,7 +158,7 @@ tmp = rmfield(tlZscore, 'cfg');
 cfg.channel = tmp.label(c(subj));
 ft_singleplotER(cfg, tmp);
 if existWindow
-    load(sprintf('/project/3011085.02/results/erf/sub-%03d/aseo.mat', subj), 'window', 'windowGuess'); % load ERF
+    load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_aseo.mat', subj, subj), 'window', 'windowGuess'); % load ERF
 else
 %     for iPeak = 1:size(guess,1)
 iPeak=1;
@@ -286,9 +286,9 @@ end
 
 %% save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/aseo', subj);
+    filename = sprintf('/project/3011085.02/analysis/erf/pilot-%03d/sub-%03d_aseo', subj, subj);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/aseo_allchan', subj);
+    filename = sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_aseo_allchan', subj, subj);
 end
 % save(fullfile([filename '.mat']), 'erfdata', 'reconstructed', 'residual', 'latency', 'amplitude', 'window', 'windowGuess', 'windowvar')
 save(fullfile([filename '.mat']), 'reconstructed', 'windowGuess', 'windowvar', '-v7.3');

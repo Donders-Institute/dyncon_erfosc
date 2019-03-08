@@ -1,17 +1,42 @@
-function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas)
+function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas, doresplocked)
+% Model time courses on the source level using a LCMV beamformer. By
+% default the evoked activity is estimated at stimulus change, but can be
+% done at response onset. dipoles are combined into anatomically defined
+% parcels.
+%
+% INPUT 
+%   data_shift: data, timing relative to stimulus change
+%   headmodel: volume conduction model of the head, output of
+%       ft_prepare_headmodel
+%   sourcemodel: 2D or 3D sourcemodel
+%   atlas: anatomical or functional atlas describing how to combine dipole
+%      locations. Only implemented for HBM anatomical atlas (374parc)
+%   doresplocked (logical): true when lcmv should be optimized for response
+%       locked activity.
+% 
+% OUTPUT
+%   source_parc: channel level fieldtrip data structure, containing single
+%       trial time courses for each parcel defined in the atlas.
+
+
+if ~exist('doresplocked'); doresplocked=false; end
 
 cfg         = [];
-cfg.latency = [-0.1 inf];
-data_shift  = ft_selectdata(cfg, data_shift);
-cfg.latency = [-0.1 0.6];
-data_shift_short = ft_selectdata(cfg, data_shift);
+if doresplocked
+    cfg.latency = [-0.5 0.4];
+else
+    cfg.latency = [-0.1 0.6];
+end
+data_shift = ft_selectdata(cfg, data_shift);
 
 cfg = [];
 cfg.preproc.demean = 'yes';
-cfg.preproc.baselinewindow = [-0.1 0];
+if ~doresplocked
+    cfg.preproc.baselinewindow = [-0.1 0];
+    cfg.removemean = 'no';
+end
 cfg.covariance = 'yes';
-cfg.removemean = 'no';
-%tlck = ft_timelockanalysis(cfg, data_shift_short);
+
 tlck = ft_timelockanalysis(cfg, data_shift);
 
 if ~isfield(sourcemodel, 'leadfield')

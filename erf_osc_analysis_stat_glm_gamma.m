@@ -12,7 +12,7 @@ ft_diary('on')
 erf_osc_datainfo;
 
 for subj=allsubs
-    tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time_%s.mat', subj, erfoi));
+    tmp{subj} = load(sprintf('/project/3011085.02/analysis/GLM/sub-%03d/sub-%03d_glm_gamma_time_%s.mat', subj, subj, erfoi));
     betas{subj} = rmfield(tmp{subj}.betas, 'elec');
 end
 clear tmp
@@ -60,7 +60,7 @@ stat.cfg = rmfield(stat.cfg, 'previous');
 
 
 % save
-filename = sprintf('/project/3011085.02/results/GLM/stat_glm_gamma_time_%s', erfoi);
+filename = sprintf('/project/3011085.02/analysis/stat_glm_gamma_time_%s', erfoi);
 save(fullfile([filename, '.mat']), 'stat');
 
 ft_diary('off')

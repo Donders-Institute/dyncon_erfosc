@@ -1,5 +1,14 @@
-function erf_osc_analysis_rt(subj)
-% estimate reaction times from trigger information and save
+function [rt, idx_trials] = erf_osc_analysis_rt(subj)
+% calculate reaction times from trigger information and save on disk.
+%
+% INPUT
+%   subj (int): subject ID, ranging from 1 to 33, excluding 10.
+%
+% OUTPUT
+%   saves data on disk.
+%   rt: reaction times (ms), after stimulus change
+%   idx_trials: trial numbers of reaction time estimates
+
 if nargin<1
     subj=1;
 end
@@ -10,7 +19,7 @@ end
 ft_diary('on')
 
 %% load data, select trials, estimate RT
-data=load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj), 'dataClean');
+data=load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 
 data = data.dataClean;
 fs = data.fsample;
@@ -44,7 +53,7 @@ data = ft_selectdata(cfg, data);
 rt = (data.trialinfo(:,6)-data.trialinfo(:, 5))/data.fsample;
 
 % save
-filename = sprintf('/project/3011085.02/results/behavior/sub-%03d/rt', subj);
+filename = sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt', subj,subj);
 save(fullfile([filename '.mat']), 'rt');
 
 ft_diary('off')

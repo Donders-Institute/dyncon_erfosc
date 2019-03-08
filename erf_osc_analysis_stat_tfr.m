@@ -18,9 +18,9 @@ erf_osc_datainfo;
 
 % load data
 for subj=allsubs
-    tfa{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj,freqRange, zeropoint));
+    tfa{subj} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s_%s.mat', subj, subj,freqRange, zeropoint));
     if strcmp(zeropoint, 'reversal')
-        baseline{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_onset.mat', subj, freqRange), 'baseline');
+        baseline{subj} = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s_onset.mat', subj, subj, freqRange), 'baseline');
         baseline{subj} = rmfield(baseline{subj}.baseline, 'cfg');
     else
         baseline{subj} = rmfield(tfa{subj}.baseline, 'cfg');
@@ -77,7 +77,7 @@ stat = ft_freqstatistics(cfg, tfrAvg, blAvg);
 
 
 % save
-filename = sprintf('/project/3011085.02/results/stat_tfr_%s.mat', zeropoint);
+filename = sprintf('/project/3011085.02/analysis/stat_tfr_%s.mat', zeropoint);
 save(filename, 'stat', 'diffAvg','tfrAvg', 'blAvg', '-v7.3');
 
 ft_diary('off')

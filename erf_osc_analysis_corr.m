@@ -1,4 +1,20 @@
-function erf_osc_analysis_corr(subj, isPilot, correlation, freqRange, zeropoint, erfoi, doDSS, compareQuartile)
+function erf_osc_analysis_corr(subj, isPilot, correlation, freqRange, zeropoint, doDSS, compareQuartile)
+% Calculates correlations between various variables. 
+%
+% INPUT
+%   subj (int): subject ID, ranging from 1 to 33, excluding 10 (default=1)
+%   isPilot (logical): whether or not to apply on pilot data (default=0)
+%   correlation (string): which variables you want to calculate the
+%       correlation between. Can be 'gamma_rt' (default), 'gamma_erf', 
+%       'gamma_erf_virtualchan' or 'amp_tfr'.
+%   freRange (string): 'low' or 'high' (default), frequency range (below or 
+%       above 30 Hz.
+%   zeropoint (string): 'onset' (default) or 'reversal', what to time lock 
+%       the data to. if 'onset' a seperate baseline estimate is saved.
+%   doDSS (logical): in correlations with erf, whether or not to apply DSS
+%       cleaning.
+%   compareQuartile (logical): only works for some implementations. Whether
+%       to do a single trial correlation or to contrast quartiles.
 
 if nargin<1 || isempty(subj)
     subj = 1;
@@ -7,7 +23,7 @@ if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
 if nargin<3 || isempty(correlation);
-    correlation = input('which correlation do you want to compute? choose *gamma_rt*, *gamma_erf*, *gamma_erf_virtualchan* or *amp_tfr*')
+    correlation = input('which correlation do you want to compute? choose *gamma_rt*, *gamma_erf*, *gamma_erf_virtualchan* or *amp_tfr*');
 end
 if nargin<4 || isempty(freqRange)
     freqRange = 'high';
@@ -15,13 +31,10 @@ end
 if nargin<5 || isempty(zeropoint)
     zeropoint = 'reversal';
 end
-if nargin<6 || isempty(erfoi)
-    erfoi = 'reversal';
-end
-if nargin<7 || isempty(doDSS)
+if nargin<6 || isempty(doDSS)
     doDSS = 0;
 end
-if nargin<8 || isempty(compareQuartile)
+if nargin<7 || isempty(compareQuartile)
     compareQuartile = false;
 end
 
@@ -35,14 +48,14 @@ erf_osc_datainfo;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if strcmp(correlation, 'gamma_rt');
     for subj=allsubs
-        load(sprintf('/project/3011085.02/results/freq/sub-%03d/pow.mat', subj), 'peakFreq_gamma');
-        gammaPow{subj} = load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow'); % load gamma power
-        gammaPow{subj} = gammaPow{subj}.gammaPow;
-        rt{subj} = load(sprintf('/project/3011085.02/results/behavior/sub-%03d/rt.mat', subj)); % load reaction time power
+        load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow.mat', subj, subj), 'peakFreq_gamma');
+        gammaPow{subj} = load(sprintf('/project/3011085.02/analysis/corr/sub-%03d/sub-%03d_corrpowlcmv_gamma.mat', subj, subj), 'pow'); % load gamma power
+        gammaPow{subj} = gammaPow{subj}.pow';
+        rt{subj} = load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat', subj, ssubj)); % load reaction time power
         rt{subj} = rt{subj}.rt;
         
         
-        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj));
         data = dataClean;
         
         idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
@@ -79,33 +92,73 @@ if strcmp(correlation, 'gamma_rt');
         rt{subj} = rt{subj}-mean(rt{subj});
         jitter{subj} = log(jitter{subj});
         jitter{subj} = jitter{subj}-mean(jitter{subj});
-        [r_gamma_rt(subj) p_gamma_rt(subj)] = partialcorr(gammaPow{subj}', rt{subj},jitter{subj}, 'type', 'spearman');
-        [r_jitter_gamma(subj) p_jitter_gamma(subj)] = partialcorr(gammaPow{subj}', jitter{subj},rt{subj}, 'type', 'spearman');
-        [r_jitter_rt(subj) p_jitter_rt(subj)] = partialcorr(rt{subj}, jitter{subj},gammaPow{subj}', 'type', 'spearman');
+        [r_gamma_rt(subj) p_gamma_rt(subj)] = corr(gammaPow{subj}', rt{subj}, 'type', 'spearman');
+        [r_jitter_gamma(subj) p_jitter_gamma(subj)] = corr(gammaPow{subj}', jitter{subj}, 'type', 'spearman');
+        [r_jitter_rt(subj) p_jitter_rt(subj)] = corr(rt{subj}, jitter{subj}, 'type', 'spearman');
         
+        [partialr_gamma_rt(subj) partialp_gamma_rt(subj)] = partialcorr(gammaPow{subj}', rt{subj},jitter{subj}, 'type', 'spearman');
+        [partialr_jitter_gamma(subj) partialp_jitter_gamma(subj)] = partialcorr(gammaPow{subj}', jitter{subj},rt{subj}, 'type', 'spearman');
+        [partialr_jitter_rt(subj) partialp_jitter_rt(subj)] = partialcorr(rt{subj}, jitter{subj},gammaPow{subj}', 'type', 'spearman');
     end
     
     % statistics
+    
     stat_gamma_rt=[];
     [stat_gamma_rt.h stat_gamma_rt.p]= ttest(r_gamma_rt);
+    stat_gamma_rt.u = mean(r_gamma_rt);
+    stat_gamma_rt.std = std(r_gamma_rt);
+    stat_gamma_rt.r = r_gamma_rt;
     stat_jitter_gamma=[];
     [stat_jitter_gamma.h stat_jitter_gamma.p] = ttest(r_jitter_gamma);
+    stat_jitter_gamma.u = mean(r_jitter_gamma);
+    stat_jitter_gamma.std = std(r_jitter_gamma);
+    stat_jitter_gamma.r = r_jitter_gamma;
     stat_jitter_rt=[];
     [stat_jitter_rt.h stat_jitter_rt.p] = ttest(r_jitter_rt);
+    stat_jitter_rt.u = mean(r_jitter_rt);
+    stat_jitter_rt.std = std(r_jitter_rt);
+    stat_jitter_rt.r = r_jitter_rt;
     
+    r.stat_gamma_rt = stat_gamma_rt;
+    r.stat_jitter_gamma = stat_jitter_gamma;
+    r.stat_jitter_rt = stat_jitter_rt;
+    
+    
+    stat_partial_gamma_rt=[];
+    [stat_partial_gamma_rt.h stat_partial_gamma_rt.p]= ttest(partialr_gamma_rt);
+    stat_partial_gamma_rt.u = mean(partialr_gamma_rt);
+    stat_partial_gamma_rt.std = std(partialr_gamma_rt);
+    stat_partial_gamma_rt.r = partialr_gamma_rt;
+    stat_partial_jitter_gamma=[];
+    [stat_partial_jitter_gamma.h stat_partial_jitter_gamma.p] = ttest(partialr_jitter_gamma);
+    stat_partial_jitter_gamma.u = mean(partialr_jitter_gamma);
+    stat_partial_jitter_gamma.std = std(partialr_jitter_gamma);
+    stat_partial_jitter_gamma.r = partialr_jitter_gamma;
+    stat_partial_jitter_rt=[];
+    [stat_partial_jitter_rt.h stat_partial_jitter_rt.p] = ttest(partialr_jitter_rt);
+    stat_partial_jitter_rt.u = mean(partialr_jitter_rt);
+    stat_partial_jitter_rt.std = std(partialr_jitter_rt);
+    stat_partial_jitter_rt.r = partialr_jitter_rt;
+
+    
+    partialr.stat_gamma_rt = stat_partial_gamma_rt;
+    partialr.stat_jitter_gamma = stat_partial_jitter_gamma;
+    partialr.stat_jitter_rt = stat_partial_jitter_rt;
+    
+
 elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
     %%%%%%%%%%%%%%%%%%%%%%
     % P1 amplitude - TFR %
     %%%%%%%%%%%%%%%%%%%%%%
     %% load data
     if isPilot
-        load(sprintf('/project/3011085.02/results/erf/pilot-%03d/dss.mat', subj), 'data_dss');
+        load(sprintf('/project/3011085.02/analysis/erf/pilot-%03d/sub-%03d_dss.mat', subj, subj), 'data_dss');
     else
-        if strcmp(erfoi, 'reversal')
+        if strcmp(zeropoint, 'reversal')
             if doDSS
                 [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
             else
-                load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+                load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj));
             end
         else
             if doDSS
@@ -115,10 +168,10 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
             end
         end
         if strcmp(correlation, 'amp_tfr')
-            load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, zeropoint), 'tfa');
-            load(sprintf('/project/3011085.02/results/freq/sub-%03d/tfa_%s_%s.mat', subj, freqRange, 'onset'), 'baseline');
+            load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s_%s.mat', subj, subj, freqRange, zeropoint), 'tfa');
+            load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s_%s.mat', subj, subj, freqRange, 'onset'), 'baseline');
         elseif strcmp(correlation, 'gamma_erf')
-            load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
+            load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj), 'gammaPow');
         end
     end
     %% if no data_dss cleaning is done beforehand, do this
@@ -150,11 +203,11 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
         data = ft_selectdata(cfg, data);
         clear data_reversal_tmp
         
-        if strcmp(erfoi, 'reversal')
+        if strcmp(zeropoint, 'reversal')
             cfg=[];
             cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
             data = ft_redefinetrial(cfg, data);
-        elseif strcmp(erfoi, 'motor')
+        elseif strcmp(zeropoint, 'motor')
             cfg=[];
             cfg.offset = -(data.trialinfo(:,6)-data.trialinfo(:,4));
             data=ft_redefinetrial(cfg, data);
@@ -330,23 +383,23 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
         
     end
 elseif strcmp(correlation, 'gamma_erf_virtualchan')
-        load(sprintf('/project/3011085.02/results/freq/sub-%03d/allori/gamma_virtual_channel.mat', subj), 'gammaPow');
-        lcmvData = erf_osc_analysis_lcmv_orientation(subj, erfoi); 
+        load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/allori/gamma_virtual_channel.mat', subj), 'gammaPow');
+        lcmvData = erf_osc_analysis_lcmv_orientation(subj, zeropoint); 
 
 end
     %% save
     if strcmp(correlation, 'gamma_rt');
-        filename = '/project/3011085.02/results/stat_partcorr_gamma_rt';
-        save(fullfile([filename '.mat']), 'stat_gamma_rt', 'r_gamma_rt', 'p_gamma_rt', 'rt', 'gammaPow', 'r_jitter_gamma', 'p_jitter_gamma', 'stat_jitter_gamma', 'r_jitter_rt', 'p_jitter_rt', 'stat_jitter_rt');
+        filename = '/project/3011085.02/analysis/stat_partcorr_gamma_rt';
+        save(fullfile([filename '.mat']), 'r', 'partialr');
     elseif strcmp(correlation, 'amp_tfr') && ~compareQuartile
-        filename = sprintf('/project/3011085.02/results/freq/sub-%03d/corr_amp_tfr', subj);
+        filename = sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_corr_amp_tfr', subj, subj);
         save(fullfile([filename '.mat']), 'z_act', 'z_bl', 'r_act', 'r_bl', 'lat', 'p1amp', 'maxchanid','p1chans_id');
     elseif strcmp(correlation, 'amp_tfr') && compareQuartile
-        filename = sprintf('/project/3011085.02/results/freq/sub-%03d/corr_amp_tfr_quartile', subj);
+        filename = sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_corr_amp_tfr_quartile', subj, subj);
         save(fullfile([filename '.mat']), 'tfa_q1', 'tfa_q4', 'lat', 'p1amp', 'maxchanid','p1chans_id', 'val', 'idx', 'q1', 'q4');
     elseif strcmp(correlation, 'gamma_erf') && compareQuartile
-        filename = sprintf('/project/3011085.02/results/erf/sub-%03d/corr_gamma_erf_quartile_%s', subj, erfoi);
+        filename = sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_corr_gamma_erf_quartile_%s', subj, subj, zeropoint);
         save(fullfile([filename '.mat']), 'tlck_q1', 'tlck_q4', 'gammaPow', 'val', 'idx', 'q1', 'q4');
     end
-    ft_diary('off')
+ft_diary('off')
 

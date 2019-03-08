@@ -19,7 +19,7 @@ end
 ft_diary('on')
 
 erf_osc_datainfo;
-load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat',subj), 'lcmvData');
+load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat',subj, subj), 'lcmvData');
 
 cfg=[];
 if strcmp(erfoi, 'reversal')

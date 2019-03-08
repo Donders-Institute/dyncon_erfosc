@@ -21,15 +21,15 @@ ft_diary('on')
 %% load data
 erf_osc_datainfo;
 if isPilot
-    load(sprintf('/project/3011085.02/results/erf/pilot-%03d/dss.mat', subj), 'data_dss');
-    load(sprintf('/project/3011085.02/results/freq/pilot-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
+    load(sprintf('/project/3011085.02/analysis/erf/pilot-%03d/sub-%03d_dss.mat', subj, subj), 'data_dss');
+    load(sprintf('/project/3011085.02/analysis/freq/pilot-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj), 'gammaPow');
 else
-    load(sprintf('/project/3011085.02/results/freq/sub-%03d/gamma_virtual_channel.mat', subj), 'gammaPow');
-    load(sprintf('/project/3011085.02/results/eye/sub%03d.mat', subj), 'X', 'Y');
+    load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj), 'gammaPow');
+%     load(sprintf('/project/3011085.02/analysis/eye/sub%03d.mat', subj), 'X', 'Y'); %FIXME get eyedata from cleandata
     if doDSS
         [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
     else
-        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
+        load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj));
         data = dataClean;
         clear dataClean
     end
@@ -165,9 +165,9 @@ end
 
 %% Save
 if isPilot
-    filename = sprintf('/project/3011085.02/results/erf/pilot-%03d/glm_gamma_time_%s', subj, erfoi);
+    filename = sprintf('/project/3011085.02/analysis/glm/pilot-%03d/sub-%03d_glm_gamma_time_%s', subj, subj, erfoi);
 else
-    filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_time_%s', subj, erfoi);
+    filename = sprintf('/project/3011085.02/analysis/glm/sub-%03d/sub-%03d_glm_gamma_time_%s', subj, subj, erfoi);
 end
 save(fullfile([filename '.mat']), 'betas','betas_bl', '-v7.3');
 ft_diary('off')

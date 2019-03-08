@@ -16,7 +16,7 @@ erf_osc_datainfo;
 lcmvData = erf_osc_analysis_lcmv_orientation(subj, erfoi, filtdir, 'lp'); % optimal dipole orientation is chosen based on [0 0.5] after stimulus-reversal.
 % data is timelocked to reversal or behavioral response, and low pass
 % filtered. 
-load(sprintf('/project/3011085.02/results/freq/sub-%03d/fixori/gamma_virtual_channel.mat', subj),'gammaPow'); % load gamma power
+load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat', subj, subj),'gammaPow'); % load gamma power
 
 cfg = [];
 cfg.demean = 'yes';
@@ -71,7 +71,7 @@ else
 end
 
 
-filename = sprintf('/project/3011085.02/results/erf/sub-%03d/glm_gamma_virtualchan_%s', subj, erfoi);
+filename = sprintf('/project/3011085.02/analysis/glm/sub-%03d/sub-%03d_glm_gamma_virtualchan_%s', subj, subj, erfoi);
 save(fullfile([filename '.mat']), 'betas','betas_bl', '-v7.3');
 ft_diary('off')
 

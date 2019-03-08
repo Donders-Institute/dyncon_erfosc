@@ -17,7 +17,7 @@ ft_diary('on')
 erf_osc_datainfo;
 
 for subj=allsubs
-    tmp{subj} = load(sprintf('/project/3011085.02/results/erf/sub-%03d/glm_tf_%s_%s_erf_%s.mat', subj, freqRange, zeropoint, erfoi));
+    tmp{subj} = load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_glm_tf_%s_%s_erf_%s.mat', subj, subj, freqRange, zeropoint, erfoi));
     betas{subj} = tmp{subj}.betas;
     betas_bl{subj} = tmp{subj}.betas;
 end
@@ -62,7 +62,7 @@ stat = ft_freqstatistics(cfg, betas_GA, betas_bl_GA);
 
 
 % save
-filename = sprintf('/project/3011085.02/results/stat_glm_tf_%s_%s_erf_%s.mat', freqRange, zeropoint, erfoi);
+filename = sprintf('/project/3011085.02/analysis/stat_glm_tf_%s_%s_erf_%s.mat', freqRange, zeropoint, erfoi);
 save(filename, 'stat', 'betas_GA', 'betas_bl_GA');
 
 ft_diary('off')
