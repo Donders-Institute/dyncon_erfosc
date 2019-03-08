@@ -1,5 +1,4 @@
 function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas)
-load('atlas_subparc374_8k.mat')
 
 cfg         = [];
 cfg.latency = [-0.1 inf];
