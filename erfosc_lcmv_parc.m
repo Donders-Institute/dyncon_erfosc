@@ -108,6 +108,7 @@ for k = 1:numel(selparc)
   
   source_parc.F{k} = source_parc.F{k}(1,:);
 end
+source_parc.F = cat(1, source_parc.F{:});
   cfg=[];
   cfg.comment = 'create the component spatial filter (F) for each parcel by multiplying the unmixing from ft_componentanalysis with the spatial filters of the corresponding parcel. For each parcel`s spatial filter components only keep the component that explains most variance. Compute source level timelock average by multiplying this filter with the channel level timelock average.';
   source_parc = ft_annotate(cfg, source_parc);
