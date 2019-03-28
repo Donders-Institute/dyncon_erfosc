@@ -1,5 +1,5 @@
 function [source_onset, source_shift, Tval, F] = erfosc_dics_gamma(freq_onset, freq_shift, headmodel, sourcemodel)
-% Compute power in the gamma band on the source level using a DICS
+% Compute power on the source level using a DICS
 % beamformer (Gross et al, 2001). Also estimates the location with the 
 % highest increase from baseline.
 %
@@ -44,10 +44,6 @@ cfg.dics.keepfilter = 'no';
 
 source_onset = ft_sourceanalysis(cfg, ft_checkdata(freq_onset, 'cmbrepresentation', 'fullfast'));
 source_shift = ft_sourceanalysis(cfg, ft_checkdata(freq_shift, 'cmbrepresentation', 'fullfast'));
-
-cfg.keeptrials = 'yes';
-source_onset2 = ft_sourceanalysis(cfg, ft_checkdata(freq_onset, 'cmbrepresentation', 'fullfast'));
-source_shift2 = ft_sourceanalysis(cfg, ft_checkdata(freq_shift, 'cmbrepresentation', 'fullfast'));
 
 % projection matrix to get from fourier to power
 nrpt = numel(freq_onset.cumtapcnt);
