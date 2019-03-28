@@ -45,6 +45,10 @@ cfg.dics.keepfilter = 'no';
 source_onset = ft_sourceanalysis(cfg, ft_checkdata(freq_onset, 'cmbrepresentation', 'fullfast'));
 source_shift = ft_sourceanalysis(cfg, ft_checkdata(freq_shift, 'cmbrepresentation', 'fullfast'));
 
+cfg.keeptrials = 'yes';
+source_onset2 = ft_sourceanalysis(cfg, ft_checkdata(freq_onset, 'cmbrepresentation', 'fullfast'));
+source_shift2 = ft_sourceanalysis(cfg, ft_checkdata(freq_shift, 'cmbrepresentation', 'fullfast'));
+
 % projection matrix to get from fourier to power
 nrpt = numel(freq_onset.cumtapcnt);
 ntap = freq_onset.cumtapcnt(1);
@@ -55,24 +59,35 @@ iz = ones(nrpt*ntap,1)./ntap;
 P  = sparse(iy,ix,iz,nrpt*ntap,nrpt);
 
 % hacky T-statistic computation
-F = cat(1, source.avg.filter{:});
-p_onset = (abs(F*transpose(freq_onset.fourierspctrm)).^2)*P;
-p_shift = (abs(F*transpose(freq_shift.fourierspctrm)).^2)*P;
+F = zeros(numel(source.inside), numel(data_onset.label));
+F(source.inside,:) = cat(1, source.avg.filter{:}); %FIXME do I need to change this into a FT structure?
+
+p_onset = rmfield(source, 'avg');
+p_onset.dimord = 'pos_rpt';
+p_onset.pow = (abs(F*transpose(freq_onset.fourierspctrm)).^2)*P;
+cfg=[];
+cfg.comment = 'calculate single-trial source power (locked to stimulus onset) by computing "pow = (abs(spatial_filter*transpose(fourierspctrm)).^2)*P", where P is the weigth matrix for combining over tapers.';
+p_onset = ft_annotate(cfg, p_onset);
+
+p_shift = rmfield(source, 'avg');
+p_shift.dimord = 'pos_rpt';
+p_shift.pow = (abs(F*transpose(freq_shift.fourierspctrm)).^2)*P;
+cfg.comment = 'calculate single-trial source power (locked to stimulus change) by computing "pow = (abs(spatial_filter*transpose(fourierspctrm)).^2)*P", where P is the weigth matrix for combining over tapers.';
+p_shift = ft_annotate(cfg, p_shift);
 
 cfg = [];
 cfg.ivar = 1;
 cfg.uvar = 2;
 design = [ones(1,nrpt)*2 ones(1,nrpt);1:nrpt 1:nrpt];
-Tstat_dep = ft_statfun_depsamplesT(cfg, [p_onset p_shift], design);
-cfg = [];
-cfg.ivar = 1;
-design = design(1,:);
-Tstat_indep = ft_statfun_indepsamplesT(cfg, [p_onset p_shift], design);
+cfg.design = design;
+cfg.method = 'analytic';
+cfg.statistic = 'depsamplesT';
+Tval = ft_sourcestatistics(cfg, p_onset, p_shift);
+% cfg = [];
+% cfg.ivar = 1;
+% cfg.design = design(1,:);
+% cfg.method = 'analytic';
+% cfg.statistic = 'indepsamplesT';
+% Tstat_indep = ft_statfun_indepsamplesT(cfg, p_onset, p_shift);
 
-Tval = zeros(size(source.pos,1),1);
-Tval(source.inside) = Tstat_dep.stat;
-
-Ftmp = zeros(size(source_onset.pos,1), size(F,2));
-Ftmp(source_onset.inside, :) = F;
-F = Ftmp; clear Ftmp;
 
