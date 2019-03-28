@@ -1,4 +1,4 @@
-function [source_onset, source_shift, Tval, F] = erfosc_dics_gamma(freq_onset, freq_shift, headmodel, sourcemodel)
+function [source_onset, source_shift, Tval, F] = erfosc_dics(freq_onset, freq_shift, headmodel, sourcemodel)
 % Compute power on the source level using a DICS
 % beamformer (Gross et al, 2001). Also estimates the location with the 
 % highest increase from baseline.
