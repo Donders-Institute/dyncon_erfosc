@@ -1,4 +1,4 @@
-function [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo)
+function [freq_onset, freq_shift, P, pow_onset, pow_shift] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo)
 % Frequency analysis using fieldtrip mtmfft
 %
 % INPUT
@@ -42,6 +42,10 @@ cfg.pad    = 1;
 freq_onset = ft_freqanalysis(cfg, data_onset);
 freq_shift = ft_freqanalysis(cfg, data_shift);
 
+cfg.keeptrials = 'yes';
+cfg.output = 'pow';
+pow_onset = ft_freqanalysis(cfg, data_onset);
+pow_shift = ft_freqanalysis(cfg, data_shift);
 % projection matrix to get from fourier to power
 nrpt = numel(freq_onset.cumtapcnt);
 ntap = freq_onset.cumtapcnt(1);

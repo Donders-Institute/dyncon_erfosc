@@ -4,7 +4,7 @@ function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, at
 % done at response onset. dipoles are combined into anatomically defined
 % parcels.
 %
-% INPUT 
+% INPUT
 %   data_shift: data, timing relative to stimulus change
 %   headmodel: volume conduction model of the head, output of
 %       ft_prepare_headmodel
@@ -13,18 +13,12 @@ function [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, at
 %      locations. Only implemented for HBM anatomical atlas (374parc)
 %   doresplocked (logical): true when lcmv should be optimized for response
 %       locked activity.
-% 
+%
 % OUTPUT
 %   source_parc: channel level fieldtrip data structure, containing single
 %       trial time courses for each parcel defined in the atlas.
 
 
-global ft_default;
-ft_default = [];
-ft_default.reproducescript = datestr(now, 30);
-ft_default.checksize = inf;
-
-load('atlas_subparc374_8k.mat')
 if ~exist('doresplocked'); doresplocked=false; end
 
 cfg         = [];
@@ -46,12 +40,12 @@ cfg.covariance = 'yes';
 tlck = ft_timelockanalysis(cfg, data_shift);
 
 if ~isfield(sourcemodel, 'leadfield')
-  cfg           = [];
-  cfg.headmodel = ft_convert_units(headmodel, 'm');
-  cfg.grid      = ft_convert_units(sourcemodel, 'm');
-  cfg.grad      = ft_convert_units(data_shift.grad, 'm');
-  cfg.channel   = data_shift.label;
-  sourcemodel   = ft_prepare_leadfield(cfg);
+    cfg           = [];
+    cfg.headmodel = ft_convert_units(headmodel, 'm');
+    cfg.grid      = ft_convert_units(sourcemodel, 'm');
+    cfg.grad      = ft_convert_units(data_shift.grad, 'm');
+    cfg.channel   = data_shift.label;
+    sourcemodel   = ft_prepare_leadfield(cfg);
 end
 
 cfg = [];
@@ -90,30 +84,27 @@ source_parc.avg   = zeros(numel(selparc),numel(source_parc.time));
 source_parc.dimord = 'chan_time';
 
 for k = 1:numel(selparc)
-  tmpF = F(atlas.parcellation==selparc(k),:);
-  tmp.trial = tmpF*data_shift.trial;
-  for l=1:size(tmpF,1)
-      tmplabel{l} = sprintf('loc%03d', l);
-  end
-  tmp.label = tmplabel;
-  clear tmplabel
-  cfg.comment = sprintf('Select the spatial filters for all nodes belonging to parcel %s. Create the source time courses for this parcel by multiplying these spatial filters with the channel level data', atlas.parcellationlabel{selparc(k)});
-  tmpcomp   = ft_componentanalysis(cfg, tmp);
-
-  tmpL = L(:,atlas.parcellation==selparc(k));
-  
-  source_parc.F{k}     = tmpcomp.unmixing*tmpF;
-%   source_parc.L{k}     = tmpL*tmpcomp.unmixing';
-  source_parc.avg(k,:) = source_parc.F{k}(1,:)*tlck.avg;
-  
-  source_parc.F{k} = source_parc.F{k}(1,:);
+    tmpF = F(atlas.parcellation==selparc(k),:);
+    tmp.trial = tmpF*data_shift.trial;
+    for l=1:size(tmpF,1)
+        tmplabel{l} = sprintf('loc%03d', l);
+    end
+    tmp.label = tmplabel;
+    clear tmplabel
+    cfg.comment = sprintf('Select the spatial filters for all nodes belonging to parcel %s. Create the source time courses for the nodes in this parcel by multiplying the spatial filters with the channel level data. Give this as input to ft_componentanalysis.', atlas.parcellationlabel{selparc(k)});
+    tmpcomp   = ft_componentanalysis(cfg, tmp);
+    
+    tmpL = L(:,atlas.parcellation==selparc(k));
+    
+    source_parc.F{k}     = tmpcomp.unmixing*tmpF;
+    %   source_parc.L{k}     = tmpL*tmpcomp.unmixing';
+    source_parc.avg(k,:) = source_parc.F{k}(1,:)*tlck.avg;
+    
+    source_parc.F{k} = source_parc.F{k}(1,:);
 end
 source_parc.F = cat(1, source_parc.F{:});
-  cfg=[];
-  cfg.comment = 'create the component spatial filter (F) for each parcel by multiplying the unmixing from ft_componentanalysis with the spatial filters of the corresponding parcel. For each parcel`s spatial filter components only keep the component that explains most variance. Compute source level timelock average by multiplying this filter with the channel level timelock average.';
-  source_parc = ft_annotate(cfg, source_parc);
-
-ft_default.reproducescript = [];
-
+cfg=[];
+cfg.comment = 'create the component spatial filter (F) for each parcel by multiplying the unmixing from ft_componentanalysis with the spatial filters of the nodes in the corresponding parcel. For each parcel`s spatial filter components only keep the component that explains most variance. Compute source level timelock average by multiplying this filter with the channel level timelock average.';
+source_parc = ft_annotate(cfg, source_parc);
 
 
