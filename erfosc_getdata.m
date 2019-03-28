@@ -86,7 +86,7 @@ cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
 data       = ft_redefinetrial(cfg, data);
 
 cfg         = [];
-cfg.latency = [-1 0.7];
+cfg.latency = [-0.75 0.75];
 data_shift  = ft_selectdata(cfg, data);
 
 if ~isempty(comp)
@@ -103,7 +103,6 @@ if ~isempty(comp)
   cfg.time = comp.time;
   data_shift = ft_resampledata(cfg, data_shift);
   data_shift.trial = data_shift.trial + (comp.topo*comp.unmixing)*data_shift.trial;
-  %data_shift.time(1:end) = data_shift.time(1);
   
   nsmp = cellfun('size',data_shift.trial, 2);
   ok   = nsmp==min(nsmp);
