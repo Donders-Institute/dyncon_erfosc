@@ -183,14 +183,7 @@ if dolcmv_norm
     tmpcfg = [];
     tmpcfg.covariance = 'yes';
     tmp = ft_timelockanalysis(tmpcfg, data_shift_baseline);
-    
-    % REPLACE THIS
-    %     for k = 1:numel(source_parc.label)
-    %         tmpF = source_parc.F{k}(1,:);
-    %         tmpC = sqrt(tmpF*tmp.cov*tmpF');
-    %         noise(k) = tmpC;
-    %     end
-    % BY THIS
+
     source_parc.noise = diag(sqrt(source_parc.F*tmp.cov*source_parc.F'));
     cfg=[];
     cfg.comment = 'compute the noise by calculating "noise = diag(sqrt(lcmv_spatial_filters*noise_covariance*transpose(lcmv_spatial_filters)))"'; %FIXME
@@ -205,52 +198,68 @@ if docorrpow_lcmv
     
     datadir = [project_dir 'analysis/'];
     load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_lcmv',    subj, subj)));
-    source_parc.avg = diag(1./noise)*source_parc.avg;
+    cfg=[];
+    cfg.matrix = repmat(1./source_parc.noise, [1 size(source_parc.avg,2)]);
+    cfg.parameter = 'avg';
+    cfg.operation = 'multiply';
+    cfg.comment = 'devide the average by the noise';
+    source_parc = ft_math(cfg, source_parc);
     
-    ix1 = nearest(source_parc.time, peaks(subj,1));
-    ix2 = nearest(source_parc.time, peaks(subj,2));
+    cfg=[];
+    cfg.baseline = [-0.1 -1./data_shift.fsample];
+    source_parc = ft_timelockbaseline(cfg, source_parc);
     
-    tmpcfg = [];
-    tmpcfg.latency = [-0.1 0.5-1./600];
-    datapst = ft_selectdata(tmpcfg, data_shift);
-    tmpcfg.latency = [-0.2 -1./600] + peaks(subj,1) - 0.02;
-    datapre = ft_selectdata(tmpcfg, data_shift);
+    cfg = [];
+    cfg.latency = [-0.1 0.5-1./data_shift.fsample];
+    datapst = ft_selectdata(cfg, data_shift);
     
-    source_parc.avg  = ft_preproc_baselinecorrect(source_parc.avg, 1, 60);
-    [maxval, maxidx] = max(abs(mean(source_parc.avg(:,ix1:ix2),2)));
-    signpeak         = sign(mean(source_parc.avg(maxidx,ix1:ix2),2));
-    fprintf('parcel with max amplitude = %s\n', source_parc.label{maxidx});
-    
-    for k = 1:numel(source_parc.label)
-        F(k,:) = source_parc.F{k}(1,:);
-    end
-    datapst.trial = F*datapst.trial;
+    datapst.trial = source_parc.F*datapst.trial;
     datapst.label = source_parc.label;
+    cfg=[];
+    cfg.comment = 'mutliply the LCMV spatial filter with the data (time locked to stimulus change)';
+    datapst = ft_annotate(cfg, datapst);
     
-    tmpcfg = [];
-    tmpcfg.demean = 'yes';
-    tmpcfg.baselinewindow = [-inf 0];
-    tmpcfg.lpfilter = 'yes';
-    tmpcfg.lpfreq = 30;
-    tmpcfg.lpfilttype = 'firws';
-    tmpcfg.lpfiltdir = 'onepass-reverse-zerophase'
-    datapst = ft_preprocessing(tmpcfg, datapst);
+    cfg = [];
+    cfg.demean = 'yes';
+    cfg.baselinewindow = [-inf 0];
+    cfg.lpfilter = 'yes';
+    cfg.lpfreq = 30;
+    cfg.lpfilttype = 'firws';
+    cfg.lpfiltdir = 'onepass-reverse-zerophase'
+    datapst = ft_preprocessing(cfg, datapst);
     
-    tmpcfg = [];
-    tmpcfg.latency = peaks(subj,:);%JM
-    tmpcfg.avgovertime = 'yes';
-    datapeak = ft_selectdata(tmpcfg,datapst);
     
-    X = cat(2,datapeak.trial{:});
-    Xpow = abs(mean(X,2));
-    signswap = diag(sign(mean(X,2)));
-    X = signswap*X; % let the amplitude be on average positive
-    X = standardise(X,2);
+    cfg=[];
+    cfg.keeptrials = 'yes';
+    datapst = ft_timelockanalysis(cfg, datapst);
+    cfg = [];
+    cfg.latency = peaks(subj,:);
+    cfg.avgovertime = 'yes';
+    datapeak = ft_selectdata(cfg,datapst);
+
+    cfg=[];
+    cfg.operation = 'multiply';
+    cfg.matrix = 
     
-    tmpcfg = [];
-    tlckpst = ft_timelockanalysis(tmpcfg, datapst);
-    tlckpst.avg = signswap*tlckpst.avg;
+    X = datapeak.trial;
+    Xpow = abs(mean(X,1));
+    signswap = diag(sign(mean(X,1)));
+    X = X*signswap; % let the amplitude be on average positive
+    datapeak.amp = standardise(X,1);
     
+    cfg=[];
+    cfg.comment = 'Create .amp by aligning the parcels such that the trial-average of .trial is positive. Standardise over trials.';
+    datapeak = ft_annotate(cfg, datapeak);
+    
+    cfg = [];
+    datapst = ft_timelockanalysis(cfg, datapst);
+    cfg = [];
+    cfg.matrix = repmat(diag(signswap), [1 size(datapst.avg,2)]);
+    cfg.operation = 'multiply';
+    cfg.comment = sprintf('align the parcels such that the trial-average of the [%d %d]s window is positive.',peaks(subj,:));
+    cfg.parameter = 'avg';
+    datapst = ft_math(cfg, datapst);
+%FIXME continue here.    
     load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_source',   subj, subj)));
     if ~exist('freq_shift')
         load(fullfile(datadir, 'freq/', sprintf('sub-%03d/sub-%03d_freqshort',  subj,  subj)));
@@ -259,7 +268,7 @@ if docorrpow_lcmv
     pow      = (abs(F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
     pow      = standardise(log10(pow(:)));
     
-    rho = corr(X', pow, 'type', 'spearman'); %MvE
+    rho = corr(datapeak.amp, pow, 'type', 'spearman'); %MvE
     
     
     tmp = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_eyedata.mat', subj, subj));
