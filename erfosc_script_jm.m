@@ -912,7 +912,7 @@ if dostat_erf_rt
    
    
     for subj = allsubs
-        filename = fullfile([datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_peakpicking_gamma.mat', subj, subj)]);
+        filename = fullfile([datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_gamma.mat', subj, subj)]);
         tmp = load(filename,'X', 'pow');
         X{k}=tmp.X;
         pow{k}=tmp.pow;
