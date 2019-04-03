@@ -1,4 +1,4 @@
-function erf_osc_headlocation(subj)
+function erfosc_headlocation(subj)
 
 if nargin<1
     subj = 4;
@@ -35,7 +35,7 @@ for i = 1:numel(workSpace) % list all workspace variables
 end
 
 %% load data, define trials
-erf_osc_datainfo;
+erfosc_datainfo;
 isPilot=true;
 
 cfg=[];
@@ -48,7 +48,7 @@ else
 end
 cfg.datafile = cfg.dataset;
 cfg.headerfile = cfg.dataset;
-cfg.trialfun = 'erf_osc_mytrialfun';
+cfg.trialfun = 'erfosc_trialfun';
 cfg.trialdef.prestim = min(cfg.logfile.log.realBaselineDuration, cfg.logfile.log.setBaselineDuration);
 cfg.trialdef.poststim = cfg.logfile.log.completeDurationGrating;
 cfg.catchtrial = cfg.logfile.log.trlNoShift;

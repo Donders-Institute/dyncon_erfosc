@@ -1,4 +1,4 @@
-function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact, visDegOffFixation, dosave)
+function erfosc_preprocessing_artifact(subj, isPilot, existArtifact, visDegOffFixation, dosave)
 % This function is interactive and can not be automated and/or
 % paralellized.
 % This function loads data from the ERF-oscillation experiment, segments
@@ -36,9 +36,9 @@ if nargin<5 || isempty(dosave)
 end
 
 %% Load data and define trials
-erf_osc_datainfo; % load subject specific info.
+erfosc_datainfo; % load subject specific info.
 cfg=[];
-cfg.comment = 'load data from erf_osc_datainfo.m';
+cfg.comment = 'load data from erfosc_datainfo.m';
 init = ft_annotate(cfg,[]);
 
 cfg=[];
@@ -51,7 +51,7 @@ else
 end
 cfg.datafile = cfg.dataset;
 cfg.headerfile = cfg.dataset;
-cfg.trialfun = 'erf_osc_mytrialfun';
+cfg.trialfun = 'erfosc_trialfun';
 load(cfg.logfile);
 cfg.trialdef.prestim = min(log.realBaselineDuration, log.setBaselineDuration);
 cfg.trialdef.poststim = log.completeDurationGrating;
@@ -247,7 +247,7 @@ if ~existArtifact
     end
     
     %% Inspect ICA components
-    % load the ica components computed with erf_osc_preprocessing_ica
+    % load the ica components computed with erfosc_preprocessing_ica
     
     cfg = [];
     cfg.channel = {comp.label{1:10}}; % components to be plotted
@@ -255,7 +255,7 @@ if ~existArtifact
     cfg.compscale = 'local';
     ft_databrowser(cfg, comp);
     
-    input('Please enter the ICA components in datainfo_erf_osc. press any key to continue');
+    input('Please enter the ICA components in datainfo_erfosc. press any key to continue');
     
 else
     if isPilot
@@ -279,7 +279,7 @@ comp_orig.topo = comp.topo; % topographies should be the same for full rank (com
 % als niet hetzelfde, comp_orig.topo = comp.topo;
 
 
-erf_osc_datainfo; % load subject specific data for the latest version.
+erfosc_datainfo; % load subject specific data for the latest version.
 if isPilot
     subs_comp = [pilotsubjects(subj).ecgcomp, pilotsubjects(subj).eyecomp];
 else

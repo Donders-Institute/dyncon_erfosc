@@ -2,7 +2,7 @@
 % individual gamma peak frequency. This estimation is based on either the
 % average over occipital channels, or the maximum occipital channel.
 
-erf_osc_datainfo;
+erfosc_datainfo;
 
 k=1;
 for subj=allsubs

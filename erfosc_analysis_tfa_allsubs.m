@@ -1,5 +1,5 @@
-function erf_osc_analysis_tfa_allsubs(freqRange, zeropoint, dosave)
-% Loads analysis from erf_osc_analysis_tfa, makes a relative contrast with
+function erfosc_analysis_tfa_allsubs(freqRange, zeropoint, dosave)
+% Loads analysis from erfosc_analysis_tfa, makes a relative contrast with
 % baseline and averages over subjects.
 %
 % INPUT
@@ -17,7 +17,7 @@ if ~exist(freqRange); freqRange = 'low'; end
 if ~exist(zeropoint); zeropoint = 'onset'; end
 if ~exist(zeropoint); dosave = 'true'; end
 
-erf_osc_datainfo;
+erfosc_datainfo;
 k=1;
 for subj=allsubs
     tmp = load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_tfa_%s_%s', subj, subj, freqRange, zeropoint), 'tfa');

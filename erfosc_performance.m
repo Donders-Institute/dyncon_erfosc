@@ -1,4 +1,4 @@
-function erf_osc_performance(subj, isPilot)
+function erfosc_performance(subj, isPilot)
 
 if nargin<1
     subj = 1;
@@ -13,7 +13,7 @@ if isempty(isPilot);
     isPilot = true;
 end
 
-datainfo_erf_osc; % load subject specific info.
+erfosc_datainfo; % load subject specific info.
 
 cfg=[];
 if isPilot

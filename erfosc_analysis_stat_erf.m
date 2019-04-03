@@ -1,4 +1,4 @@
-function erf_osc_analysis_stat_erf(erfoi)
+function erfosc_analysis_stat_erf(erfoi)
 
 if nargin<1 || isempty(erfoi)
     erfoi='reversal';
@@ -6,7 +6,7 @@ end
 
 ft_diary('on')
 
-erf_osc_datainfo;
+erfosc_datainfo;
 
 for subj=allsubs
         tmp{subj} = load(sprintf('/project/3011085.02/analysis/erf/sub-%03d/sub-%03d_timelock_%s.mat', subj,subj, erfoi), 'q1', 'q4');

@@ -1,4 +1,4 @@
-function [trl] = erf_osc_mytrialfun(cfg)
+function [trl] = erfosc_trialfun(cfg)
 % This function splits up the data into trials based on trigger
 % information. The triggers in the concentric grating experiment are the
 % following:

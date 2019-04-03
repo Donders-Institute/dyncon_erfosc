@@ -10,7 +10,7 @@ if ~exist('isPilot', 'var')
     isPilot = false;
 end
 if isnumeric(subj) && ~isPilot
-    erf_osc_datainfo;
+    erfosc_datainfo;
     subject = subjects(subj);
 elseif isnumeric(subj) && isPilot
     subject = pilotsubjects(subj);
@@ -474,7 +474,7 @@ if dostat_pow_erf
         load atlas_subparc374_8k.mat
         
         datadir = [project_dir 'analysis/'];
-        erf_osc_datainfo;
+        erfosc_datainfo;
         k=1;
         for subj = allsubs
             if whichFreq==1
@@ -557,7 +557,7 @@ if dostat_pow_erf
     end
 end
 if dostat_erf_rt
-    erf_osc_datainfo;
+    erfosc_datainfo;
     load atlas_subparc374_8k
     
     datadir = [project_dir 'analysis/'];

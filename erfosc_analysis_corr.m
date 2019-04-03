@@ -1,4 +1,4 @@
-function erf_osc_analysis_corr(subj, isPilot, correlation, freqRange, zeropoint, doDSS, compareQuartile)
+function erfosc_analysis_corr(subj, isPilot, correlation, freqRange, zeropoint, doDSS, compareQuartile)
 % Calculates correlations between various variables. 
 %
 % INPUT
@@ -40,7 +40,7 @@ end
 
 % initiate diary
 ft_diary('on')
-erf_osc_datainfo;
+erfosc_datainfo;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -156,13 +156,13 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
     else
         if strcmp(zeropoint, 'reversal')
             if doDSS
-                [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'reversal', false);
+                [data, nComp_keep] = erfosc_analysis_dss(subj,isPilot, 'reversal', false);
             else
                 load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj));
             end
         else
             if doDSS
-                [data, nComp_keep] = erf_osc_analysis_dss(subj,isPilot, 'onset', false);
+                [data, nComp_keep] = erfosc_analysis_dss(subj,isPilot, 'onset', false);
             else
                 load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/cleandata.mat', subj));
             end
@@ -384,7 +384,7 @@ elseif strcmp(correlation, 'amp_tfr') || strcmp(correlation, 'gamma_erf')
     end
 elseif strcmp(correlation, 'gamma_erf_virtualchan')
         load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/allori/gamma_virtual_channel.mat', subj), 'gammaPow');
-        lcmvData = erf_osc_analysis_lcmv_orientation(subj, zeropoint); 
+        lcmvData = erfosc_analysis_lcmv_orientation(subj, zeropoint); 
 
 end
     %% save

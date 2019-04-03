@@ -1,4 +1,4 @@
-function erf_osc_analysis_aseo(subj, isPilot, existWindow, doDSS)
+function erfosc_analysis_aseo(subj, isPilot, existWindow, doDSS)
 % This function selects time windows for which the specific ERF peaks and
 % it selects the channels for which the amplitude is highest. Based on
 % these parameters, the ASEO algorithm (Xu et al, 2009) models the
@@ -55,7 +55,7 @@ for i = 1:numel(workSpace) % list all workspace variables
 end
 
 %% load data
-erf_osc_datainfo;
+erfosc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
     load(sprintf('/project/3011085.02/analysis/erf/pilot-%03d/sub-%03d_timelock.mat', subj, subj));

@@ -1,4 +1,4 @@
-function erf_osc_analysis_lcmv(subj, isPilot, sourcemodel)
+function erfosc_analysis_lcmv(subj, isPilot, sourcemodel)
 % This function estimates gamma power at the estimated gamma peak frequency
 
 if nargin<1
@@ -24,7 +24,7 @@ end
 ft_diary('on')
 
 %% load data
-erf_osc_datainfo;
+erfosc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subjm subj), 'dataClean');
     load(fullfile([pilotsubjects(subj).segmentedmri, '.mat']));

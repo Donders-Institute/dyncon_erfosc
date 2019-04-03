@@ -1,4 +1,4 @@
-function [data] = erf_osc_analysis_lcmv_orientation(subj, erfoi, filtdir, dofilter, filtfreq)
+function [data] = erfosc_analysis_lcmv_orientation(subj, erfoi, filtdir, dofilter, filtfreq)
 % take the lcmv dat
 if nargin<1 || isempty(subj)
     error('subject number was not specified')
@@ -18,7 +18,7 @@ end
 
 ft_diary('on')
 
-erf_osc_datainfo;
+erfosc_datainfo;
 load(sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_gamma_virtual_channel.mat',subj, subj), 'lcmvData');
 
 cfg=[];

@@ -1,4 +1,4 @@
-function [tfa, baseline] = erf_osc_analysis_tfa(subj, isPilot, freqRange, zeropoint)
+function [tfa, baseline] = erfosc_analysis_tfa(subj, isPilot, freqRange, zeropoint)
 % Time frequency analysis.
 %
 % INPUT
@@ -32,7 +32,7 @@ end
 ft_diary('on')
 
 %% load data
-erf_osc_datainfo;
+erfosc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 else

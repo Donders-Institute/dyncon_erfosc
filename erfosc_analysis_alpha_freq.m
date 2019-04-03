@@ -1,4 +1,4 @@
-function erf_osc_analysis_alpha_freq(subj, isPilot)
+function erfosc_analysis_alpha_freq(subj, isPilot)
 % This function estimates the gamma peak frequency
 
 if nargin<1
@@ -35,7 +35,7 @@ for i = 1:numel(workSpace) % list all workspace variables
 end
 
 %% load data
-erf_osc_datainfo;
+erfosc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
     load(pilotsubjects(subj).logfile);% load log file

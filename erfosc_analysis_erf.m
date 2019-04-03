@@ -1,4 +1,4 @@
-function erf_osc_analysis_erf(subj, erfoi)
+function erfosc_analysis_erf(subj, erfoi)
 % trialinfo columns:
 % 1: trialnumber
 % 2: position (-1=left, 0=middle, 1=right)
@@ -19,7 +19,7 @@ end
 ft_diary('on')
 
 %% load data
-erf_osc_datainfo;
+erfosc_datainfo;
 data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 
 data = data.dataClean;

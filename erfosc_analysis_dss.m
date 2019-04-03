@@ -1,4 +1,4 @@
-function [data_dss, nComp_keep] = erf_osc_analysis_dss(subj, isPilot, zeropoint, doSave)
+function [data_dss, nComp_keep] = erfosc_analysis_dss(subj, isPilot, zeropoint, doSave)
 
 if nargin<1
     subj = 1;
@@ -29,7 +29,7 @@ end
 % ft_diary('on')
 
 %% load data
-erf_osc_datainfo;
+erfosc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 else

@@ -24,7 +24,7 @@ if nargin<2 || isempty(dosave)
 end
 
 %% Load data and define trials
-erf_osc_datainfo; % load subject specific info.
+erfosc_datainfo; % load subject specific info.
 
 cfg=[];
 [~, name, ext] = fileparts(subjects(subj).dataset);
@@ -32,7 +32,7 @@ cfg.dataset = fullfile(['/project/3011085.02/erfosc/ses-meg01/', name, ext]);
 cfg.logfile = load(sprintf('/project/3011085.02/erfosc/ses-beh01/sub%02dses01.mat', subj));
 cfg.datafile = cfg.dataset;
 cfg.headerfile = cfg.dataset;
-cfg.trialfun = 'erf_osc_mytrialfun';
+cfg.trialfun = 'erfosc_trialfun';
 cfg.trialdef.prestim = min(cfg.logfile.log.realBaselineDuration, cfg.logfile.log.setBaselineDuration);
 cfg.trialdef.poststim = cfg.logfile.log.completeDurationGrating;
 cfg.catchtrial = cfg.logfile.log.trlNoShift;

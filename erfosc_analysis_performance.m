@@ -1,4 +1,4 @@
-function erf_osc_analysis_perfomance(subj)
+function erfosc_analysis_perfomance(subj)
 
 load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_trialinfo.mat', subj, subj));
 trialinfo_all = trialinfo;

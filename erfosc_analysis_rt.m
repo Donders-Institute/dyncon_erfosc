@@ -1,4 +1,4 @@
-function [rt, idx_trials] = erf_osc_analysis_rt(subj, dosave)
+function [rt, idx_trials] = erfosc_analysis_rt(subj, dosave)
 % calculate reaction times from trigger information and save on disk.
 %
 % INPUT

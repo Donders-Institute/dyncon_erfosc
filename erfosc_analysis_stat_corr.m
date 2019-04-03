@@ -1,4 +1,4 @@
-function erf_osc_analysis_stat_corr(freqRange, zeropoint, erfoi, compareQuartile, correlation)
+function erfosc_analysis_stat_corr(freqRange, zeropoint, erfoi, compareQuartile, correlation)
 
 if nargin<1 || isempty(freqRange)
     freqRange = 'high';
@@ -20,7 +20,7 @@ end
 ft_diary('on')
 
 %% load data
-erf_osc_datainfo;
+erfosc_datainfo;
 
 for subj=allsubs
     if ~compareQuartile

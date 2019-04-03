@@ -1,6 +1,6 @@
-function erf_osc_preprocessing_ica(subj, isPilot)
+function erfosc_preprocessing_ica(subj, isPilot)
 % This function decomposes the data with ICA and should be called before
-% erf_osc_preprocessing_artifact. 50 components are computed with fastica
+% erfosc_preprocessing_artifact. 50 components are computed with fastica
 % procedure and saved on harddisk.
 
 if nargin<1
@@ -17,7 +17,7 @@ if isempty(isPilot);
 end
 
 %% Load data and define trials
-erf_osc_datainfo; % load subject specific info.
+erfosc_datainfo; % load subject specific info.
 
 cfg=[];
 if isPilot
@@ -29,7 +29,7 @@ else
 end
 cfg.datafile = cfg.dataset;
 cfg.headerfile = cfg.dataset;
-cfg.trialfun = 'erf_osc_mytrialfun';
+cfg.trialfun = 'erfosc_trialfun';
 cfg.trialdef.prestim = min(cfg.logfile.log.realBaselineDuration, cfg.logfile.log.setBaselineDuration);
 cfg.trialdef.poststim = cfg.logfile.log.completeDurationGrating;
 cfg.catchtrial = cfg.logfile.log.trlNoShift;
@@ -62,9 +62,9 @@ comp = ft_componentanalysis(cfg, dataResample);
 
 % save
 if isPilot
-    save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_icaComp.mat', subj,subj), 'comp');
+    save([project_dir sprintf('processed/pilot-%03d/ses-meg01/sub-%03d_icaComp.mat', subj,subj)], 'comp');
 else
-    save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj), 'comp');
+    save([project_dir sprintf('processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj)], 'comp');
 end
 
 end

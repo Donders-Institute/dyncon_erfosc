@@ -1,4 +1,4 @@
-function erf_osc_analysis_gamma_pow(subj, isPilot)
+function erfosc_analysis_gamma_pow(subj, isPilot)
 % This function makes an estimate of gamma power increase active-baseline
 % in order to exclude participants that do not show a clear gamma peak
 
@@ -19,7 +19,7 @@ end
 ft_diary('on')
 
 %% load data
-erf_osc_datainfo;
+erfosc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 else

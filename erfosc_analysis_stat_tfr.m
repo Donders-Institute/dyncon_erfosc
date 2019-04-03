@@ -1,4 +1,4 @@
-function erf_osc_analysis_stat_tfr(freqRange, zeropoint)
+function erfosc_analysis_stat_tfr(freqRange, zeropoint)
 
 if nargin<1
     freqRange = 'high';
@@ -14,7 +14,7 @@ if isempty(zeropoint)
 end
 ft_diary('on')
 
-erf_osc_datainfo;
+erfosc_datainfo;
 
 % load data
 for subj=allsubs

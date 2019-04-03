@@ -1,4 +1,4 @@
-function erf_osc_analysis_pow(subj, isPilot, dosave)
+function erfosc_analysis_pow(subj, isPilot, dosave)
 % estimates power on stimulus and baseline segments in occipital channels
 % and contrasts them as relative change. Also estimates peak frequency and
 % maximum difference ratio for gamma band (30-90 Hz, as increase) and alpha
@@ -23,7 +23,7 @@ if nargin<3 || isempty(dosave);
 end
 
 %% load data
-erf_osc_datainfo;
+erfosc_datainfo;
 if isPilot
     data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj,subj), 'dataClean');
 else
