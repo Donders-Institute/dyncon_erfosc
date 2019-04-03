@@ -1,4 +1,4 @@
-function erf_osc_analysis_tfa_allsubs(freqRange, zeropoint)
+function erf_osc_analysis_tfa_allsubs(freqRange, zeropoint, dosave)
 % Loads analysis from erf_osc_analysis_tfa, makes a relative contrast with
 % baseline and averages over subjects.
 %
@@ -15,6 +15,7 @@ function erf_osc_analysis_tfa_allsubs(freqRange, zeropoint)
 
 if ~exist(freqRange); freqRange = 'low'; end
 if ~exist(zeropoint); zeropoint = 'onset'; end
+if ~exist(zeropoint); dosave = 'true'; end
 
 erf_osc_datainfo;
 k=1;
@@ -35,7 +36,8 @@ cfg=[];
 cfg.appenddim = 'rpt';
 d = ft_appendfreq(cfg, tfa{:});
 
-save(sprintf('/project/3011085.02/analysis/tfr_all_%s_%s.mat', freqRange, zeropoint), 'd', '-v7.3');
-
+if dosave
+    save(sprintf('/project/3011085.02/analysis/tfr_all_%s_%s.mat', freqRange, zeropoint), 'd', '-v7.3');
+end
 
 
