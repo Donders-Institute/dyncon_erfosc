@@ -1,4 +1,4 @@
-function [rt, idx_trials] = erf_osc_analysis_rt(subj)
+function [rt, idx_trials] = erf_osc_analysis_rt(subj, dosave)
 % calculate reaction times from trigger information and save on disk.
 %
 % INPUT
@@ -9,14 +9,13 @@ function [rt, idx_trials] = erf_osc_analysis_rt(subj)
 %   rt: reaction times (ms), after stimulus change
 %   idx_trials: trial numbers of reaction time estimates
 
-if nargin<1
+if nargin<1 || isempty(subj)
     subj=1;
 end
-if isempty(subj)
-    subj=1;
+if isempty(dosave)
+    dosave=true;
 end
 
-ft_diary('on')
 
 %% load data, select trials, estimate RT
 data=load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
@@ -51,11 +50,15 @@ cfg.channel = 'MEG';
 data = ft_selectdata(cfg, data);
 
 rt = (data.trialinfo(:,6)-data.trialinfo(:, 5))/data.fsample;
+cfg=[];
+cfg.comment = 'define rt by running "rt = (data.trialinfo(:,6)-data.trialinfo(:, 5))/data.fsample;".';
+rt = ft_annotate(cfg, rt);
 
 % save
 filename = sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt', subj,subj);
-save(fullfile([filename '.mat']), 'rt');
+if dosave
+    save(fullfile([filename '.mat']), 'rt');
+end
 
-ft_diary('off')
 
 end
