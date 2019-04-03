@@ -1,4 +1,4 @@
-function [source_onset, source_shift, Tval, F] = erfosc_dics(freq_onset, freq_shift, headmodel, sourcemodel)
+function [sourcefreq_onset, sourcefreq_shift, Tval] = erfosc_dics(freq_onset, freq_shift, headmodel, sourcemodel)
 % Compute power on the source level using a DICS
 % beamformer (Gross et al, 2001). Also estimates the location with the 
 % highest increase from baseline.
@@ -42,8 +42,8 @@ source = ft_sourceanalysis(cfg, ft_checkdata(freq, 'cmbrepresentation', 'fullfas
 cfg.grid.filter = source.avg.filter;
 cfg.dics.keepfilter = 'no';
 
-source_onset = ft_sourceanalysis(cfg, ft_checkdata(freq_onset, 'cmbrepresentation', 'fullfast'));
-source_shift = ft_sourceanalysis(cfg, ft_checkdata(freq_shift, 'cmbrepresentation', 'fullfast'));
+sourcefreq_onset = ft_sourceanalysis(cfg, ft_checkdata(freq_onset, 'cmbrepresentation', 'fullfast'));
+sourcefreq_shift = ft_sourceanalysis(cfg, ft_checkdata(freq_shift, 'cmbrepresentation', 'fullfast'));
 
 % projection matrix to get from fourier to power
 nrpt = numel(freq_onset.cumtapcnt);
@@ -54,9 +54,16 @@ iy = 1:(nrpt*ntap);
 iz = ones(nrpt*ntap,1)./ntap;
 P  = sparse(iy,ix,iz,nrpt*ntap,nrpt);
 
-% hacky T-statistic computation
-F = zeros(numel(source.inside), numel(data_onset.label));
+% T-statistic computation
+F = zeros(numel(source.inside), numel(freq_onset.label));
 F(source.inside,:) = cat(1, source.avg.filter{:}); %FIXME do I need to change this into a FT structure?
+
+cfg=[];
+cfg.comment = 'add spatial filter to structure';
+sourcefreq_onset.F = F;
+sourcefreq_onset = ft_annotate(cfg, sourcefreq_onset);
+sourcefreq_shift.F = F;
+sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
 
 p_onset = rmfield(source, 'avg');
 p_onset.dimord = 'pos_rpt';
@@ -79,11 +86,5 @@ cfg.design = design;
 cfg.method = 'analytic';
 cfg.statistic = 'depsamplesT';
 Tval = ft_sourcestatistics(cfg, p_onset, p_shift);
-% cfg = [];
-% cfg.ivar = 1;
-% cfg.design = design(1,:);
-% cfg.method = 'analytic';
-% cfg.statistic = 'indepsamplesT';
-% Tstat_indep = ft_statfun_indepsamplesT(cfg, p_onset, p_shift);
 
 
