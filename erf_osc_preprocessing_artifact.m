@@ -1,4 +1,4 @@
-function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact, visDegOffFixation)
+function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact, visDegOffFixation, dosave)
 % This function is interactive and can not be automated and/or
 % paralellized.
 % This function loads data from the ERF-oscillation experiment, segments
@@ -15,6 +15,9 @@ function erf_osc_preprocessing_artifact(subj, isPilot, existArtifact, visDegOffF
 % = false)
 % visDegOffFixation: threshold for deleting trials based on excessive eye
 % movements (default: delete trials if deviation>5 visual degrees).
+% global ft_default;
+% ft_default = [];
+% ft_default.reproducescript = datestr(now, 30);
 
 if nargin<1 || isempty(subj)
     subj = 1;
@@ -28,27 +31,31 @@ end
 if nargin<4 || isempty(visDegOffFixation)
     visDegOffFixation = 5;
 end
-
-% initiate diary
-ft_diary('on')
+if nargin<5 || isempty(dosave)
+    dosave = true;
+end
 
 %% Load data and define trials
 erf_osc_datainfo; % load subject specific info.
+cfg=[];
+cfg.comment = 'load data from erf_osc_datainfo.m';
+init = ft_annotate(cfg,[]);
 
 cfg=[];
 if isPilot
     cfg.dataset = pilotsubjects(subj).dataset;
-    cfg.logfile = load(pilotsubjects(subj).logfile);% load log file
+    cfg.logfile = pilotsubjects(subj).logfile;
 else
     cfg.dataset = subjects(subj).dataset;
-    cfg.logfile = load(subjects(subj).logfile);
+    cfg.logfile = subjects(subj).logfile;
 end
 cfg.datafile = cfg.dataset;
 cfg.headerfile = cfg.dataset;
 cfg.trialfun = 'erf_osc_mytrialfun';
-cfg.trialdef.prestim = min(cfg.logfile.log.realBaselineDuration, cfg.logfile.log.setBaselineDuration);
-cfg.trialdef.poststim = cfg.logfile.log.completeDurationGrating;
-cfg.catchtrial = cfg.logfile.log.trlNoShift;
+load(cfg.logfile);
+cfg.trialdef.prestim = min(log.realBaselineDuration, log.setBaselineDuration);
+cfg.trialdef.poststim = log.completeDurationGrating;
+cfg.catchtrial = log.trlNoShift;
 cfg.continuous = 'yes';
 cfg = ft_definetrial(cfg);
 cfg2=cfg; % use this for finding EOG artifacts.
@@ -81,14 +88,14 @@ if ~existArtifact
     cfg.layout = 'CTF275_helmet.mat'; % so timecourses and topographies of individual trials can be looked at
     dataRejVis        = ft_rejectvisual(cfg, data);
     % you can check the rejected trial number by typing
-    trlind=[];
+    artfctdef.badtrial=[];
     for i=1:size(dataRejVis.cfg.artfctdef.summary.artifact,1)
-        trlind(i)=find(data.sampleinfo(:,1)==dataRejVis.cfg.artfctdef.summary.artifact(i,1));
+        artfctdef.badtrial(i)=find(data.sampleinfo(:,1)==dataRejVis.cfg.artfctdef.summary.artifact(i,1));
     end;
-    trlind = [trlind, subjects(subj).badtrials];
-    if trlind
-        disp(trlind);
-        data.badtrials = trlind;
+    artfctdef.badtrial = [artfctdef.badtrial, subjects(subj).badtrials];
+    if artfctdef.badtrial
+        disp(artfctdef.badtrial);
+        data.badtrials = artfctdef.badtrial;
     else
         data.badtrials = [];
     end
@@ -110,7 +117,7 @@ if ~existArtifact
     cfg.artfctdef.zvalue.interactive = 'yes';
     
     sprintf('find jump artifacts')
-    [~, artifact_jump] = ft_artifact_zvalue(cfg, data);
+    [~, artfctdef.jump.artifact] = ft_artifact_zvalue(cfg, data);
     
     %% Find muscle artifacts
     cfg            = [];
@@ -131,7 +138,7 @@ if ~existArtifact
     cfg.artfctdef.zvalue.interactive = 'yes';
     
     sprintf('find muscle artifacts')
-    [~, artifact_muscle] = ft_artifact_zvalue(cfg, data);
+    [~, artfctdef.muscle.artifact] = ft_artifact_zvalue(cfg, data);
     
     %% find EOG blink artifacts
     % channel selection, cutoff and padding
@@ -150,118 +157,38 @@ if ~existArtifact
     cfg2.artfctdef.zvalue.interactive = 'yes';
     
     sprintf('find blink artifacts')
-    [~, artifact_EOG_blink] = ft_artifact_zvalue(cfg2);
-   
+    [~, artfctdef.eyeblink.artifact] = ft_artifact_zvalue(cfg2);
+    
     %% Find EOG saccade artifacts
     % this algorithm marks events as artifacts if eye movements are made
     % with more than 1 visual degree off the central fixation point.
-    
-    
-    % pixel coords for 1920x1080 screen, upper left is (0,0)
-    % these dimensions can be found in PHYSICAL.INI or your presentation/PTB
-    % settings.
-    screenRight=1919;
-    screenLeft=0;
-    screenTop=0;
-    screenBottom=1079;
-    
-    % range of voltages and recording range as defined in FINAL.INI
-    minVoltage=-5;
-    maxVoltage=5;
-    minRange=0;
-    maxRange=1;
-    
-    totDist=780; % distance eye-screen in mm
-    
-    % if you want to calculate the visual degree per pixel, physical dimensions
-    % of the pixels have to be known (so projected screen size).
-    screenWidth_y=270;
-    screenWidth_x=480; % has to be 'projected width' in mm (not actual width)
-    
-    % convert ADC-voltref back to GAZE position
-    xGaze=[];
-    yGaze=[];
-    for iTrial=1:size(data.trial,2);% these are trials with right-left voluntary saccades
-        
-        
-        idxChanHor=find(strcmp(data.label,'UADC005'));
-        idxChanVer=find(strcmp(data.label,'UADC006'));
-        
-        voltageHor=data.trial{iTrial}(idxChanHor,:);
-        voltageVer=data.trial{iTrial}(idxChanVer,:);
-        
-        % see eyelink1000_UserManual for formulas:
-        RangeHor = (voltageHor-minVoltage)./(maxVoltage-minVoltage); % voltage range proportion
-        S_h = RangeHor.*(maxRange-minRange)+minRange; % proportion of screen width or height
-        
-        R_v = (voltageVer-minVoltage)./(maxVoltage-minVoltage);
-        S_v = R_v.*(maxRange-minRange)+minRange;
-        
-        xGaze{iTrial} = S_h.*(screenRight-screenLeft+1)+screenLeft;
-        yGaze{iTrial} = S_v.*(screenBottom-screenTop+1)+screenTop;
-        
-        
-        % gaze position on center of screen (where fixation dot is)
-        Xgaze_origin=xGaze;
-        Ygaze_origin=yGaze;
-        
-        xGaze{iTrial} = xGaze{iTrial} - round(screenRight/2);%%presentation/PTB assumes 1 more pixel than there actually is.
-        %presenation x-position = screen position + 1 pixel to the right:
-        %presentation x-pos(0) = 1919/2
-        
-        yGaze{iTrial} = yGaze{iTrial} - round(screenBottom/2);
-    end
-    % Xgaze and Ygaze now are the eye positions on the screen (relative to
-    % fixation point). We can now convert them to visual angles (relative to
-    % fixation point).
-    
-    % if you want to know the visual angle per pixel, calculate this
-    %
-    % X
-    screenResX=screenRight+1;
-    visAngX_rad = 2 * atan(screenWidth_x/2/totDist);
-    visAngX_deg = visAngX_rad * (180/pi);
-    visAngPerPixX = visAngX_deg / screenResX;
-    
+    [artfctdef.eyepos.visAngleX, artfctdef.eyepos.visAngleY, visAngPerPixX, visAngPerPixY] = transform_eyedata(data);
     dotSize = 20; % fixation dot is 20 pixels wide (see concentric_grating_experiment)
     visDegFixDot = visAngPerPixX * dotSize;
-    
-    % Y
-    screenResY=screenBottom+1;
-    visAngY_rad = 2 * atan(screenWidth_y/2/totDist);
-    visAngY_deg = visAngY_rad * (180/pi);
-    visAngPerPixY = visAngY_deg / screenResY;
-    %}
-    
-    % visual angle in reference to middle of the screen
-    for iTrial = 1:size(data.trial,2)
-        visAngleX{iTrial} = rad2deg(atan((xGaze{iTrial}/2)/(totDist*screenResX/screenWidth_x)))*2;
-        visAngleY{iTrial} = rad2deg(atan((yGaze{iTrial}/2)/(totDist*screenResY/screenWidth_y)))*2;
-    end
-    
     % NOTE: the rest of the eye movement artifact detection is done after
     % ICA based on visAngleX and Y.
     
     %% Save artifacts
-    artfctdef.badtrial = trlind;
-    artfctdef.jump.artifact = artifact_jump;
-    artfctdef.muscle.artifact = artifact_muscle;
-    artfctdef.eyeblink.artifact = artifact_EOG_blink;
-    artfctdef.eyepos.visAngleX = visAngleX;
-    artfctdef.eyepos.visAngleY = visAngleY; 
     artfctdef.eyepos.visDegFixDot = visDegFixDot; % save eye position in artifact definition in order to find artifacts in it later.
     %     artfctdef.eyesaccade.artifact = artifact_EOG_saccade; % save
     %     saccade artifacts later
+    cfg=[];
+    cfg.comment = 'artfctdef.eyepos is created by running "[artfctdef.eyepos.visAngleX, artfctdef.eyepos.visAngleY, visAngPerPixX, visAngPerPixY] = transform_eyedata(data)".';
+    artfctdef = ft_annotate(cfg, artfctdef);
     if isPilot
         if ~exist(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/', subj), 'dir');
             mkdir(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/', subj));
         end
-        save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
+        if dosave
+            save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
+        end
     else
         if ~exist(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/', subj), 'dir');
             mkdir(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/', subj));
         end
-        save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
+        if dosave
+            save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
+        end
     end
     
     
@@ -275,7 +202,6 @@ else
     end
     if ~exist('artfctdef.eyesaccade')
         sprintf('WARNING: possibly eye saccade artifacts have not yet been marked. These do not appear in artfctdef.')
-        input('press a key to continue')
     end
 end
 
@@ -287,13 +213,13 @@ cfg.artfctdef.crittoilim = [-1 3.75];
 dataNoArtfct = ft_rejectartifact(cfg, data);
 
 % reject extra channels if needed
-if ~isempty(subjects(subj).channels) 
+if ~isempty(subjects(subj).channels)
     cfg=[];
     cfg.channel = subjects(subj).channels;
     dataNoArtfct = ft_selectdata(cfg, dataNoArtfct);
 end
-    
-    
+
+
 
 %% Compute ICA
 if ~existArtifact
@@ -316,7 +242,9 @@ if ~existArtifact
     else
         filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj);
     end
-    save(filename, 'comp')
+    if dosave
+        save(filename, 'comp')
+    end
     
     %% Inspect ICA components
     % load the ica components computed with erf_osc_preprocessing_ica
@@ -361,8 +289,6 @@ cfg=[];
 cfg.component = subs_comp;
 dataNoIca = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
 
-% save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/dataHalfClean.mat', subj), 'dataNoIca', '-v7.3')
-
 %% remove saccade artifacts
 artifact_EOG_saccade = [];
 if ~exist('visAngleX') || ~exist('visAngleY')
@@ -378,33 +304,7 @@ end
 % visDegOffFixation = visDegOffFixation + visDegFixDot; % relative to border of fixation dot
 % mark event as artifact if fixation from fixation point is broken with
 % more than x visual degree.
-for iTrial = 1:size(data.trial,2)
-    isFixation = sqrt(visAngleX{iTrial}.^2 + visAngleY{iTrial}.^2) < visDegOffFixation; % note all the samples where fixation is good/bad
-    %         samplenumber = data.sampleinfo(iTrial,1);
-    %         while samplenumber <= data.sampleinfo(iTrial,2)
-    samplenumber = 1;
-    while samplenumber <= size(isFixation,2) % for the whole trial (in sample numbers)
-        % if there is a new off-fixation event, note the first off-fixation sample
-        if any(isFixation(1, samplenumber:end)==0)
-            sampleStartOffFixation = (samplenumber -1) + find(isFixation(1, samplenumber:end)==0,1);
-            artifact_EOG_saccade(end+1,1) = data.sampleinfo(iTrial,1) + sampleStartOffFixation;
-            %                 samplenumber = sampleStartOffFixation+1;
-            %if there is fixation returns after off-fixation, note last
-            % off-fixation sample of that event
-            if any(isFixation(1, sampleStartOffFixation + 1 : end)==1)
-                sampleStopOffFixation = sampleStartOffFixation + find(isFixation(1, sampleStartOffFixation + 1 : end) ==1, 1) -1; % stop off-fixation is 1 sample before on fixation again.
-                artifact_EOG_saccade(end,2) = data.sampleinfo(iTrial,1) + sampleStopOffFixation;
-                samplenumber = sampleStopOffFixation +1;
-break
-            else
-                artifact_EOG_saccade(end,2) = data.sampleinfo(iTrial,2);
-                samplenumber = data.sampleinfo(iTrial,2);
-            end
-        else
-            break
-        end
-    end
-end
+artifact_EOG_saccade = break_fixation(data, visDegOffFixation);
 
 % save artifacts in existing artifact definition.
 if isPilot
@@ -413,12 +313,16 @@ else
     load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
 end
 artfctdef.eyesaccade.artifact = artifact_EOG_saccade;
-if isPilot
-    save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
-else
-    save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
+cfg=[];
+cfg.comment = 'artfctdef.eyesaccade.artifact is created by running "artfctdef.eyesaccade.artifact = break_fixation(data, 5)".';
+artfctdef = ft_annotate(cfg, artfctdef);
+if dosave
+    if isPilot
+        save(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
+    else
+        save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
+    end
 end
-
 % reject eye movements from data
 cfg = [];
 cfg.artfctdef.eyesaccade.artifact = artifact_EOG_saccade;
@@ -449,10 +353,11 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata', subj, subj);
 end
-save(fullfile([filename '.mat']), 'dataClean','nTrialsPreClean','nTrialsPostClean','nTrialsValid', '-v7.3');
-save(fullfile([filename(1:end-9), 'headmotion', '.mat']), 'headmotion');
-ft_diary('off')
-
+if dosave
+    save(fullfile([filename '.mat']), 'dataClean','nTrialsPreClean','nTrialsPostClean','nTrialsValid', '-v7.3');
+    save(fullfile([filename(1:end-9), 'headmotion', '.mat']), 'headmotion');
 end
+
+ft_default.reproducescript = [];
 
 

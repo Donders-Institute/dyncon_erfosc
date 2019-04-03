@@ -28,7 +28,7 @@ for iEvent = 1:length(event)
     trigValue(iEvent,1) = event(iEvent).value;
 end
 
-log = cfg.logfile.log;
+load(cfg.logfile)
 
 trl=[];
 iTrial=1;
