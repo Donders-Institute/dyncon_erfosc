@@ -71,7 +71,7 @@ cfg        = [];
 cfg.offset = -((data.trialinfo(:,5)-data.trialinfo(:,4)))/2;
 data_shift = ft_redefinetrial(cfg, data);
 
-data = rmfield(data,'cfg');
+data_onset = rmfield(data,'cfg');
 data_shift = rmfield(data_shift, 'cfg');
 
 if dosave
