@@ -1,9 +1,9 @@
-function erf_osc_analysis_pow(subj, isPilot)
+function erf_osc_analysis_pow(subj, isPilot, dosave)
 % estimates power on stimulus and baseline segments in occipital channels
 % and contrasts them as relative change. Also estimates peak frequency and
 % maximum difference ratio for gamma band (30-90 Hz, as increase) and alpha
 % low frequency band (2-30 Hz, as decrease)
-% 
+%
 % INPUT
 %   subj (int): subject ID, ranging from 1 to 33, excluding 10 (default=1)
 %   isPilot (logical): whether or not to apply on pilot data (default=0)
@@ -12,21 +12,15 @@ function erf_osc_analysis_pow(subj, isPilot)
 %   saves data on disk
 %   mean ratio, maximum ratio, peak frequency, for high and low frequencies
 
-if nargin<1
+if nargin<1 || isempty(subj)
     subj = 1;
 end
-if isempty(subj)
-    subj = 1;
-end
-if nargin<2
+if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
-if isempty(isPilot);
-    isPilot = false;
+if nargin<3 || isempty(dosave);
+    dosave = true;
 end
-
-% initiate diary
-ft_diary('on')
 
 %% load data
 erf_osc_datainfo;
@@ -38,30 +32,30 @@ end
 data=data.dataClean;
 fs = data.fsample;
 
-    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
-    nTrials = length(idxM);
-    
-    cfg=[];
-    cfg.trials = idxM;
-    cfg.channel = 'MEG';
-    data = ft_selectdata(cfg, data);
-    
-    % find out which trials have response after end of trial, so you can
-    % exclude them
-    cfg=[];
-    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-    data_reversal_tmp = ft_redefinetrial(cfg, data);
-    
-    for iTrial=1:nTrials
-        trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
-    end
-    idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
-    idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
-    
-    cfg=[];
-    cfg.trials = idx_trials;
-    cfg.channel = 'MEG';
-    data = ft_selectdata(cfg, data);
+idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
+nTrials = length(idxM);
+
+cfg=[];
+cfg.trials = idxM;
+cfg.channel = 'MEG';
+data = ft_selectdata(cfg, data);
+
+% find out which trials have response after end of trial, so you can
+% exclude them
+cfg=[];
+cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+data_reversal_tmp = ft_redefinetrial(cfg, data);
+
+for iTrial=1:nTrials
+    trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
+end
+idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+
+cfg=[];
+cfg.trials = idx_trials;
+cfg.channel = 'MEG';
+data = ft_selectdata(cfg, data);
 
 for iTrl=1:size(data.trial,2)
     blonset(iTrl,1) = data.time{iTrl}(1);
@@ -71,8 +65,8 @@ cfg=[];
 % cfg.trl = [data.trialinfo(:,3), data.trialinfo(:,4) data.trialinfo(:,3)-data.trialinfo(:,4)];
 % the first column represents the start of the baseline period. Its sample
 % number is inaccurate w.r.t. the time axis in the data (possibly because
-% of previous use of ft_selectdata?). This analysis in NaNs in the data. 
-% Thus, don't use the samplenumber provided by trialinfo, but calculate on 
+% of previous use of ft_selectdata?). This analysis in NaNs in the data.
+% Thus, don't use the samplenumber provided by trialinfo, but calculate on
 % the spot based on time axis.
 cfg.trl = [data.trialinfo(:,4)+blonset*fs, data.trialinfo(:,4)];
 cfg.trl = [cfg.trl, cfg.trl(:,1)-cfg.trl(:,2)];
@@ -136,9 +130,10 @@ if isPilot
 else
     filename = sprintf('/project/3011085.02/analysis/freq/sub-%03d/sub-%03d_pow', subj, subj);
 end
-save(fullfile([filename '.mat']), 'powRatio', 'peakFreq_gamma', 'gamRatio', 'maxP_gam');
-save(fullfile([filename '_low.mat']), 'powRatio', 'minP_low', 'peakFreq_low', 'lowfreqRatio');
-ft_diary('off')
+if dosave
+    save(fullfile([filename '.mat']), 'powRatio', 'peakFreq_gamma', 'gamRatio', 'maxP_gam');
+    save(fullfile([filename '_low.mat']), 'powRatio', 'minP_low', 'peakFreq_low', 'lowfreqRatio');
+end
 
 end
 
