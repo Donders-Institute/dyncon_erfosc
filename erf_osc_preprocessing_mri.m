@@ -12,6 +12,9 @@ else
     cfg.subjects = subjects;
 end
 
+cfg.ctfspace = false;
+anatomy_deface(subj, cfg);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% CORTICAL SHEET, FREESURFER, PREPROCESSING %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -24,6 +27,10 @@ anatomy_dicom2mgz(subj, cfg);
 anatomy_mgz2mni(subj, cfg);
 
 anatomy_mgz2ctf(subj, cfg);
+
+% deface mri (newly introduced for sharing data)
+cfg.ctfspace = true;
+anatomy_deface(subj, cfg)
 
 % Skullstriping
 anatomy_skullstrip(subj, cfg);
