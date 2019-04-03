@@ -2,7 +2,7 @@
 % subject specific information for analysis
 pilotsubjects = [];
 subjects=[];
-
+project_dir = '/project/3011085.02/';
 %% pilot
 
 pilotsubjects(1).channels         = [];
