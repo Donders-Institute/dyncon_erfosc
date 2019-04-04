@@ -231,6 +231,16 @@ if dolcmv_norm
   end
 end
 
+if dodics && dofreq_short
+  sourcefreq_shift.avg.pow = (abs(sourcefreq_shift.F*transpose(freq_shift.fourierspctrm)).^2)*P;
+  cfg=[];
+  cfg.comment = 'for avg.pow take the power in the pre-ERF window by combining the spatial filter with the fourierspectrum in this window';
+  sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
+  sourcefreq_shift.avg.pow = standardise(log10(source_shift.avg.pow), 2);
+  cfg.comment = 'log10 avg.pow and standardise w.r.t. trials';
+  sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
+end
+
 if docorrpow_lcmv
   peakpicking;
   cfg=[];
@@ -313,9 +323,8 @@ if docorrpow_lcmv
   % do the correlations
   if dolowfreq
     [m, idx] = max(sourcefreq_shift_Tval.stat);
-    sourcefreq_shift.roipow      = (abs(sourcefreq_shift.F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
     cfg=[];
-    cfg.comment = 'add `roipow` field to frequency structure, with single-trial power values at the source location of maximal NEGATIVE induced power change';
+    cfg.comment = 'Create field roipow: from avg.pow, select only single-trial power values at the source location of maximal NEGATIVE induced power change';
   elseif dohighfreq
     % prepare eye data
     [~, eyedata_shift] = erfosc_preprocessing_eyedata(subj);
@@ -355,19 +364,10 @@ if docorrpow_lcmv
     distance_fixation = ft_annotate(cfg, distance_fixation);
     
     [m, idx] = max(sourcefreq_shift_Tval.stat);
-    sourcefreq_shift.roipow      = (abs(sourcefreq_shift.F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
     cfg=[];
-    cfg.comment = 'add `roipow` field to frequency structure, with single-trial power values at the source location of maximal POSITIVE induced power change';
+    cfg.comment = 'Create field roipow: from avg.pow, select only single-trial power values at the source location of maximal POSITIVE induced power change';
   end
-  sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
-  cfg=[];
-  cfg.parameter = 'roipow';
-  cfg.operation = 'log10';
-  sourcefreq_shift = ft_math(cfg, sourcefreq_shift);
-  
-  sourcefreq_shift.roipow      = standardise(sourcefreq_shift.roipow(:));
-  cfg=[];
-  cfg.comment = 'standardise roipow w.r.t. trials';
+  sourcefreq_shift.roipow = sourcefreq_shift.avg.pow(idx,:);
   sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
   
   datapeak.rho = corr(datapeak.trial, sourcefreq_shift.roipow, 'type', 'spearman');
@@ -434,20 +434,15 @@ if docorrpow_lcmv
 end
 
 if docorr_gamma_rt
-  datadir = [project_dir 'analysis/'];
-  load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_source',  subj,  subj)));
+  sourcefreq_shift.rho = corr(data_onset.trialinfo(:,7), sourcefreq_shift.avg.pow', 'type', 'spearman')'; %MvE
+  cfg=[];
+  cfg.comment = 'create rho field by calculating the spearman rank correlation between source power and reaction times.';
+  sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
   
-  pow      = (abs(F*transpose(freq_shift.fourierspctrm)).^2)*P;
-  pow      = log10(pow);
-  s = std(pow, [], 2);
-  u = mean(pow, 2);
-  pow = (pow-repmat(u, [1 size(pow,2)]))./repmat(s, [1 size(pow,2)]);
-  
-  rho = corr(data_onset.trialinfo(:,7), pow', 'type', 'spearman'); %MvE
-  rho=rho';
-  
-  filename = sprintf('/project/3011085.02/analysis/corr/sub-%03d/sub-%03d_corr_3Dgamma_rt.mat', subj, subj);
-  save(filename, 'rho')
+  if dosave
+    filename = [project_dir, sprintf('analysis/corr/sub-%03d/sub-%03d_corr_3Dgamma_rt.mat', subj, subj)];
+    save(filename, 'sourcefreq_shift')
+  end
 end
 if dostat_pow_erf
   if ~exist('GA'); GA = input('send out single subject analyses (0), or continue to group analysis (1)?'); end
