@@ -70,6 +70,11 @@ if ~isempty(comp)
 end
 clear data_reversal_tmp
 
+data.trialinfo(:,end+1) = (data.trialinfo(:,6)-data.trialinfo(:,5))/1200;
+cfg=[];
+cfg.comment = 'add reaction times (s) as the 7th column in trialinfo by subtracting 5th from 6th column and deviding by the sampling frequency.';
+data = ft_annotate(cfg, data);
+
 % get the stim-onset aligned data
 cfg         = [];
 cfg.latency = [-0.75 0.75-1/fsorig];
