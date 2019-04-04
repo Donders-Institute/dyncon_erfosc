@@ -84,20 +84,14 @@ if dotfa
   cfg.method          = 'sincos';
   data_planar         = ft_megplanar(cfg, data_onset);
   
-  cfg                  = [];
-  cfg.output           = 'pow';
-  cfg.channel          = 'MEG';
-  cfg.method           = 'mtmconvol';
-  cfg.toi              = -1.75:0.05:1.75;
-  cfg.keeptrials       = 'yes';
-  cfg.pad          = 6;
-  
-  cfg2=[];
-  cfg2.method = 'sum';
-  
-  cfg3=[];
-  cfg3.latency = [-1 -0.25];
-  
+  cfg                 = [];
+  cfg.output          = 'pow';
+  cfg.channel         = 'MEG';
+  cfg.method          = 'mtmconvol';
+  cfg.toi             = -1.75:0.05:1.75;
+  cfg.keeptrials      = 'yes';
+  cfg.pad             = 6;
+
   savedir = [project_dir, sprintf('results/freq/sub-%03d', subj)];
   if ~exist('dolowfreq', 'var'); dolowfreq = 1; end
   if ~exist('dohighfreq', 'var'); dohighfreq = 1; end
@@ -105,24 +99,26 @@ if dotfa
     cfg.taper        = 'hanning';
     cfg.foi          = 2:2:30;% analysis 2 to 30 Hz in steps of 2 Hz
     cfg.t_ftimwin    = ones(length(cfg.foi),1).*0.5;   % length of time window = 0.5 sec
-    tfa_planar_low   = ft_freqanalysis(cfg, data_planar);
-    tfa_low          = ft_combineplanar(cfg2, tfa_planar_low);
-    tfa_low_baseline = ft_selectdata(cfg3, tfa_high);
-    if dosave
-      save([savedir, sprintf('sub-%03d_tfa_low_onset', subj)], 'tfa_low', 'tfa_low_baseline')
-    end
+  elseif dohighfreq
+    cfg.taper     = 'dpss';
+    cfg.tapsmofrq = 8; % 8 Hz freq smoothing on both sides
+    cfg.foi       = 28:4:100;
+    cfg.t_ftimwin = ones(length(cfg.foi),1).*(1/4);
   end
-  if dohighfreq
-    cfg.taper         = 'dpss';
-    cfg.tapsmofrq     = 8; % 8 Hz freq smoothing on both sides
-    cfg.foi           = 28:4:100;
-    cfg.t_ftimwin     = ones(length(cfg.foi),1).*(1/4);
-    tfa_planar_high   = ft_freqanalysis(cfg, data_planar);
-    tfa_high          = ft_combineplanar(cfg2, tfa_planar_high);
-    tfa_high_baseline = ft_selectdata(cfg3, tfa_high);
-    if dosave
-      save([savedir, sprintf('sub-%03d_tfa_high_onset', subj)], 'tfa_high', 'tfa_high_baseline')
+  tfa_planar   = ft_freqanalysis(cfg, data_planar);
+  cfg=[];
+  cfg.method = 'sum';
+  tfa          = ft_combineplanar(cfg, tfa_planar_low);
+  cfg=[];
+  cfg.latency = [-1 -0.25];
+  tfa_baseline = ft_selectdata(cfg, tfa_high);
+  if dosave
+    if dolowfreq
+      tmpstr = 'low';
+    elseif dohighfreq
+      tmpstr = 'high';
     end
+    save([savedir, sprintf('sub-%03d_tfa_%s_onset', subj, tmpstr)], 'tfa', 'tfa_baseline')
   end
   clear tfa_planar_low tfa_planar_high data_planar
 end
@@ -130,31 +126,27 @@ end
 % this chunk does spectral decomposition - needed for computing spatial
 % filters
 if dofreq
-  if ~exist('latency', 'var')
-    latency = [-inf 0-1./data_onset.fsample];
-  end
-  if dodics_lowfreq
+  if dolowfreq
     if ~exist('peakfreq', 'var')
       load([project_dir, sprintf('analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj)]);
     end
     foi = [peakfreq peakfreq]; smo = 2;
     latency = [-0.75+1./data_onset.fsample 0-1./data_onset.fsample];
     [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
-  else
+  elseif dohighfreq
+    if ~exist('latency', 'var')
+      latency = [-inf 0-1./data_onset.fsample];
+    end
     [freq_onset, freq_shift, P, pow_onset, pow_shift] = erfosc_freq(data_onset, data_shift, latency, subject);
   end
-  
-  if ~exist('savefreq', 'var')
-    savefreq = false;
-  end
-  if savefreq
+  if dosave
     savedir = [project_dir 'analysis/freq'];
     save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_freq', subj,subj)), 'freq_shift', 'P', 'latency');
   end
 end
 
 % this chunk does source reconstruction
-if dodics_gamma || dodics_lowfreq
+if dodics
   load(fullfile(subject.mridir,'preproc','headmodel.mat'));
   cfg=[];
   cfg.comment = 'load subject`s headmodel';
@@ -167,21 +159,22 @@ if dodics_gamma || dodics_lowfreq
   savedir = [project_dir 'analysis/source/'];
   if dosave
     filename = fullfile(savedir, sprintf('sub-%03d/sub-%03d_source', subj,subj));
-    if dodics_lowfreq
+    if dolowfreq
       filename = [filename, '_low'];
     end
     save(filename, 'sourcefreq_onset', 'sourcefreq_shift', 'sourcefreq_shift_Tval', 'F');
   end
 end
 
-% this chunk does spectral decomposition - used for estimating gamma power
-if dofreq_short || dofreq_short_lowfreq
+% this chunk does spectral decomposition - used for estimating
+% gamma/lowfreq power before ERF peak
+if dofreq_short
   peakpicking;
-  if dofreq_short
+  if dohighfreq
     latency = peaks(subj,1).*[1 1] - 0.02 - [0.20 1./600];%MvE
     foi     = subject.gammapeak(end).*[1 1];
     smo     = max(10, diff(subject.gammaband(end,:))./2);
-  elseif dofreq_short_lowfreq
+  elseif dolowfreq
     load([project_dir, sprintf('analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj)]);
     latency = peaks(subj,1).*[1 1] - 0.02 - [0.4 1./600];%MvE
     foi = peakFreq;
@@ -195,7 +188,7 @@ if dofreq_short || dofreq_short_lowfreq
   if savefreq
     savedir = [project_dir 'analysis/freq/'];
     filename = fullfile(savedir, sprintf('sub-%03d/sub-%03d_freqshort', subj,subj));
-    if dofreq_short_lowfreq
+    if dolowfreq
       filename = [filename, '_low'];
     end
     save(filename, 'freq_shift', 'P', 'latency');
@@ -287,7 +280,7 @@ if docorrpow_lcmv
   signswap = repmat(sign(mean(X,1)), [size(datapeak.trial,1), 1]);
   
   % let the amplitude be on average positive
-  %{ 
+  %{
   % FIXME when issue 1068 has been resolved, replace this:
   datapeak.trial = datapeak.trial.*signswap;
 
@@ -296,13 +289,13 @@ if docorrpow_lcmv
   datapeak = ft_annotate(cfg, datapeak);
   % by this:
   %}
-
+  
   cfg=[];
   cfg.operation = 'multiply';
   cfg.matrix = signswap;
   cfg.parameter = 'trial';
   datapeak = ft_math(cfg, datapeak);
- 
+  
   datapeak.trial = standardise(datapeak.trial,1);
   cfg=[];
   cfg.comment = 'Standardise peak data over trials';
@@ -318,54 +311,54 @@ if docorrpow_lcmv
   datapst = ft_math(cfg, datapst);
   
   % do the correlations
-if dolowfreq
-  [m, idx] = max(sourcefreq_shift_Tval.stat);
-  sourcefreq_shift.roipow      = (abs(sourcefreq_shift.F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
-  cfg=[];
-  cfg.comment = 'add `roipow` field to frequency structure, with single-trial power values at the source location of maximal NEGATIVE induced power change';
-elseif dohighfreq
-  % prepare eye data
-   [~, eyedata_shift] = erfosc_preprocessing_eyedata(subj);
-  % get gamma-ERF correlation, accounting for pupil diameter, without confounding eye position.
-  cfg=[];
-  cfg.vartrllength = 2;
-  cfg.keeptrials = 'yes';
-  eyedata_shift = ft_timelockanalysis(cfg,eyedata_shift);
-  cfg=[];
-  cfg.comment = 'get pupil diameter data without contribution of eye position';
-  cfg.toilim = [-0.2 -1./600] + peaks(subj,1) - 0.02;
-  pupil_diameter = erfosc_regress_eye(ft_redefinetrial(cfg, eyedata_shift), {'UADC007'}, {'visAngleX', 'visAngleY'});
-  cfg=[];
-  cfg.avgovertime = 'yes';
-  pupil_diameter = ft_selectdata(cfg, pupil_diameter);
-  pupil_diameter.trial = standardise(pupil_diameter.trial);
-  cfg=[];
-  cfg.comment = 'standardise pupil diameter w.r.t. trials';
-  pupild = ft_annotate(cfg, pupild);
-  
-  idx = match_str(eyedata_shift.label, {'visAngleX', 'visAngleY'});
-  eyedata_shift.trial(:,end+1,:) = (eyedata_shift.trial(:,idx(1),:).^2 + eyedata_shift.trial(:,idx(2),:).^2).^0.5;
-  eyedata_shift.label{end+1} = 'distance';
-  cfg=[];
-  cfg.comment = 'add channel `distance` as distance from fixation (combining vertical and horizontal distance).';
-  eyedata_shift = ft_annotate(cfg, eyedata_shift);
-  cfg=[];
-  cfg.comment = 'get eye position data without contribution of pupil diameter';
-  cfg.toilim = [-0.2 -1./600] + peaks(subj,1) - 0.02;
-  eyepos = erfosc_regress_eye(ft_redefinetrial(cfg, eyedata_shift), {'distance'}, {'UADC007'});
-  cfg=[];
-  cfg.avgovertime = 'yes';
-  distance_fixation = ft_selectdata(cfg, eyepos);
-  distance_fixation.trial = standardise(distance_fixation.trial);
-  cfg=[];
-  cfg.comment = 'standardise gaze distance from fixation w.r.t. trials';
-  distance_fixation = ft_annotate(cfg, distance_fixation);
-  
-  [m, idx] = max(sourcefreq_shift_Tval.stat);
-  sourcefreq_shift.roipow      = (abs(sourcefreq_shift.F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
-  cfg=[];
-  cfg.comment = 'add `roipow` field to frequency structure, with single-trial power values at the source location of maximal POSITIVE induced power change';
-end
+  if dolowfreq
+    [m, idx] = max(sourcefreq_shift_Tval.stat);
+    sourcefreq_shift.roipow      = (abs(sourcefreq_shift.F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
+    cfg=[];
+    cfg.comment = 'add `roipow` field to frequency structure, with single-trial power values at the source location of maximal NEGATIVE induced power change';
+  elseif dohighfreq
+    % prepare eye data
+    [~, eyedata_shift] = erfosc_preprocessing_eyedata(subj);
+    % get gamma-ERF correlation, accounting for pupil diameter, without confounding eye position.
+    cfg=[];
+    cfg.vartrllength = 2;
+    cfg.keeptrials = 'yes';
+    eyedata_shift = ft_timelockanalysis(cfg,eyedata_shift);
+    cfg=[];
+    cfg.comment = 'get pupil diameter data without contribution of eye position';
+    cfg.toilim = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+    pupil_diameter = erfosc_regress_eye(ft_redefinetrial(cfg, eyedata_shift), {'UADC007'}, {'visAngleX', 'visAngleY'});
+    cfg=[];
+    cfg.avgovertime = 'yes';
+    pupil_diameter = ft_selectdata(cfg, pupil_diameter);
+    pupil_diameter.trial = standardise(pupil_diameter.trial);
+    cfg=[];
+    cfg.comment = 'standardise pupil diameter w.r.t. trials';
+    pupild = ft_annotate(cfg, pupild);
+    
+    idx = match_str(eyedata_shift.label, {'visAngleX', 'visAngleY'});
+    eyedata_shift.trial(:,end+1,:) = (eyedata_shift.trial(:,idx(1),:).^2 + eyedata_shift.trial(:,idx(2),:).^2).^0.5;
+    eyedata_shift.label{end+1} = 'distance';
+    cfg=[];
+    cfg.comment = 'add channel `distance` as distance from fixation (combining vertical and horizontal distance).';
+    eyedata_shift = ft_annotate(cfg, eyedata_shift);
+    cfg=[];
+    cfg.comment = 'get eye position data without contribution of pupil diameter';
+    cfg.toilim = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+    eyepos = erfosc_regress_eye(ft_redefinetrial(cfg, eyedata_shift), {'distance'}, {'UADC007'});
+    cfg=[];
+    cfg.avgovertime = 'yes';
+    distance_fixation = ft_selectdata(cfg, eyepos);
+    distance_fixation.trial = standardise(distance_fixation.trial);
+    cfg=[];
+    cfg.comment = 'standardise gaze distance from fixation w.r.t. trials';
+    distance_fixation = ft_annotate(cfg, distance_fixation);
+    
+    [m, idx] = max(sourcefreq_shift_Tval.stat);
+    sourcefreq_shift.roipow      = (abs(sourcefreq_shift.F(idx,:)*transpose(freq_shift.fourierspctrm)).^2)*P;
+    cfg=[];
+    cfg.comment = 'add `roipow` field to frequency structure, with single-trial power values at the source location of maximal POSITIVE induced power change';
+  end
   sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
   cfg=[];
   cfg.parameter = 'roipow';
@@ -383,22 +376,23 @@ end
   datapeak = ft_annotate(cfg, datapeak);
   
   if dohighfreq
-  datapeak.partialrho_pupild = partialcorr(datapeak.trial, sourcefreq_shift.roipow, pupil_diameter.trial, 'type', 'spearman');
-  cfg=[];
-  cfg.comment = 'add field `partialrho_pupild`, the partial Spearman correlation betweek roipow and ERF peak amplitude, accounted for pupil diameter.';
-  datapeak = ft_annotate(cfg, datapeak);
-  
-  % get correlation gamma-ERF, accounting for eye position, without confound pupil diameter
-  datapeak.partialrho_distancefixation = partialcorr(datapeak.trial, sourcefreq_shift.roipow, distance_fixation.trial, 'type', 'spearman');
-  cfg=[];
-  cfg.comment = 'add field `partialrho_distancefixation`, the partial Spearman correlation betweek roipow and ERF peak amplitude, accounted for gaze distance to fixation.';
-  datapeak = ft_annotate(cfg, datapeak);
-  % get correlation gamma-ERF, accounting for eye position and pupil
-  % diameter (both not confounded by the other)
-  datapeak.partialrho_pupuld_distancefixation = partialcorr(datapeak.trial, sourcefreq_shift.roipow, [distance_fixation.trial, pupil_diameter.trial], 'type', 'spearman');
-  cfg=[];
-  cfg.comment = 'add field `partialrho_pupild_distancefixation`, the partial Spearman correlation betweek roipow and ERF peak amplitude, accounted for pupil diameter and gaze distance to fixation (after regressing out their interaction).';
-  datapeak = ft_annotate(cfg, datapeak);
+    % partial correlations with eye data
+    datapeak.partialrho_pupild = partialcorr(datapeak.trial, sourcefreq_shift.roipow, pupil_diameter.trial, 'type', 'spearman');
+    cfg=[];
+    cfg.comment = 'add field `partialrho_pupild`, the partial Spearman correlation betweek roipow and ERF peak amplitude, accounted for pupil diameter.';
+    datapeak = ft_annotate(cfg, datapeak);
+    
+    % get correlation gamma-ERF, accounting for eye position, without confound pupil diameter
+    datapeak.partialrho_distancefixation = partialcorr(datapeak.trial, sourcefreq_shift.roipow, distance_fixation.trial, 'type', 'spearman');
+    cfg=[];
+    cfg.comment = 'add field `partialrho_distancefixation`, the partial Spearman correlation betweek roipow and ERF peak amplitude, accounted for gaze distance to fixation.';
+    datapeak = ft_annotate(cfg, datapeak);
+    % get correlation gamma-ERF, accounting for eye position and pupil
+    % diameter (both not confounded by the other)
+    datapeak.partialrho_pupuld_distancefixation = partialcorr(datapeak.trial, sourcefreq_shift.roipow, [distance_fixation.trial, pupil_diameter.trial], 'type', 'spearman');
+    cfg=[];
+    cfg.comment = 'add field `partialrho_pupild_distancefixation`, the partial Spearman correlation betweek roipow and ERF peak amplitude, accounted for pupil diameter and gaze distance to fixation (after regressing out their interaction).';
+    datapeak = ft_annotate(cfg, datapeak);
   end
   
   load atlas_subparc374_8k
@@ -420,11 +414,11 @@ end
   source.rho(indx)    = datapeak.rho;
   cfg=[];
   if dohighfreq
-  source.partialrho(indx,1) = datapeak.partialrho_pupild;
-  source.partialrho(indx,2) = datapeak.partialrho_distancefixation;
-  source.partialrho(indx,3) = datapeak.partialrho_pupild_distancefixation;
-  cfg.comment = 'mold all correlations into a fieldtrip source structure. The field `partialrho` contains partialrho_pupild, partialrho_distancefixation, partialrho_pupild_distancefixation in columns 1, 2, and 3, respectively.'
-  tmpstr = 'low';
+    source.partialrho(indx,1) = datapeak.partialrho_pupild;
+    source.partialrho(indx,2) = datapeak.partialrho_distancefixation;
+    source.partialrho(indx,3) = datapeak.partialrho_pupild_distancefixation;
+    cfg.comment = 'mold all correlations into a fieldtrip source structure. The field `partialrho` contains partialrho_pupild, partialrho_distancefixation, partialrho_pupild_distancefixation in columns 1, 2, and 3, respectively.'
+    tmpstr = 'low';
   else
     cfg.comment = 'mold all correlations into a fieldtrip source structure.';
     tmpstr = 'gamma';
@@ -438,6 +432,7 @@ end
     save(fullfile(datadir, sprintf('sub-%03d/sub-%03d_corrpowlcmv_%s',subj,  subj, tmpstr)), 'source', 'sourcefreq_shift', 'datapeak')%, 'pupild', 'distance');
   end
 end
+
 if docorr_gamma_rt
   datadir = [project_dir 'analysis/'];
   load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_source',  subj,  subj)));
