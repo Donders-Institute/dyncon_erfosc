@@ -76,6 +76,57 @@ if getdata
     clear dataClean;
 end
 
+if dotfa
+  cfg                 = [];
+cfg.method          = 'template';
+cfg.template        = 'CTF275_neighb.mat';
+cfg.neighbours      = ft_prepare_neighbours(cfg, data_onset);
+cfg.method          = 'sincos';
+data_planar         = ft_megplanar(cfg, data_onset);
+
+cfg                  = [];
+cfg.output           = 'pow';
+cfg.channel          = 'MEG';
+cfg.method           = 'mtmconvol';
+cfg.toi              = -1.75:0.05:1.75;
+cfg.keeptrials       = 'yes';
+cfg.pad          = 6;
+
+cfg2=[];
+cfg2.method = 'sum';
+
+cfg3=[];
+cfg3.latency = [-1 -0.25];
+
+savedir = [project_dir, sprintf('results/freq/sub-%03d', subj)];
+if ~exist('dolowfreq', 'var'); dolowfreq = 1; end
+if ~exist('dohighfreq', 'var'); dohighfreq = 1; end
+if dolowfreq
+  cfg.taper        = 'hanning';
+  cfg.foi          = 2:2:30;% analysis 2 to 30 Hz in steps of 2 Hz
+  cfg.t_ftimwin    = ones(length(cfg.foi),1).*0.5;   % length of time window = 0.5 sec
+  tfa_planar_low   = ft_freqanalysis(cfg, data_planar);
+  tfa_low          = ft_combineplanar(cfg2, tfa_planar_low);
+  tfa_low_baseline = ft_selectdata(cfg3, tfa_high);
+  if dosave
+    save([savedir, sprintf('sub-%03d_tfa_low_onset', subj)], 'tfa_low', 'tfa_low_baseline')
+  end
+end
+if dohighfreq
+  cfg.taper         = 'dpss';
+  cfg.tapsmofrq     = 8; % 8 Hz freq smoothing on both sides
+  cfg.foi           = 28:4:100;
+  cfg.t_ftimwin     = ones(length(cfg.foi),1).*(1/4);
+  tfa_planar_high   = ft_freqanalysis(cfg, data_planar);
+  tfa_high          = ft_combineplanar(cfg2, tfa_planar_high);
+  tfa_high_baseline = ft_selectdata(cfg3, tfa_high);
+    if dosave
+      save([savedir, sprintf('sub-%03d_tfa_high_onset', subj)], 'tfa_high', 'tfa_high_baseline')
+  end
+end
+clear tfa_planar_low tfa_planar_high data_planar
+end
+
 % this chunk does spectral decomposition - needed for computing spatial
 % filters
 if dofreq
@@ -442,7 +493,6 @@ if docorrpow_lcmv_lowfreq
     save(fullfile(datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_low', subj, subj)), 'source', 'pow', 'X', 'tlckpst');
 end
 if docorr_gamma_rt
-    load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat',subj, subj));
     datadir = [project_dir 'analysis/'];
     load(fullfile(datadir, 'source/', sprintf('sub-%03d/sub-%03d_source',  subj,  subj)));
     
@@ -452,7 +502,7 @@ if docorr_gamma_rt
     u = mean(pow, 2);
     pow = (pow-repmat(u, [1 size(pow,2)]))./repmat(s, [1 size(pow,2)]);
     
-    rho = corr(rt, pow', 'type', 'spearman'); %MvE
+    rho = corr(data_onset.trialinfo(:,7), pow', 'type', 'spearman'); %MvE
     rho=rho';
     
     filename = sprintf('/project/3011085.02/analysis/corr/sub-%03d/sub-%03d_corr_3Dgamma_rt.mat', subj, subj);
@@ -624,6 +674,6 @@ if dostat_erf_rt
     
     stat=ft_freqstatistics(cfgs,source, ref);
     
-    filename = '/project/3011085.02/analysis/stat_corr_peakpicking_rt2.mat';
+    filename = '/project/3011085.02/analysis/stat_corr_peakpicking_rt.mat';
     save(filename, 'stat', 'source');
 end
