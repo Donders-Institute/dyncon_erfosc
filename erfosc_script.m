@@ -42,37 +42,28 @@ if dofreq_short_lowfreq, getdata = true; end
 if dolcmv_parc,  getdata = true; end
 if dolcmv_norm,  getdata = true; end
 
-
+% load some things for source analysis
+  load(fullfile(subject.mridir,'preproc','headmodel.mat'));
+  cfg=[];
+  cfg.comment = 'load subject`s headmodel';
+  headmodel = ft_annotate(cfg, headmodel);
+  load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
+  cfg.comment = 'load subject`s 2D headmodel';
+  sourcemodel = ft_annotate(cfg, sourcemodel);
+  load('atlas_subparc374_8k.mat');
+  cfg.comment = 'load 2D atlas with 374 parcels, based on the Conte 69 atlas';
+  atlas = ft_annotate(cfg, atlas);
 
 % this chunk creates 2 data structures [-0.75 0.5]
 if getdata
-  if ~exist('undocomp','var')
-    undocomp = false;
-  end
-  [p,f,e]       = fileparts(subject.dataset);
-  basedir       = strrep(p, 'raw', 'processed');
+  basedir       = [project_dir, sprintf('processed/sub-001/ses-meg01')];
   filename_data = fullfile(basedir, sprintf('sub-%03d_cleandata.mat', subj));
   load(filename_data);
   
   cfg=[];
   cfg.comment = 'load preprocessed MEG data';
   dataClean = ft_annotate(cfg, dataClean);
-  if undocomp
-    filename_comp = fullfile(basedir, sprintf('sub-%03d_icaComp.mat', subj));
-    load(filename_comp);
-    sel = zeros(0,1);
-    if ~isempty(subject.ecgcomp)
-      sel = [sel subject.ecgcomp];
-    end
-    if ~isempty(subject.eyecomp)
-      sel = [sel subject.eyecomp];
-    end
-    comp.topo     = comp.topo(:,sel);
-    comp.unmixing = comp.unmixing(sel,:);
-  else
-    comp = [];
-  end
-  [data_onset, data_shift, data_resp] = erfosc_getdata(dataClean, comp);
+  [data_onset, data_shift, data_resp] = erfosc_getdata(dataClean);
   clear dataClean;
 end
 
@@ -120,7 +111,7 @@ if dotfa
     end
     save([savedir, sprintf('sub-%03d_tfa_%s_onset', subj, tmpstr)], 'tfa', 'tfa_baseline')
   end
-  clear tfa_planar_low tfa_planar_high data_planar
+  clear tfa_planar data_planar
 end
 
 % this chunk does spectral decomposition - needed for computing spatial
@@ -147,13 +138,6 @@ end
 
 % this chunk does source reconstruction
 if dodics
-  load(fullfile(subject.mridir,'preproc','headmodel.mat'));
-  cfg=[];
-  cfg.comment = 'load subject`s headmodel';
-  headmodel = ft_annotate(cfg, headmodel);
-  load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
-  cfg.comment = 'load subject`s 2D headmodel';
-  sourcemodel = ft_annotate(cfg, sourcemodel);
   [sourcefreq_onset, sourcefreq_shift, sourcefreq_shift_Tval] = erfosc_dics(freq_onset, freq_shift, headmodel, sourcemodel);
   
   savedir = [project_dir 'analysis/source/'];
@@ -196,16 +180,6 @@ if dofreq_short
 end
 
 if dolcmv_parc
-  load(fullfile(subject.mridir,'preproc','headmodel.mat'));
-  cfg=[];
-  cfg.comment = 'load subject`s headmodel';
-  headmodel = ft_annotate(cfg, headmodel);
-  load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
-  cfg.comment = 'load subject`s 2D headmodel';
-  sourcemodel = ft_annotate(cfg, sourcemodel);
-  load('atlas_subparc374_8k.mat');
-  cfg.comment = 'load 2D atlas with 374 parcels, based on the Conte 69 atlas';
-  atlas = ft_annotate(cfg, atlas);
   [source_parc] = erfosc_lcmv_parc(data_resp, headmodel, sourcemodel, atlas);
   if dosave
     savedir = [project_dir 'analysis/source/'];
@@ -395,10 +369,6 @@ if docorrpow_lcmv
     datapeak = ft_annotate(cfg, datapeak);
   end
   
-  load atlas_subparc374_8k
-  cfg=[];
-  cfg.comment = 'load 2D atlas with 374 parcels, based on the Conte 69 atlas';
-  atlas = ft_annotate(cfg, atlas);
   exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
   
   source = [];
@@ -445,20 +415,6 @@ if docorr_gamma_rt
   end
 end
 if dostat_pow_erf
-  if ~exist('GA'); GA = input('send out single subject analyses (0), or continue to group analysis (1)?'); end
-  if ~exist('whichFreq'); whichFreq = input('gamma (1), lowfreq (2)?'); end
-  if ~GA
-    sel = setdiff(1:33,10);
-    for k = sel(:)'
-      if whichFreq==1
-        qsubfeval('erfosc_execute_pipeline','erfosc_script_jm',k,{'docorrpow_lcmv',1}, {'dofreq_short', 1},{'savefreq', 0},'memreq',8*1024^3,'timreq',59*60,'batchid',sprintf('subj%03d',k));
-      elseif whichFreq==2
-        qsubfeval('erfosc_execute_pipeline','erfosc_script_jm',k,{'docorrpow_lcmv_lowfreq',1}, {'dofreq_short_lowfreq', 1},{'savefreq', 0},'memreq',8*1024^3,'timreq',59*60,'batchid',sprintf('subj%03d',k));
-      end
-    end
-  else
-    load atlas_subparc374_8k.mat
-    
     datadir = [project_dir 'analysis/'];
     erfosc_datainfo;
     k=1;
@@ -541,7 +497,6 @@ if dostat_pow_erf
       save(filename, 'stat','S');
     end
   end
-end
 if dostat_erf_rt
   erfosc_datainfo;
   load atlas_subparc374_8k
