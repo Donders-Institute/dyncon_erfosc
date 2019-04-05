@@ -83,6 +83,13 @@ source_parc.L     = cell(numel(source_parc.label),1);
 source_parc.avg   = zeros(numel(selparc),numel(source_parc.time));
 source_parc.dimord = 'chan_time';
 
+cfg=[];
+cfg.comment = 'create empty timelock structure with parcel`s as channels';
+source_parce = ft_annotate(cfg, source_parc);
+
+tmpdir = ft_default.reproducescript;
+ft_default.reproducescript = []; % temporarily disable reproducescript. 
+% Componentanalysis will create too much intermediate data
 for k = 1:numel(selparc)
     tmpF = F(atlas.parcellation==selparc(k),:);
     tmp.trial = tmpF*data_shift.trial;
@@ -97,14 +104,16 @@ for k = 1:numel(selparc)
     tmpL = L(:,atlas.parcellation==selparc(k));
     
     source_parc.F{k}     = tmpcomp.unmixing*tmpF;
-    %   source_parc.L{k}     = tmpL*tmpcomp.unmixing';
+    source_parc.L{k}     = tmpL*tmpcomp.unmixing';
     source_parc.avg(k,:) = source_parc.F{k}(1,:)*tlck.avg;
     
     source_parc.F{k} = source_parc.F{k}(1,:);
 end
+ft_default.reproducescript = tmpdir; % enable reproducescript again.
+
 source_parc.F = cat(1, source_parc.F{:});
 cfg=[];
-cfg.comment = 'create the component spatial filter (F) for each parcel by multiplying the unmixing from ft_componentanalysis with the spatial filters of the nodes in the corresponding parcel. For each parcel`s spatial filter components only keep the component that explains most variance. Compute source level timelock average by multiplying this filter with the channel level timelock average.';
+cfg.comment = 'create the component spatial filter (F) for each parcel by running ft_componentanalysis on the spatial filters within a parcel. For each parcel`s spatial filter components only keep the component that explains most variance. Compute source level timelock average by multiplying this filter with the channel level timelock average.';
 source_parc = ft_annotate(cfg, source_parc);
 
 
