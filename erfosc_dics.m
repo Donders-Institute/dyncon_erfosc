@@ -21,11 +21,20 @@ cfg.parameter = 'fourierspctrm';
 freq          = ft_appendfreq([], freq_onset, freq_shift);
 
 if ~isfield(sourcemodel, 'leadfield')
+  headmodel      = ft_convert_units(headmodel, 'm');
+  sourcemodel    = ft_convert_units(sourcemodel, 'm');
+
+  cfg = [];
+  cfg.comment = 'convert to unit `m`.';
+  headmodel   = ft_annotate(cfg, headmodel);
+  sourcemodel = ft_annotate(cfg, sourcemodel);
+  
   cfg           = [];
-  cfg.headmodel = ft_convert_units(headmodel, 'm');
-  cfg.grid      = ft_convert_units(sourcemodel, 'm');
+  cfg.headmodel = headmodel;
+  cfg.grid      = sourcemodel;
   cfg.grad      = ft_convert_units(freq_onset.grad, 'm');
   cfg.channel   = freq_onset.label;
+  cfg.comment   = 'get grad and label information from frequency data.';
   sourcemodel   = ft_prepare_leadfield(cfg);
 end
 
@@ -38,10 +47,11 @@ cfg.dics.keepfilter = 'yes';
 cfg.dics.fixedori   = 'yes';
 cfg.dics.realfilter = 'yes';
 cfg.dics.lambda     = '100%';
+cfg.comment = 'change frequency data to cmbrepresentation `fullfast` with ft_checkdata.';
 source = ft_sourceanalysis(cfg, ft_checkdata(freq, 'cmbrepresentation', 'fullfast'));
 cfg.grid.filter = source.avg.filter;
-cfg.dics.keepfilter = 'no';
 
+cfg.comment = 'change frequency data to cmbrepresentation `fullfast` with ft_checkdata. Take the spatial filter from the previous step.';
 sourcefreq_onset = ft_sourceanalysis(cfg, ft_checkdata(freq_onset, 'cmbrepresentation', 'fullfast'));
 sourcefreq_shift = ft_sourceanalysis(cfg, ft_checkdata(freq_shift, 'cmbrepresentation', 'fullfast'));
 
@@ -59,7 +69,7 @@ F = zeros(numel(source.inside), numel(freq_onset.label));
 F(source.inside,:) = cat(1, source.avg.filter{:}); %FIXME do I need to change this into a FT structure?
 
 cfg=[];
-cfg.comment = 'add spatial filter to structure';
+cfg.comment = 'concatenate the spatial filters';
 sourcefreq_onset.F = F;
 sourcefreq_onset = ft_annotate(cfg, sourcefreq_onset);
 sourcefreq_shift.F = F;
