@@ -56,8 +56,6 @@ cfg.keepleadfield = 'yes';
 cfg.lcmv.keepfilter = 'yes';
 cfg.lcmv.fixedori   = 'yes';
 cfg.lcmv.lambda     = '100%';
-%cfg.lcmv.weightnorm = 'unitnoisegain'; % this confuses me in terms of the
-%unit-gain inspection when keeping the leadfields: it's also just a scaling
 cfg.lcmv.keepleadfield = 'yes';
 cfg.lcmv.keepori = 'yes';
 source = ft_sourceanalysis(cfg, tlck);
@@ -85,8 +83,9 @@ source_parc.dimord = 'chan_time';
 
 cfg=[];
 cfg.comment = 'create empty timelock structure with parcel`s as channels';
-source_parce = ft_annotate(cfg, source_parc);
+source_parc = ft_annotate(cfg, source_parc);
 
+global ft_default
 tmpdir = ft_default.reproducescript;
 ft_default.reproducescript = []; % temporarily disable reproducescript. 
 % Componentanalysis will create too much intermediate data
