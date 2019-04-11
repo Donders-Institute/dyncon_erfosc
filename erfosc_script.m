@@ -27,12 +27,11 @@ if ~exist('dofreq_short', 'var'), dofreq_short = false; end
 if ~exist('dolcmv_norm', 'var'),  dolcmv_norm = false; end
 if ~exist('docorrpow_lcmv', 'var'), docorrpow_lcmv = false; end
 if ~exist('docorr_gamma_rt', 'var'), docorr_gamma_rt = false; end
-if ~exist('dostat_erf_rt', 'var'), dostat_erf_rt = false; end
 if ~exist('dostat_pow_erf', 'var'), dostat_pow_erf = false; end
 if ~exist('dopartialcorr', 'var'), dopartialcorr = false; end
 if ~exist('dolowfreq', 'var'), dolowfreq = false; end
 if ~exist('dohighfreq', 'var'), dohighfreq = false; end
-
+if ~exist('dotfa', 'var'), dotfa = false; end
 
 if docorrpow_lcmv, dodics = true; dolcmv_parc = true; dofreq_short = true; end
 if docorr_gamma_rt, dofreq_short = true; end
@@ -46,7 +45,6 @@ if ~dolowfreq && ~dohighfreq, dohighfreq = 1; end
 
 
 % load some things for source analysis
-peakpicking
 load(fullfile(subject.mridir,'preproc','headmodel.mat'));
 cfg=[];
 cfg.comment = 'load subject`s headmodel';
@@ -57,7 +55,7 @@ sourcemodel = ft_annotate(cfg, sourcemodel);
 load('atlas_subparc374_8k.mat');
 cfg.comment = 'load 2D atlas with 374 parcels, based on the Conte 69 atlas';
 atlas = ft_annotate(cfg, atlas);
-if dogroupanalysis
+if ~dogroupanalysis
   % this chunk creates 2 data structures [-0.75 0.5]
   if getdata
     basedir       = [project_dir, sprintf('processed/sub-001/ses-meg01')];
@@ -158,12 +156,12 @@ if dogroupanalysis
   % gamma/lowfreq power before ERF peak
   if dofreq_short
     if dohighfreq
-      latency = peaks(subj,1).*[1 1] - 0.02 - [0.20 1./600];%MvE
+      latency = subject.erflatency(1).*[1 1] - 0.02 - [0.20 1./600];%MvE
       foi     = subject.gammapeak(end).*[1 1];
       smo     = max(10, diff(subject.gammaband(end,:))./2);
     elseif dolowfreq
       load([project_dir, sprintf('analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj)]);
-      latency = peaks(subj,1).*[1 1] - 0.02 - [0.4 1./600];%MvE
+      latency = subject.erflatency(1).*[1 1] - 0.02 - [0.4 1./600];%MvE
       foi = peakFreq;
       smo     = 2.5;
     end
@@ -180,6 +178,16 @@ if dogroupanalysis
       end
       save(filename, 'freq_shift', 'P', 'latency');
     end
+  end
+  
+  if dodics && dofreq_short
+    sourcefreq_shift.avg.pow = (abs(sourcefreq_shift.F*transpose(freq_shift.fourierspctrm)).^2)*P;
+    cfg=[];
+    cfg.comment = 'for avg.pow take the power in the pre-ERF window by combining the spatial filter with the fourierspectrum of this window';
+    sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
+    sourcefreq_shift.avg.pow = standardise(log10(sourcefreq_shift.avg.pow), 2);
+    cfg.comment = 'log10 avg.pow and standardise w.r.t. trials';
+    sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
   end
   
   if dolcmv_parc
@@ -208,22 +216,12 @@ if dogroupanalysis
     end
   end
   
-  if dodics && dofreq_short
-    sourcefreq_shift.avg.pow = (abs(sourcefreq_shift.F*transpose(freq_shift.fourierspctrm)).^2)*P;
-    cfg=[];
-    cfg.comment = 'for avg.pow take the power in the pre-ERF window by combining the spatial filter with the fourierspectrum in this window';
-    sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
-    sourcefreq_shift.avg.pow = standardise(log10(sourcefreq_shift.avg.pow), 2);
-    cfg.comment = 'log10 avg.pow and standardise w.r.t. trials';
-    sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
-  end
-  
   if docorrpow_lcmv
     cfg=[];
     cfg.matrix = repmat(1./source_parc.noise, [1 size(source_parc.avg,2)]);
     cfg.parameter = 'avg';
     cfg.operation = 'multiply';
-    cfg.comment = 'devide the average by the noise';
+    cfg.comment = 'devide the source level timelock average by the noise';
     source_parc_norm = ft_math(cfg, source_parc);
     source_parc_norm = copyfields(source_parc, source_parc_norm, {'noise', 'F'});
     cfg=[];
@@ -241,7 +239,7 @@ if dogroupanalysis
     datapst.trial = source_parc_norm.F*datapst.trial;
     datapst.label = source_parc_norm.label;
     cfg=[];
-    cfg.comment = 'mutliply the LCMV spatial filter with the data (time locked to stimulus change)';
+    cfg.comment = 'mutliply the LCMV spatial filter with the single-trial timelock data.';
     datapst = ft_annotate(cfg, datapst);
     
     cfg = [];
@@ -257,7 +255,7 @@ if dogroupanalysis
     cfg.keeptrials = 'yes';
     datapst = ft_timelockanalysis(cfg, datapst);
     cfg = [];
-    cfg.latency = peaks(subj,:);
+    cfg.latency = subject.erflatency;
     cfg.avgovertime = 'yes';
     datapeak = ft_selectdata(cfg,datapst);
     
@@ -290,7 +288,7 @@ if dogroupanalysis
     cfg = [];
     cfg.matrix = repmat(signswap(1,:), [size(datapst.avg,2), 1])';
     cfg.operation = 'multiply';
-    cfg.comment = sprintf('align the parcels such that the trial-average of the [%d %d]s window is positive.',peaks(subj,:));
+    cfg.comment = sprintf('align the parcels such that the trial-average of the [%d %d]s window is positive.', subject.erflatency);
     cfg.parameter = 'avg';
     datapst = ft_math(cfg, datapst);
     % do the correlations
@@ -306,7 +304,7 @@ if dogroupanalysis
     sourcefreq_shift.roipow = sourcefreq_shift.avg.pow(idx,:);
     sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
     
-    datapeak.rho = corr(datapeak.trial, sourcefreq_shift.roipow', 'type', 'spearman');
+    datapeak.rho_pow_erf = corr(datapeak.trial, sourcefreq_shift.roipow', 'type', 'spearman');
     cfg=[];
     cfg.comment = 'calculate Spearman rank correlation between roipow and peak ERF amplitude.';
     datapeak = ft_annotate(cfg, datapeak);
@@ -321,7 +319,7 @@ if dogroupanalysis
       eyedata_shift = ft_timelockanalysis(cfg,eyedata_shift);
       cfg=[];
       cfg.comment = 'get pupil diameter data without contribution of eye position';
-      cfg.toilim = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+      cfg.toilim = [-0.2 -1./600] + subject.erflatency(1) - 0.02;
       pupil_diameter = erfosc_regress_eye(ft_redefinetrial(cfg, eyedata_shift), {'UADC007'}, {'visAngleX', 'visAngleY'});
       cfg=[];
       cfg.avgovertime = 'yes';
@@ -339,7 +337,7 @@ if dogroupanalysis
       eyedata_shift = ft_annotate(cfg, eyedata_shift);
       cfg=[];
       cfg.comment = 'get eye position data without contribution of pupil diameter';
-      cfg.toilim = [-0.2 -1./600] + peaks(subj,1) - 0.02;
+      cfg.toilim = [-0.2 -1./600] + subject.erflatency(1) - 0.02;
       eyepos = erfosc_regress_eye(ft_redefinetrial(cfg, eyedata_shift), {'distance'}, {'UADC007'});
       cfg=[];
       cfg.avgovertime = 'yes';
@@ -368,53 +366,66 @@ if dogroupanalysis
       datapeak = ft_annotate(cfg, datapeak);
     end
     
+    datapeak.rho_erf_rt = corr(datapeak.trial, datapeak.trialinfo(:,7), 'type', 'spearman'); %MvE
+    cfg=[]
+    cfg.comment = 'calculate Spearman rank correlation between ERF amplitude and reaction times (7th column trialinfo).';
+    datapeak = ft_annotate(cfg, datapeak);
+    
     exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
     
     source = [];
     source.freq          = 0;
     source.brainordinate = atlas;
     source.label         = atlas.parcellationlabel;
-    source.rho           = nan(374,1);
+    source.rho_pow_erf           = nan(374,1);
+    source.rho_erf_rt            = nan(374,1);
     if dopartialcorr
-      source.partialrho    = nan(374,1);
+      source.partialrho_pupild                  = nan(374,1);
+      source.partialrho_distancefixation        = nan(374,1);
+      source.partialrho_pupild_distancefixation = nan(374,1);
     end
     source.pow           = nan(374,1);
     source.dimord        = 'chan_freq';
     
     indx = 1:374;
     indx(exclude_label) = [];
-    source.rho(indx)    = datapeak.rho;
+    source.rho_pow_erf(indx)    = datapeak.rho_pow_erf;
+    source.rho_erf_rt(indx)     = datapeak.rho_erf_rt;
     cfg=[];
-    if dopartialcorr
-      source.partialrho_pupild = datapeak.partialrho_pupild;
-      source.partialrho_distancefixation = datapeak.partialrho_distancefixation;
-      source.partialrho_pupild_distancefixation = datapeak.partialrho_pupild_distancefixation;
-      cfg.comment = 'mold all correlations into a fieldtrip source structure. Contains partialrho_pupild, partialrho_distancefixation, partialrho_pupild_distancefixation';
-    else
-      cfg.comment = 'mold all correlations into a fieldtrip source structure.';
-    end
     if dolowfreq
       tmpstr = 'low';
     elseif dohighfreq
       tmpstr = 'gamma';
     end
+    if dopartialcorr
+      source.partialrho_pupild = datapeak.partialrho_pupild;
+      source.partialrho_distancefixation = datapeak.partialrho_distancefixation;
+      source.partialrho_pupild_distancefixation = datapeak.partialrho_pupild_distancefixation;
+      cfg.comment = sprintf('mold all correlations into a fieldtrip source structure, as well as source-level ERF and %s power. Contains rho_pow_erf, partialrho_pupild, partialrho_distancefixation, partialrho_pupild_distancefixation', tmpstr);
+    else
+      cfg.comment = sprintf('mold correlation into a fieldtrip source structure, as well as source-level ERF and %s power', tmpstr);
+    end
+
     source.pow(indx)    = Xpow(:);
+    source.trial        = datapeak.trial;
     source = ft_annotate(cfg, source);
     
     % save the results to disk.
     datadir = [results_dir sprintf('%03d', subj)];
-    save(fullfile(datadir, sprintf('corr_erf_%spow', tmpstr)), 'source');
+    save(fullfile(datadir, sprintf('source_erf_%spow', tmpstr)), 'source');
   end
 else
   if dostat_pow_erf
-    datadir = [project_dir, 'analysis/'];
+    datadir = [results_dir sprintf('%03d', subj)];
     k=1;
     for subj = allsubs
-      if dohighfreq
-        filename = fullfile([datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_gamma.mat', subj, subj)]);
-      elseif dolowfreq
-        filename = fullfile([datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_low.mat', subj, subj)]);
+      if dolowfreq
+        tmpstr = 'lowfreq';
+      elseif dohighfreq
+        tmpstr = 'gamma';
       end
+      filename = fullfile(datadir, sprintf('source_erf_%spow', tmpstr));
+      fprintf('loading data for subject %s\n', subj);
       load(filename,'source');
       S{k} = source;
       k=k+1;
@@ -423,12 +434,16 @@ else
     n = 32;
     
     S0{1} = S{1};
-    S0{1}.rho = 0*S0{1}.rho;
+    S0{1}.rho_pow_erf = 0*S0{1}.rho_pow_erf;
+    S0{1}.rho_erf_rt  = 0*S0{1}.rho_erf_rt;
     if dopartialcorr
       S0{1}.partialrho_pupild = 0*S0{1}.partialrho_pupild;
       S0{1}.partialrho_distancefixation = 0*S0{1}.partialrho_distancefixation;
       S0{1}.partialrho_pupild_distancefixation = 0*S0{1}.partialrho_pupild_distancefixation;
     end
+    cfg=[];
+    cfg.comment = 'multiply rho with zero to create a zero-distribution.';
+    S0{1} = ft_annotate(cfg, S0{1});
     for k=2:n
       S0{k} = S0{1};
     end
@@ -439,7 +454,6 @@ else
       neighb(k).neighblabel = atlas.parcellationlabel(find(tmp(k,:)));
     end
     
-    
     cfgs = [];
     cfgs.comment = 'compare the correlations to zero';
     cfgs.method='montecarlo';
@@ -448,7 +462,6 @@ else
     cfgs.numrandomization=10000;
     cfgs.ivar=1;
     cfgs.uvar=2;
-    cfgs.parameter='rho';
     cfgs.correctm='cluster';
     cfgs.clusterthreshold='nonparametric_individual';
     cfgs.connectivity = neighb;
@@ -458,9 +471,13 @@ else
     cfgs.correcttail = 'prob';
     cfgs.clusteralpha = 0.05;
     cfgs.alpha = 0.05;
-    cfgs.parameter = 'rho';
     
-    stat=ft_freqstatistics(cfgs,S{:},S0{:});
+    cfgs.parameter = 'rho_pow_erf';
+    stat_pow_erf = ft_freqstatistics(cfgs,S{:},S0{:});
+    
+    cfgs.parameter = 'rho_erf_rt';
+    stat_erf_rt = ft_freqstatistics(cfgs,S{:},S0{:});
+
     
     if dopartialcorr
       cfgs.parameter = 'partialrho_pupild';
@@ -470,91 +487,12 @@ else
       cfgs.parameter = 'partialrho_pupild_distancefixation';
       stat_eye=ft_freqstatistics(cfgs,S{:},S0{:});
     end
-    
-    if dosave
-      if dolowfreq
-        tmpstr = 'lowfreq';
-      elseif dohighfreq
-        tmpstr = 'gamma';
-      end
-      filename = [project_dir, sprintf('analysis/stat_peakpicking_%s.mat', tmpstr)];
-      if dopartialcorr
-        save(filename, 'stat', 'S', 'stat_eye', 'stat_pupild', 'stat_xy');
-      else
-        save(filename, 'stat','S');
-      end
+    datadir = [results_dir 'group/'];
+    filename = [project_dir, sprintf('stat_erf_%spow.mat', tmpstr)];
+    if dopartialcorr
+      save(filename, 'S', 'stat_pow_erf', 'stat_erf_rt', 'stat_eye', 'stat_pupild', 'stat_xy');
+    else
+      save(filename, 'S', 'stat_pow_erf', 'stat_erf_rt');
     end
-  end
-  
-  if dostat_erf_rt
-    erfosc_datainfo;
-    load atlas_subparc374_8k
-    
-    datadir = [project_dir 'analysis/'];
-    k=1;
-    
-    d = dir('*corrpowlcmv_peakpicking_gamma.mat');
-    
-    
-    for subj = allsubs
-      filename = fullfile([datadir, 'corr/', sprintf('sub-%03d/sub-%03d_corrpowlcmv_gamma.mat', subj, subj)]);
-      tmp = load(filename,'X', 'pow');
-      X{k}=tmp.X;
-      pow{k}=tmp.pow;
-      k=k+1;
-    end
-    k=1;
-    for subj=allsubs
-      tmp = load(sprintf('/project/3011085.02/analysis/behavior/sub-%03d/sub-%03d_rt.mat', subj,subj));
-      rt{k} = tmp.rt;
-      k=k+1;
-    end
-    
-    for k=1:32
-      rho{k} = corr(X{k}', rt{k}, 'type', 'spearman'); %MvE
-    end
-    
-    exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'}); %MvE
-    
-    source = [];
-    source.brainordinate = atlas;
-    source.label         = atlas.parcellationlabel;
-    source.freq          = 0;
-    source.dimord        = 'rpt_chan_freq';
-    source.rho           = zeros(32,374);
-    
-    indx = 1:374;
-    indx(exclude_label) = [];
-    source.rho(:,indx) = cat(2,rho{:})';
-    source.rho(:,exclude_label) = nan;
-    
-    
-    ref=source;
-    ref.rho(:) = 0;
-    
-    n = 32;
-    
-    cfgs = [];
-    cfgs.method='montecarlo';
-    cfgs.design=[ones(1,n) ones(1,n)*2;1:n 1:n];
-    cfgs.statistic='ft_statfun_wilcoxon';
-    cfgs.numrandomization=10000;
-    cfgs.ivar=1;
-    cfgs.uvar=2;
-    cfgs.parameter='rho';
-    cfgs.correctm='cluster';
-    cfgs.clusterthreshold='nonparametric_individual';
-    cfgs.connectivity = parcellation2connectivity_midline(atlas);
-    cfgs.neighbours = cfgs.connectivity; %MvE
-    cfgs.correcttail = 'prob';
-    cfgs.tail = -1;
-    cfgs.clustertail = -1;
-    cfgs.alpha = 0.05;
-    cfgs.clusteralpha = 0.01;
-    
-    stat=ft_freqstatistics(cfgs,source, ref);
-    
-    filename = '/project/3011085.02/analysis/stat_corr_peakpicking_rt.mat';
-    save(filename, 'stat', 'source');
   end
 end
