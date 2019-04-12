@@ -26,16 +26,9 @@ end
 % headmotion data and one with the preprocessed MEG data.
     global ft_default;
     ft_default = [];
-    ft_default.reproducescript = datestr(now, 30);
+    ft_default.reproducescript = 'tempreproduce/';
 for subj=allsubs
     erf_osc_preprocessing_artifact(subj, false, true, 5, dosave)
-
-% seperately, preprocess the eyetracker data. Transform X- and Y-gaze
-% positions to visual degrees relative to fixation. Save it on disk
-% together with pupil diameter data, both for data time locked to stimulus
-% onset and stimulus change.
-
-    [eyedata_onset, eyedata_shift] = erfosc_preprocessing_eyedata(subj, dosave);
 
     %% Single Subject Analysis
 % Reaction times
@@ -48,7 +41,7 @@ for subj=allsubs
 
 %% power spectra
 % compute channel level induced power spectra in low and high frequencies.
-    erf_osc_analysis_pow(subj, false);
+    erfosc_analysis_pow(subj, false);
 
 %% 2D source parcels    
     erfosc_execute_pipeline('erfosc_script', subj, {'dolcmv_parc', true}, {'dolcmv_norm', true}, {'savefreq', dosave});
@@ -67,13 +60,13 @@ end
 
 %% Group Analysis
 %% Induced power
-erf_osc_analysis_tfa_allsubs('low', 'onset', dosave);
-erf_osc_analysis_tfa_allsubs('high', 'onset', dosave);
+erfosc_analysis_tfa_allsubs('low', 'onset', dosave);
+erfosc_analysis_tfa_allsubs('high', 'onset', dosave);
 
 %% Correlation with RT
 % computing correlations and partial correlations between jitter, gamma
 % power and rt.
-erf_osc_analysis_corr([],[],'gamma_rt')
+erfosc_analysis_corr([],[],'gamma_rt')
 
 %% Correlation Gamma ERF
 erfosc_execute_pipeline('erfosc_script', 1, {'dostat_pow_erf',1}, {'GA', 1}, {'whichFreq', 1}, {'savefreq', dosave});
