@@ -55,10 +55,14 @@ sourcemodel = ft_annotate(cfg, sourcemodel);
 load('atlas_subparc374_8k.mat');
 cfg.comment = 'load 2D atlas with 374 parcels, based on the Conte 69 atlas';
 atlas = ft_annotate(cfg, atlas);
+load('cortex_inflated_shifted');
+cfg.comment = 'load cortex template';
+ctx = ft_annotate(cfg, ctx);
+
 if ~dogroupanalysis
   % this chunk creates 2 data structures [-0.75 0.5]
   if getdata
-    basedir       = [project_dir, sprintf('processed/sub-001/ses-meg01')];
+    basedir       = [project_dir, sprintf('processed/sub-%03d/ses-meg01', subj))];
     filename_data = fullfile(basedir, sprintf('sub-%03d_cleandata.mat', subj));
     load(filename_data);
     
@@ -85,9 +89,6 @@ if ~dogroupanalysis
     cfg.keeptrials      = 'yes';
     cfg.pad             = 6;
     
-    savedir = [project_dir, sprintf('results/freq/sub-%03d', subj)];
-    if ~exist('dolowfreq', 'var'); dolowfreq = 1; end
-    if ~exist('dohighfreq', 'var'); dohighfreq = 1; end
     if dolowfreq
       cfg.taper        = 'hanning';
       cfg.foi          = 2:2:30;% analysis 2 to 30 Hz in steps of 2 Hz
@@ -105,14 +106,13 @@ if ~dogroupanalysis
     cfg=[];
     cfg.latency = [-1 -0.25];
     tfa_baseline = ft_selectdata(cfg, tfa_high);
-    if dosave
-      if dolowfreq
+    if dolowfreq
         tmpstr = 'low';
-      elseif dohighfreq
+    elseif dohighfreq
         tmpstr = 'high';
-      end
-      save([savedir, sprintf('sub-%03d_tfa_%s_onset', subj, tmpstr)], 'tfa', 'tfa_baseline')
     end
+    datadir = [results_dir sprintf('%03d', subj)];
+    save([datadir, sprintf('tfa_%s_onset', subj, tmpstr)], 'tfa', 'tfa_baseline')
     clear tfa_planar data_planar
   end
   
@@ -141,15 +141,14 @@ if ~dogroupanalysis
   % this chunk does source reconstruction
   if dodics
     [sourcefreq_onset, sourcefreq_shift, sourcefreq_shift_Tval] = erfosc_dics(freq_onset, freq_shift, headmodel, sourcemodel);
-    
-    savedir = [project_dir 'analysis/source/'];
-    if dosave
-      filename = fullfile(savedir, sprintf('sub-%03d/sub-%03d_source', subj,subj));
       if dolowfreq
-        filename = [filename, '_low'];
+        tmpstr = 'low';
+      elseif dohighfreq
+        tmpstr = 'high';
       end
-      save(filename, 'sourcefreq_onset', 'sourcefreq_shift', 'sourcefreq_shift_Tval', 'F');
-    end
+      savedir = [results_dir, sprintf('%03d', subj)];
+      filename = fullfile(savedir, sprintf('%spow_tval.mat', tmpstr));
+      save(filename, 'sourcefreq_shift_Tval');
   end
   
   % this chunk does spectral decomposition - used for estimating
@@ -171,21 +170,23 @@ if ~dogroupanalysis
       savefreq = false;
     end
     if savefreq
-      savedir = [project_dir 'analysis/freq/'];
-      filename = fullfile(savedir, sprintf('sub-%03d/sub-%03d_freqshort', subj,subj));
       if dolowfreq
-        filename = [filename, '_low'];
+        tmpstr = 'low';
+      elseif dohighfreq
+        tmpstr = 'high';
       end
+      savedir = [project_dir 'analysis/freq/'];
+      filename = fullfile(savedir, sprintf('sub-%03d/sub-%03d_%sfreqshort', subj,subj, tmpstr));
       save(filename, 'freq_shift', 'P', 'latency');
     end
   end
   
   if dodics && dofreq_short
-    sourcefreq_shift.avg.pow = (abs(sourcefreq_shift.F*transpose(freq_shift.fourierspctrm)).^2)*P;
+    sourcefreq_shift.pow = transpose((abs(sourcefreq_shift.F*transpose(freq_shift.fourierspctrm)).^2)*P);
     cfg=[];
-    cfg.comment = 'for avg.pow take the power in the pre-ERF window by combining the spatial filter with the fourierspectrum of this window';
+    cfg.comment = 'for pow take the power in the pre-ERF window by combining the spatial filter with the fourierspectrum of this window';
     sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
-    sourcefreq_shift.avg.pow = standardise(log10(sourcefreq_shift.avg.pow), 2);
+    sourcefreq_shift.pow = standardise(log10(sourcefreq_shift.pow), 1);
     cfg.comment = 'log10 avg.pow and standardise w.r.t. trials';
     sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
   end
@@ -211,6 +212,17 @@ if ~dogroupanalysis
     cfg=[];
     cfg.comment = 'compute the noise by calculating "noise = diag(sqrt(lcmv_spatial_filters*noise_covariance*transpose(lcmv_spatial_filters)))"'; %FIXME
     source_parc = ft_annotate(cfg, source_parc);
+    
+    if doplot && subj==13
+      cfg = [];
+      cfg.preproc.demean='yes';
+      cfg.preproc.baselinewindow = [-.1 0];
+      cfg.vartrllength = 2;
+      tmptlck = ft_timelockanalysis(cfg, data_shift);
+      cfg=[];
+      cfg.channel = '';
+    end
+    
     if dosave
       save(filename, 'noise', '-append');
     end
@@ -292,6 +304,7 @@ if ~dogroupanalysis
     cfg.parameter = 'avg';
     datapst = ft_math(cfg, datapst);
     % do the correlations
+    
     if dolowfreq
       [m, idx] = max(sourcefreq_shift_Tval.stat);
       cfg=[];
@@ -301,10 +314,27 @@ if ~dogroupanalysis
       cfg=[];
       cfg.comment = 'Create field roipow: from avg.pow, select only single-trial power values at the source location of maximal POSITIVE induced power change';
     end
-    sourcefreq_shift.roipow = sourcefreq_shift.avg.pow(idx,:);
+    sourcefreq_shift.roipow = sourcefreq_shift.pow(:,idx);
     sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
     
-    datapeak.rho_pow_erf = corr(datapeak.trial, sourcefreq_shift.roipow', 'type', 'spearman');
+    sourcepow = rmfield(sourcefreq_shift, {'F', 'avg'});
+    sourcepow.trialinfo = datapeak.trialinfo;
+    cfg=[];
+    cfg.comment = 'create source structure with single-trial power on source level.';
+    sourcepow = ft_annotate(cfg, sourcepow);
+    
+    sourcepow.rho_pow_rt = corr(sourcepow.pow, sourcepow.trialinfo(:,7), 'type', 'spearman');
+    sourcepow.rho_roipow_rt = corr(sourcepow.roipow, sourcepow.trialinfo(:,7), 'type', 'spearman');
+%     jitter = log10(sourcepow.trialinfo(:,5)-sourcepow.trialinfo(:,4));
+%     jitter = (jitter-mean(jitter))./1200; % demean and divide by sampling frequency
+%     sourcepow.rho_roipow_rt = corr(sourcepow.roipow, sourcepow.trialinfo(:,7), 'type', 'spearman');
+%     sourcepow.partialrho_roipow_jitter = corr(sourcepow.roipow,  jitter, 'type', 'spearman');
+    
+    cfg=[]
+    cfg.comment = 'calculate Spearman rank correlation between power and reaction times (7th column trialinfo).';
+    datapeak = ft_annotate(cfg, datapeak);
+    
+    datapeak.rho_pow_erf = corr(datapeak.trial, sourcefreq_shift.roipow, 'type', 'spearman');
     cfg=[];
     cfg.comment = 'calculate Spearman rank correlation between roipow and peak ERF amplitude.';
     datapeak = ft_annotate(cfg, datapeak);
@@ -348,24 +378,24 @@ if ~dogroupanalysis
       distance_fixation = ft_annotate(cfg, distance_fixation);
       
       % partial correlations with eye data
-      datapeak.partialrho_pupild = partialcorr(datapeak.trial, sourcefreq_shift.roipow', pupil_diameter.trial, 'type', 'spearman');
+      datapeak.partialrho_pupild = partialcorr(datapeak.trial, sourcefreq_shift.roipow, pupil_diameter.trial, 'type', 'spearman');
       cfg=[];
       cfg.comment = 'add field `partialrho_pupild`, the partial Spearman correlation betweek roipow and ERF peak amplitude, accounted for pupil diameter.';
       datapeak = ft_annotate(cfg, datapeak);
       
       % get correlation gamma-ERF, accounting for eye position, without confound pupil diameter
-      datapeak.partialrho_distancefixation = partialcorr(datapeak.trial, sourcefreq_shift.roipow', distance_fixation.trial, 'type', 'spearman');
+      datapeak.partialrho_distancefixation = partialcorr(datapeak.trial, sourcefreq_shift.roipow, distance_fixation.trial, 'type', 'spearman');
       cfg=[];
       cfg.comment = 'add field `partialrho_distancefixation`, the partial Spearman correlation betweek roipow and ERF peak amplitude, accounted for gaze distance to fixation.';
       datapeak = ft_annotate(cfg, datapeak);
       % get correlation gamma-ERF, accounting for eye position and pupil
       % diameter (both not confounded by the other)
-      datapeak.partialrho_pupuld_distancefixation = partialcorr(datapeak.trial, sourcefreq_shift.roipow', [distance_fixation.trial, pupil_diameter.trial], 'type', 'spearman');
+      datapeak.partialrho_pupuld_distancefixation = partialcorr(datapeak.trial, sourcefreq_shift.roipow, [distance_fixation.trial, pupil_diameter.trial], 'type', 'spearman');
       cfg=[];
       cfg.comment = 'add field `partialrho_pupild_distancefixation`, the partial Spearman correlation betweek roipow and ERF peak amplitude, accounted for pupil diameter and gaze distance to fixation (after regressing out their interaction).';
       datapeak = ft_annotate(cfg, datapeak);
     end
-    
+        
     datapeak.rho_erf_rt = corr(datapeak.trial, datapeak.trialinfo(:,7), 'type', 'spearman'); %MvE
     cfg=[]
     cfg.comment = 'calculate Spearman rank correlation between ERF amplitude and reaction times (7th column trialinfo).';
@@ -395,7 +425,7 @@ if ~dogroupanalysis
     if dolowfreq
       tmpstr = 'low';
     elseif dohighfreq
-      tmpstr = 'gamma';
+      tmpstr = 'high';
     end
     if dopartialcorr
       source.partialrho_pupild = datapeak.partialrho_pupild;
@@ -413,20 +443,80 @@ if ~dogroupanalysis
     % save the results to disk.
     datadir = [results_dir sprintf('%03d', subj)];
     save(fullfile(datadir, sprintf('source_erf_%spow', tmpstr)), 'source');
+    save(fullfile(datadir, sprintf('source_%spow', tmpstr)), 'sourcepow');
   end
 else
-  if dostat_pow_erf
-    datadir = [results_dir sprintf('%03d', subj)];
+  if dotfa
     k=1;
     for subj = allsubs
+      datadir = [results_dir sprintf('%03d', subj)];
       if dolowfreq
-        tmpstr = 'lowfreq';
+        tmpstr = 'low';
       elseif dohighfreq
-        tmpstr = 'gamma';
+        tmpstr = 'high';
+      end
+      filename1 = fullfile(datadir, sprintf('tfa_%s_onset', tmpstr));
+      filename2 = fullfile(datadir, sprintf('%spow_tval', tmpstr));
+      fprintf('loading data for subject %s\n', subj);
+      load(filename1, filename2);
+      freq{k} = tfa;
+      baseline{k} = tfa_baseline;
+      pow_tval{k} = sourcefreq_shift_Tval;
+      k=k+1;
+    end
+   
+    cfg=[];
+    cfg.comment = 'Compute relative change of TFR wrt mean baseline over time';
+    for k=1:numel(freq)  
+      baseline{k}.powspctrm = repmat(mean(baseline{k}.powspctrm,3),[1 1 numel(freq{k}.time)]);
+      freq{k}.powspctrm = freq{k}.powspctrm./baseline{k}.powspctrm-1;
+      freq{k} = ft_annote(cfg, freq{k});
+    end
+    
+    cfg=[];
+    cfg.appenddim = 'rpt';
+    freq_allsubs = ft_appendfreq(cfg, freq{:});
+    pow_tval_allsubs = ft_appendfreq(cfg, pow_tval{:});
+    if dolowfreq
+      [~, idx] = min(pow_tval_allsubs.stat,[], 2); % maximum tvalues
+    elseif dohighfreq
+      [~, idx] = max(pow_tval_allsubs.stat,[], 2); % maximum tvalues
+    end
+    cfg=[];
+    cfg.avgoverrpt = 'yes';
+    pow_tval_allsubs = ft_selectdata(cfg, pow_tval_allsubs);
+    
+    
+    if doplot
+      virtualchanpos=[];
+      virtualchanpos.chanpos = ctx.pos(idx,:);
+      virtualchanpos.elecpos = ctx.pos(idx,:);
+      for k=1:numel(allsubs)
+        virtualchanpos.label{k}   = sprintf('%d', k);
+      end
+      pow_tval_allsubs.pos = ctx.pos;
+      pow_tval_allsubs.virtualchanpos = virtualchanpos;
+      cfg=[];
+      cfg.comment = 'replace the .pos info by the shifted version. add virtualchanpos info.';
+      pow_tval_allsubs = ft_annotate(cfg, pow_tval_allsubs);
+      plotpart = 1; erfosc_plotting;
+      
+      
+    end
+  end
+  
+  if dostat_pow_erf
+    k=1;
+    for subj = allsubs
+      datadir = [results_dir sprintf('%03d', subj)];
+      if dolowfreq
+        tmpstr = 'low';
+      elseif dohighfreq
+        tmpstr = 'high';
       end
       filename = fullfile(datadir, sprintf('source_erf_%spow', tmpstr));
       fprintf('loading data for subject %s\n', subj);
-      load(filename,'source');
+      load(filename);
       S{k} = source;
       k=k+1;
     end
