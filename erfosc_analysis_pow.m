@@ -18,44 +18,25 @@ end
 if nargin<2 || isempty(isPilot)
     isPilot = false;
 end
-if nargin<3 || isempty(dosave);
+if nargin<3 || isempty(dosave)
     dosave = true;
 end
 
 %% load data
 erfosc_datainfo;
 if isPilot
-    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj,subj), 'dataClean');
+  load([project_dir, sprintf('processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj)], 'dataClean');
 else
-    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
+  load([project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj)], 'dataClean');
 end
-data=data.dataClean;
-fs = data.fsample;
-
-idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
-nTrials = length(idxM);
-
-cfg=[];
-cfg.trials = idxM;
-cfg.channel = 'MEG';
-data = ft_selectdata(cfg, data);
-
-% find out which trials have response after end of trial, so you can
-% exclude them
-cfg=[];
-cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
-data_reversal_tmp = ft_redefinetrial(cfg, data);
-
-for iTrial=1:nTrials
-    trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
+[data_onset, data_shift] = erfosc_getdata(dataClean);
+if strcmp(zeropoint, 'reversal')
+  data = data_shift;
+  clear data_shift
+else
+  data = data_onset;
+  clear data_onset
 end
-idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
-idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
-
-cfg=[];
-cfg.trials = idx_trials;
-cfg.channel = 'MEG';
-data = ft_selectdata(cfg, data);
 
 for iTrl=1:size(data.trial,2)
     blonset(iTrl,1) = data.time{iTrl}(1);
