@@ -3,8 +3,8 @@ close all
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global ft_default
-ft_default.checksize = inf;
 ft_default = [];
+ft_default.checksize = inf;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % the analysis follows the strategy outlined on https://doi.org/10.1016/j.neuroimage.2018.11.029
@@ -19,10 +19,10 @@ for subj=1
   ft_default.reproducescript = []; % disable
 end
 
-for subj=1
-  ft_default.reproducescript = [reproducescript_dir, 'reproduce_Group', {'dolcmv_corr', false});
-  ft_default.reproducescript = []; % disable
-end
+% for subj=1
+%   ft_default.reproducescript = [reproducescript_dir, 'reproduce_Group', {'dolcmv_corr', false});
+%   ft_default.reproducescript = []; % disable
+% end
 
 
 
