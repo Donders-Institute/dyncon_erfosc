@@ -1,4 +1,4 @@
-function [data_onset, data_shift] = erfosc_preprocessing_eyedata(subj, dosave)
+function [data_onset, data_shift] = erfosc_preprocessing_eyedata(subj, megdata, dosave)
 % Retrieve eyetracker data from the raw MEG data. From the eyedata those
 % trials are selected that are present in the processed MEG data. X- and Y-
 % gaze positions on the screen (in pixels) are transformed to X- and Y-
@@ -19,7 +19,10 @@ function [data_onset, data_shift] = erfosc_preprocessing_eyedata(subj, dosave)
 if nargin<1 || isempty(subj)
     subj = 1;
 end
-if nargin<2 || isempty(dosave)
+if nargin<2 || isempty(megdata)
+  error('please give corresponding MEG data as input')
+end
+if nargin<3 || isempty(dosave)
     dosave = false;
 end
 
@@ -27,52 +30,52 @@ end
 erfosc_datainfo; % load subject specific info.
 
 cfg=[];
-[~, name, ext] = fileparts(subjects(subj).dataset);
-cfg.dataset = fullfile(['/project/3011085.02/erfosc/ses-meg01/', name, ext]);
-cfg.logfile = load(sprintf('/project/3011085.02/erfosc/ses-beh01/sub%02dses01.mat', subj));
+cfg.dataset = subjects(subj).dataset;
+load(subjects(subj).logfile);
+cfg.logfile = subjects(subj).logfile;
 cfg.datafile = cfg.dataset;
 cfg.headerfile = cfg.dataset;
 cfg.trialfun = 'erfosc_trialfun';
-cfg.trialdef.prestim = min(cfg.logfile.log.realBaselineDuration, cfg.logfile.log.setBaselineDuration);
-cfg.trialdef.poststim = cfg.logfile.log.completeDurationGrating;
-cfg.catchtrial = cfg.logfile.log.trlNoShift;
+cfg.trialdef.prestim = min(log.realBaselineDuration,log.setBaselineDuration);
+cfg.trialdef.poststim = log.completeDurationGrating;
+cfg.catchtrial = log.trlNoShift;
 cfg.continuous = 'yes';
 cfg = ft_definetrial(cfg);
 
 cfg.channel = {'UADC005', 'UADC006', 'UADC007'};
-data = ft_preprocessing(cfg);
-datatmp = data;
+data_onset = ft_preprocessing(cfg);
+datatmp = data_onset;
 
 
 %% change X and Y positions into visual angle relative to fixation
-tmp1  =rmfield(data, {'trial', 'label'});
+tmp1  =rmfield(data_onset, {'trial', 'label'});
 tmp1.label{1} = 'visAngleX';
 tmp2=tmp1;
 tmp2.label{1} = 'visAngleY';
 [tmp1.trial, tmp2.trial] = transform_eyedata(datatmp);
+cfg=[];
+cfg.comment = 'use channels UADC005 and UADC006 to construct visAngleX: the distance from fixation in visual degrees.';
+tmp1 = ft_annotate(cfg, tmp1);
+cfg=[];
+cfg.comment = 'use channels UADC005 and UADC006 to construct visAngleY: the distance from fixation in visual degrees.';
+tmp2 = ft_annotate(cfg, tmp2);
 
-data = ft_appenddata([], data, tmp1, tmp2);
+data_onset = ft_appenddata([], data_onset, tmp1, tmp2);
 
 %% load clean data
-load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj));
-[data_onset, ~, ~] = erfosc_getdata(dataClean, []);
-
 % get the correct trials
 cfg=[];
-cfg.trials = data_onset.trialinfo(:,1);
-data = ft_selectdata(cfg, data);
+cfg.trials = megdata.trialinfo(:,1);
+data_onset = ft_selectdata(cfg, data_onset);
 
 cfg=[];
 cfg.resamplefs = 600;
-data = ft_resampledata(cfg, data);
+data_onset = ft_resampledata(cfg, data_onset);
 
 % get the shift aligned data
 cfg        = [];
-cfg.offset = -((data.trialinfo(:,5)-data.trialinfo(:,4)))/2;
-data_shift = ft_redefinetrial(cfg, data);
-
-data_onset = rmfield(data,'cfg');
-data_shift = rmfield(data_shift, 'cfg');
+cfg.offset = -((data_onset.trialinfo(:,5)-data_onset.trialinfo(:,4)))/2;
+data_shift = ft_redefinetrial(cfg, data_onset);
 
 if dosave
     save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_eyedata.mat', subj, subj),'data', 'data_shift');
