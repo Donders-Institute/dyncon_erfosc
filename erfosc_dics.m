@@ -25,8 +25,9 @@ if ~isfield(sourcemodel, 'leadfield')
   sourcemodel    = ft_convert_units(sourcemodel, 'm');
 
   cfg = [];
-  cfg.comment = 'convert to unit `m`.';
+  cfg.comment = 'convert headmodel to unit `m`.';
   headmodel   = ft_annotate(cfg, headmodel);
+  cfg.comment = 'convert sourcemodel to unit `m`.';
   sourcemodel = ft_annotate(cfg, sourcemodel);
   
   cfg           = [];
@@ -47,12 +48,13 @@ cfg.dics.keepfilter = 'yes';
 cfg.dics.fixedori   = 'yes';
 cfg.dics.realfilter = 'yes';
 cfg.dics.lambda     = '100%';
-cfg.comment = 'change frequency data to cmbrepresentation `fullfast` with ft_checkdata.';
+cfg.comment = 'change frequency data to cmbrepresentation `fullfast` with ft_checkdata before sourceanalysis.';
 source = ft_sourceanalysis(cfg, ft_checkdata(freq, 'cmbrepresentation', 'fullfast'));
 cfg.grid.filter = source.avg.filter;
 
-cfg.comment = 'change frequency data to cmbrepresentation `fullfast` with ft_checkdata. Take the spatial filter from the previous step.';
+cfg.comment = 'change frequency data to cmbrepresentation `fullfast` with ft_checkdata before sourceanalysis. Use the common spatial filter from the previous step to do sourceanalysis on freq data timelocked to stimulus onset.';
 sourcefreq_onset = ft_sourceanalysis(cfg, ft_checkdata(freq_onset, 'cmbrepresentation', 'fullfast'));
+cfg.comment = 'change frequency data to cmbrepresentation `fullfast` with ft_checkdata before sourceanalysis. Use the common spatial filter from the previous step to do sourceanalysis on freq data timelocked to stimulus change.';
 sourcefreq_shift = ft_sourceanalysis(cfg, ft_checkdata(freq_shift, 'cmbrepresentation', 'fullfast'));
 
 % projection matrix to get from fourier to power
@@ -69,9 +71,10 @@ F = zeros(numel(source.inside), numel(freq_onset.label));
 F(source.inside,:) = cat(1, source.avg.filter{:}); %FIXME do I need to change this into a FT structure?
 
 cfg=[];
-cfg.comment = 'concatenate the spatial filters';
+cfg.comment = 'concatenate the spatial filters (stimulus onset locked)';
 sourcefreq_onset.F = F;
 sourcefreq_onset = ft_annotate(cfg, sourcefreq_onset);
+cfg.comment = 'concatenate the spatial filters (stimulus change locked)';
 sourcefreq_shift.F = F;
 sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
 
