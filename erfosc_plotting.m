@@ -6,12 +6,7 @@
 % FIGURE 2 %
 %%%%%%%%%%%%
 %% Gamma Time-Frequency plot + Topography (Channel level)
-
-load /project/3011085.02/analysis/tfr_all_high_onset.mat
-
-clear all
-erf_osc_datainfo;
-
+if plotfigure==2
 % Subject grand average
 % TFR
 cfgp=[];
@@ -22,7 +17,8 @@ n=11;
 cmap = flipud(brewermap(2*n-1,'RdBu'));
 cfgp.colormap=(cmap([2:n n:end-1],:));
 cfgp.channel = {'MLO21', 'MLO22', 'MLO31', 'MRO21', 'MRO22', 'MRO31', 'MZO02'};
-ft_singleplotTFR(cfgp, d);
+cfgp.title = 'figure 2A';
+ft_singleplotTFR(cfgp, freq_allsubs);
 
 % Topography
 cfgp=[];
@@ -41,32 +37,14 @@ cfgp.colormap=(cmap([2:n n:end-1],:));
 cfgp.colorbar='yes';
 cfgp.numcontour = 0;
 cfgp.gridscale = 250;
-ft_topoplotTFR(cfgp, d);
+cfgp.title = 'Figure 2B';
+ft_topoplotTFR(cfgp, freq_allsubs);
 
 %% Gamma power on 2D sourcemodel (which is used in correlation with ERF)
 
-erf_osc_datainfo;
-datadir = '/project/3011085.02/analysis/source/';
-load cortex_inflated_shifted;
-
-k=1;
-for sub=allsubs
-    if k==1;
-        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source',   sub, sub)), 'source_shift', 'Tval');
-        source_shift = tmp{k}.source_shift;
-    else
-        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source',  sub,  sub)), 'Tval','source_shift');
-    end
-    Tval(:,k) = tmp{k}.Tval;
-    k=k+1;
-end
-
-source_shift.pos = ctx.pos;
-source_shift.Tval = mean(Tval,2);
-
 cfgx = [];
 cfgx.method='surface';
-cfgx.funparameter='Tval';
+cfgx.funparameter='stat';
 cfgx.funcolorlim = 'maxabs';%[-25 25];
 cfgx.maskstyle='colormix';
 cfgx.maskparameter = cfgx.funparameter;
@@ -76,32 +54,11 @@ cfgx.opacitylim = 'zeromax';
 n=11;
 cmap = flipud(brewermap(2*n-1,'RdBu'));
 cfgx.funcolormap=(cmap([2:n n:end-1],:));
-ft_sourceplot(cfgx,source_shift)
-h = light('position', [-1 0 -0.1]);
-h2=light; set(h2, 'position', [1 0 -0.1]);
-material dull;
-view([64 16])
-view([124 14])
-view([-48 5])
-view([-120 9])
+cfgx.title = 'Figure 2E';
+cfgx.comment = 'use view [64 16], [124 14], [-48 5], and [-120 9]. Add virtual channel locations by executing ft_plot_sens(grad,`elecshape`,`sphere`, `elecsize`, 8, `facecolor`, `black`).';
+ft_sourceplot(cfgx,pow_tval_allsubs)
 
-
-% include virtual channel positions
-datadir = '/project/3011085.02/analysis/source/';
-k=1;
-for subj=allsubs;
-    tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source', subj,   subj)));
-%     load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_freqshort',  subj,  subj)));
-    [m, idx(k)] = max(tmp{k}.Tval);
-    k=k+1;
-end
-
-grad.chanpos=ctx.pos(idx,:);
-grad.elecpos=ctx.pos(idx,:);
-for k=1:32
-grad.label{k} = sprintf('sub%d', k);
-end
-ft_plot_sens(grad,'elecshape','sphere', 'elecsize', 8, 'facecolor', 'black')
+%{
 
 %% Gamma-power boxplots + power spectra
 erf_osc_datainfo;
@@ -136,18 +93,14 @@ ratio_maxchan_SD = std(ratio_maxchan);
 addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
 figure; iosr.statistics.boxPlot(ratio_maxchan'-1, 'showScatter', true, 'scatterMarker', '.')
 figure; iosr.statistics.boxPlot(peakFreq', 'showScatter', true, 'scatterMarker', '.')
-
-
+%}
+end
 
 %%%%%%%%%%%%
 % FIGURE 3 %
 %%%%%%%%%%%%
+if plotfigure==3
 %% low frequency TFR + topo
-load /project/3011085.02/analysis/tfr_all_low_onset.mat
-
-clear all
-erf_osc_datainfo;
-
 % Subject grand average
 % TFR
 cfgp=[];
@@ -158,7 +111,8 @@ n=7;
 cmap = flipud(brewermap(2*n-1,'RdBu'));
 cfgp.colormap=(cmap([2:n n:end-1],:));
 cfgp.channel = {'MLO23', 'MLO32', 'MLO33', 'MRO23', 'MRO24', 'MRO32', 'MRO33', 'MRO34', 'MRO43', 'MRO44', 'MRO53', 'MRT57'};
-ft_singleplotTFR(cfgp, d);
+cfgp.title = 'figure 3A';
+ft_singleplotTFR(cfgp, freq_allsubs);
 
 % Topography
 cfgp=[];
@@ -177,28 +131,11 @@ cfgp.colormap=(cmap([2:n n:end-1],:));
 cfgp.colorbar='yes';
 cfgp.numcontour = 0;
 cfgp.gridscale = 250;
-ft_topoplotTFR(cfgp, d);
+cfgp.title = 'figure 3B';
+ft_topoplotTFR(cfgp, freq_allsubs);
 
 
 %% low frequency power on 2D sourcemodel
-erf_osc_datainfo;
-datadir = '/project/3011085.02/analysis/source/';
-load cortex_inflated_shifted;
-
-k=1;
-for sub=allsubs
-    if k==1;
-        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source_low',  sub,  sub)), 'source_shift', 'Tval');
-        source_shift = tmp{k}.source_shift;
-    else
-        tmp{k} = load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source_low', sub,   sub)), 'Tval');
-    end
-    Tval(:,k) = tmp{k}.Tval;
-    k=k+1;
-end
-source_shift.Tval = mean(Tval,2);
-source_shift.pos = ctx.pos;
-
 cfgx = [];
 cfgx.method='surface';
 cfgx.funparameter='Tval';
@@ -211,31 +148,10 @@ cfgx.opacitylim = 'minzero';
 n=9;
 cmap = flipud(brewermap(2*n-1,'RdBu'));
 cfgx.funcolormap=(cmap([2:n n:end-1],:));
-ft_sourceplot(cfgx,source_shift)
-h = light('position', [-1 0 -0.1]);
-h2=light; set(h2, 'position', [1 0 -0.1]);
-material dull;
-view([64 16])
-view([119 15])
-view([-48 5])
-view([-120 9])
-
-% include virtual channel positions
- datadir = '/project/3011085.02/analysis/source/';
-k=1;
-for subj=allsubs;
-    tmp{k} =     load(fullfile(datadir, sprintf('sub-%03d/sub-%03d_source_low',  subj,  subj)));
-    [m, idx(k)] = min(tmp{k}.Tval);
-    k=k+1;
-end
-
-grad.chanpos=ctx.pos(idx,:);
-grad.elecpos=ctx.pos(idx,:);
-for k=1:32
-grad.label{k} = sprintf('sub%d', k);
-end
-ft_plot_sens(grad,'elecshape','sphere', 'elecsize', 8, 'facecolor', 'black')
-
+cfgx.title = 'figure 3E';
+cfgx.comment = 'use view [64 16], [124 14], [-48 5], and [-120 9]';
+ft_sourceplot(cfgx,pow_tval_allsubs)
+%{
 %% low frequency power boxplots and powerspectra
 erf_osc_datainfo;
 
@@ -259,50 +175,67 @@ end
 addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
 figure; iosr.statistics.boxPlot(ratio', 'showScatter', true, 'scatterMarker', '.'); ylim([-0.6 0]);
 figure; iosr.statistics.boxPlot(peakfreq', 'showScatter', true, 'scatterMarker', '.')
-
+%}
+end
 
 %%%%%%%%%%%%
 % FIGURE 4 %
 %%%%%%%%%%%%
 %% Single trial ERF (SNR)
-subj = 13;
-
-erf_osc_datainfo;
-subject = subjects(subj);
-
-filename_data = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj);
-load(filename_data);
-
-[data_onset, data_shift] = erfosc_getdata(dataClean, []);
-clear dataClean;
-
-% identify channel-of-interest
-cfg = [];
-cfg.preproc.demean='yes';
-cfg.preproc.baselinewindow = [-.1 0];
-cfg.vartrllength = 2;
-tlck = ft_timelockanalysis(cfg, data_shift);
-
-% use ft_topoplotER, I selected MRP52, based on the 0.07-0.08 time window,
-% indx 221
-
-% identify parcel-of-interest
-loaddir = '/project/3011085.02/analysis/scource/';
-load(fullfile(loaddir, sprintf('sub-%03d/sub-%03d_lcmv',subj, subj)), 'source_parc', 'noise');
-% I selected R_18_B05_04, indx 360
-
-dat1 = cellrowselect(data_shift.trial, 221);
-dat2 = source_parc.F{360}(1,:)*data_shift.trial;
-
-dat1 = cat(1,dat1{:}); dat1 = dat1(:,391:end);
-dat2 = cat(1,dat2{:}); dat2 = dat2(:,391:end);
-
-tim = tlck.time(391:end);
-
-figure;imagesc(tim,1:size(dat1,1),ft_preproc_lowpassfilter(dat1,600,40,[],'firws'), [-0.8e-12 0.8e-12]); title('single sensor, filtered'); xlim([0 0.3]); colormap(flipud(brewermap(64, 'RdBu')));
-figure;imagesc(tim,1:size(dat2,1),ft_preproc_lowpassfilter(dat2,600,40,[],'firws'),[-3e-12 3e-12]); title('single parcel, filtered'); xlim([0 0.3]); colormap(flipud(brewermap(64, 'RdBu')));
-
-
+      cfg=[];
+      cfg.keeptrials = 'yes';
+      chanerf = ft_timelockanalysis(cfg, data_shift);
+      cfg=[];
+      cfg.channel = 'MRP52';
+      chanerf = ft_selectdata(cfg, chanerf);
+      cfg=[];
+      cfg.lpfilter = 'yes';
+      cfg.lpfreq = 40;
+      cfg.lpfilttype = 'firws';
+      chanerf = ft_preprocessing(cfg, chanerf);
+      chanerf.freq = 1:size(chanerf.trial,1);
+      chanerf.dimord = 'freq_chan_time';
+      cfg=[];
+      cfg.comment = 'add freq info (1:numel(#trials)) and change dimord';
+      chanerf = ft_annotate(cfg, chanerf);
+      
+      cfg=[];
+      cfg.xlim = [0 0.3];
+      cfg.zlim = [-0.8e-12 0.8e-12];
+      cfg.title = 'Figure 4A';
+      cfg.colormap = colormap(flipud(brewermap(64, 'RdBu')));
+      cfg.parameter = 'trial';
+      ft_singleplotTFR(cfg, chanerf);
+      
+      sourceerf = data_shift;
+      sourceerf.trial = source_parc.F(360,:)*data_shift.trial;
+      sourceerf.label = [];
+      sourceerf.label{1} = 'R_18_B05_04';
+      cfg=[];
+      cfg.comment = 'multiply spatial filter belonging to parcel R_18_B05_04 with the data';
+      sourceerf = ft_annotate(cfg, sourceerf);
+      cfg=[];
+      cfg.keeptrials = 'yes';
+      sourceerf = ft_timelockanalysis(cfg, sourceerf);
+      cfg=[];
+      cfg.lpfilter = 'yes';
+      cfg.lpfreq = 40;
+      cfg.lpfilttype = 'firws';
+      sourceerf = ft_preprocessing(cfg, sourceerf);
+      sourceerf.freq = 1:size(sourceerf.trial,1);
+      sourceerf.dimord = 'freq_chan_time';
+      cfg=[];
+      cfg.comment = 'add freq info (1:numel(#trials)) and change dimord';
+      sourceerf = ft_annotate(cfg, sourceerf);
+      
+      cfg=[];
+      cfg.xlim = [0 0.3];
+      cfg.zlim = [-3e-12 3e-12];
+      cfg.title = 'Figure 4B';
+      cfg.colormap = colormap(flipud(brewermap(64, 'RdBu')));
+      cfg.parameter = 'trial';
+      ft_singleplotTFR(cfg, sourceerf);
+% FIXME continue here
 
 %% ERF topographies
 
