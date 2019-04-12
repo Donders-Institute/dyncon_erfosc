@@ -37,9 +37,6 @@ end
 
 %% Load data and define trials
 erfosc_datainfo; % load subject specific info.
-cfg=[];
-cfg.comment = 'load data from erfosc_datainfo.m';
-init = ft_annotate(cfg,[]);
 
 cfg=[];
 if isPilot
