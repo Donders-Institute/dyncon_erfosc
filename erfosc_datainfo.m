@@ -75,7 +75,7 @@ subjects(1).ecgcomp            = [5, 11];
 subjects(1).eyecomp            = [3];
 subjects(1).badtrials          = []; 
 subjects(1).aseo               = [0.05167 0.1033; 0.1042 0.1683; 0.1858  0.5475]; 
-subjects(1).gammaband          = [50 70];%TFR [60 70];powspec
+subjects(1).gammaband          = [50 70];
 subjects(1).gammapeak          = 66;
 subjects(1).erflatency         = [0.065 0.095]; % s. most priminent peak in the first 100ms of the source level evoked response.
 
@@ -88,8 +88,8 @@ subjects(2).mridir             = [project_dir, 'processed/sub-002/ses-mri01/'];
 subjects(2).ecgcomp            = [10, 18];
 subjects(2).eyecomp            = [2, 4];
 subjects(2).badtrials          = [140]; % bad trials were identified with ICA and imagesc. they are removed by adding their sampleinfo data to artfctdef.eyeblink.artifact;
-subjects(2).gammaband          = [56 70];%TFR [34 46; 52 70];powspec
-subjects(2).gammapeak          = [40; 62]; % 62 highest
+subjects(2).gammaband          = [56 70];
+subjects(2).gammapeak          = [62]; 
 subjects(2).erflatency         = [0.055 0.070];
 
 subjects(3).channels           = {'MEG', '-MRT32', 'HLC*'};
@@ -101,8 +101,8 @@ subjects(3).mridir             = [project_dir, 'processed/sub-003/ses-mri01/'];
 subjects(3).ecgcomp            = [5, 7];
 subjects(3).eyecomp            = [3];
 subjects(3).badtrials          = [];
-subjects(3).gammaband          = [48 62];% TFR [26 34; 42 68];powspec
-subjects(3).gammapeak          = [30; 56]; % 56 highest
+subjects(3).gammaband          = [48 62];
+subjects(3).gammapeak          = [56]; 
 subjects(3).erflatency         = [0.060 0.085];
 
 subjects(4).channels           = {'MEG', '-MRT32', 'HLC*'};
@@ -114,7 +114,7 @@ subjects(4).mridir             = [project_dir, 'processed/sub-004/ses-mri01/'];
 subjects(4).ecgcomp            = [6, 9];
 subjects(4).eyecomp            = [2];
 subjects(4).badtrials          = [];
-subjects(4).gammaband          = [46 62];%TFR [40 64];powspec
+subjects(4).gammaband          = [46 62];
 subjects(4).gammapeak          = 54;
 subjects(4).erflatency         = [0.056 0.083];
 
@@ -127,7 +127,7 @@ subjects(5).mridir             = [project_dir, 'processed/sub-005/ses-mri01/'];
 subjects(5).ecgcomp            = [9];
 subjects(5).eyecomp            = [6, 8]; % tooth filling left temporal, high noise levels in MLT sensors. mark components 1. CHECK FOR OTHER COMPONENTS. MANY SUSPECTED
 subjects(5).badtrials          = [314, 321]; % bad trials were identified with ICA and imagesc. they are removed by adding their sampleinfo data to artfctdef.eyeblink.artifact;
-subjects(5).gammaband          = [46 60];%TFR [42 60];powspec
+subjects(5).gammaband          = [46 60];
 subjects(5).gammapeak          = 54;
 subjects(5).erflatency         = [0.055 0.082];
 
@@ -140,7 +140,7 @@ subjects(6).mridir             = [project_dir, 'processed/sub-006/ses-mri01/'];
 subjects(6).ecgcomp            = [9, 34];
 subjects(6).eyecomp            = [1];
 subjects(6).badtrials          = [];
-subjects(6).gammaband          = [42 54]; %TFR [46 62]; powspec % absent
+subjects(6).gammaband          = [42 54]; 
 subjects(6).gammapeak          = [46];
 subjects(6).erflatency         = [0.058 0.075];
 
@@ -153,7 +153,7 @@ subjects(7).mridir             = [project_dir, 'processed/sub-007/ses-mri01/'];
 subjects(7).ecgcomp            = [9, 34];
 subjects(7).eyecomp            = [1, 2, 6, 7];
 subjects(7).badtrials          = [];
-subjects(7).gammaband          = [50 64];%TFR [46 68];powspec
+subjects(7).gammaband          = [50 64];
 subjects(7).gammapeak           = 56;
 subjects(7).erflatency         = [0.060 0.077];
 
@@ -167,7 +167,7 @@ subjects(8).mridir             = [project_dir, 'processed/sub-008/ses-mri01/'];
 subjects(8).ecgcomp            = [8, 9];
 subjects(8).eyecomp            = [1];
 subjects(8).badtrials          = [];
-subjects(8).gammaband          = [46 64];%TFR [46 62];powspec
+subjects(8).gammaband          = [46 64];
 subjects(8).gammapeak          = 54;
 subjects(8).erflatency         = [0.060 0.095];
 
@@ -180,7 +180,7 @@ subjects(9).mridir             = [project_dir, 'processed/sub-009/ses-mri01/'];
 subjects(9).ecgcomp            = [9, 34];
 subjects(9).eyecomp            = [1, 2];
 subjects(9).badtrials          = [];
-subjects(9).gammaband          = [50 64];%TFR %[50 68];powspec
+subjects(9).gammaband          = [50 64];
 subjects(9).gammapeak          = 54;
 subjects(9).erflatency         = [0.065 0.075];
 
@@ -206,7 +206,7 @@ subjects(11).mridir             = [project_dir, 'processed/sub-011/ses-mri01/'];
 subjects(11).ecgcomp            = [2, 7, 18];
 subjects(11).eyecomp            = [1, 15];
 subjects(11).badtrials          = [];
-subjects(11).gammaband          = [50 66];%TFR [46 70];powpsec
+subjects(11).gammaband          = [50 66];
 subjects(11).gammapeak          = 56;
 subjects(11).erflatency         = [0.056 0.068];
 
@@ -219,7 +219,7 @@ subjects(12).mridir             = [project_dir, 'processed/sub-012/ses-mri01/'];
 subjects(12).ecgcomp            = [4, 15];
 subjects(12).eyecomp            = [1,2];
 subjects(12).badtrials          = [];
-subjects(12).gammaband          = [42 58];%TFR [40 60];powspec
+subjects(12).gammaband          = [42 58];
 subjects(12).gammapeak          = 52;
 subjects(12).erflatency         = [0.060 0.070];
 
@@ -232,7 +232,7 @@ subjects(13).mridir             = [project_dir, 'processed/sub-013/ses-mri01/'];
 subjects(13).ecgcomp            = [12, 20];
 subjects(13).eyecomp            = [1,2,3];
 subjects(13).badtrials          = []; 
-subjects(13).gammaband          = [36 50];% TFR [34 48];powspec
+subjects(13).gammaband          = [36 50];
 subjects(13).gammapeak          = 42;
 subjects(13).erflatency         = [0.065 0.085];
 
@@ -245,8 +245,8 @@ subjects(14).mridir             = [project_dir, 'processed/sub-014/ses-mri01/'];
 subjects(14).ecgcomp            = [5, 8, 13];
 subjects(14).eyecomp            = [1];
 subjects(14).badtrials          = [];
-subjects(14).gammaband          = [58 70];%TFR [54 74]; powspec
-subjects(14).gammapeak          = 64;% peakFreq _gamma WRONG??
+subjects(14).gammaband          = [58 70];
+subjects(14).gammapeak          = 64;
 subjects(14).erflatency         = [0.070 0.100];
 
 subjects(15).channels           = {'MEG', '-MRT32', 'HLC*'};
@@ -258,7 +258,7 @@ subjects(15).mridir             = [project_dir, 'processed/sub-015/ses-mri01/'];
 subjects(15).ecgcomp            = [3];
 subjects(15).eyecomp            = [2];
 subjects(15).badtrials          = []; 
-subjects(15).gammaband          = [62 82];%TFR [64 82];powspec % absent
+subjects(15).gammaband          = [62 82];
 subjects(15).gammapeak          = [80];
 subjects(15).erflatency         = [0.070 0.085];
 
@@ -271,7 +271,7 @@ subjects(16).mridir             = [project_dir, 'processed/sub-016/ses-mri01/'];
 subjects(16).ecgcomp            = [4, 6, 30];
 subjects(16).eyecomp            = [2];
 subjects(16).badtrials          = [];
-subjects(16).gammaband          = [50 66];%TFR [46 70];powspec
+subjects(16).gammaband          = [50 66];
 subjects(16).gammapeak          = 58;
 subjects(16).erflatency         = [0.055 0.085];
 
@@ -284,7 +284,7 @@ subjects(17).mridir             = [project_dir, 'processed/sub-017/ses-mri01/'];
 subjects(17).ecgcomp            = [10, 17];
 subjects(17).eyecomp            = [3];
 subjects(17).badtrials          = [];
-subjects(17).gammaband          = [66 78];%TFR [60 84];powspec
+subjects(17).gammaband          = [66 78];
 subjects(17).gammapeak          = 70;
 subjects(17).erflatency         = [0.058 0.095];
 
@@ -297,8 +297,8 @@ subjects(18).mridir             = [project_dir, 'processed/sub-018/ses-mri01/'];
 subjects(18).ecgcomp            = [5, 7];
 subjects(18).eyecomp            = [2, 9];
 subjects(18).badtrials          = [];
-subjects(18).gammaband          = [58 84]%;TFR [60 70; 74 96];powspec % absent? also in TFR
-subjects(18).gammapeak          = [62; 86];
+subjects(18).gammaband          = [58 84];
+subjects(18).gammapeak          = [62];
 subjects(18).erflatency         = [0.073 0.092];
 
 subjects(19).channels           = {'MEG', '-MRT32', 'HLC*'};
@@ -310,7 +310,7 @@ subjects(19).mridir             = [project_dir, 'processed/sub-019/ses-mri01/'];
 subjects(19).ecgcomp            = [1, 4, 13];
 subjects(19).eyecomp            = [2];
 subjects(19).badtrials          = [];
-subjects(19).gammaband          = [50 68];%TFR [50 70];powspec
+subjects(19).gammaband          = [50 68];
 subjects(19).gammapeak          = 58;
 subjects(19).erflatency         = [0.058 0.08];
 
@@ -323,7 +323,7 @@ subjects(20).mridir             = [project_dir, 'processed/sub-020/ses-mri01/'];
 subjects(20).ecgcomp            = [9, 21];
 subjects(20).eyecomp            = [2];
 subjects(20).badtrials          = [299, 300]; % bad trials were identified with ICA and imagesc. they are removed by adding their sampleinfo data to artfctdef.eyeblink.artifact;
-subjects(20).gammaband          = [54 68];% TFR [50 72];powspec
+subjects(20).gammaband          = [54 68];
 subjects(20).gammapeak          = 60;
 subjects(20).erflatency         = [0.058 0.087];
 
@@ -336,7 +336,7 @@ subjects(21).mridir             = [project_dir, 'processed/sub-021/ses-mri01/'];
 subjects(21).ecgcomp            = [10, 11];
 subjects(21).eyecomp            = [2];
 subjects(21).badtrials          = [446, 447];
-subjects(21).gammaband          = [58 72];%TFR  [50 76];powspec
+subjects(21).gammaband          = [58 72];
 subjects(21).gammapeak          = 64;
 subjects(21).erflatency         = [0.078 0.087];
 
@@ -349,7 +349,7 @@ subjects(22).mridir             = [project_dir, 'processed/sub-022/ses-mri01/'];
 subjects(22).ecgcomp            = [1, 2];
 subjects(22).eyecomp            = [3];
 subjects(22).badtrials          = [];
-subjects(22).gammaband          = [54 70];% TFR [46 74];powspec
+subjects(22).gammaband          = [54 70];
 subjects(22).gammapeak          = 62;
 subjects(22).erflatency         = [0.055 0.075];
 
@@ -362,7 +362,7 @@ subjects(23).mridir             = [project_dir, 'processed/sub-023/ses-mri01/'];
 subjects(23).ecgcomp            = [6, 20];
 subjects(23).eyecomp            = [1, 5, 8];
 subjects(23).badtrials          = [];
-subjects(23).gammaband          = [60 74];%TFR  [56 74];powspec
+subjects(23).gammaband          = [60 74];
 subjects(23).gammapeak          = 66;
 subjects(23).erflatency         = [0.06 0.08];
 
@@ -375,7 +375,7 @@ subjects(24).mridir             = [project_dir, 'processed/sub-024/ses-mri01/'];
 subjects(24).ecgcomp            = [4, 5];
 subjects(24).eyecomp            = [1, 2, 11];
 subjects(24).badtrials          = [];
-subjects(24).gammaband          = [46 62];%TFR [40 66];powspec
+subjects(24).gammaband          = [46 62];
 subjects(24).gammapeak          = 52;
 subjects(24).erflatency         = [0.058 0.078];
 
@@ -388,7 +388,7 @@ subjects(25).mridir             = [project_dir, 'processed/sub-025/ses-mri01/'];
 subjects(25).ecgcomp            = [2, 6, 14];
 subjects(25).eyecomp            = [1];
 subjects(25).badtrials          = [];
-subjects(25).gammaband          = [38 58];%TFR [34 60];powspec
+subjects(25).gammaband          = [38 58];
 subjects(25).gammapeak          = 48;
 subjects(25).erflatency         = [0.06 0.09];
 
@@ -401,7 +401,7 @@ subjects(26).mridir             = [project_dir, 'processed/sub-026/ses-mri01/'];
 subjects(26).ecgcomp            = [2, 6, 11];
 subjects(26).eyecomp            = [1];
 subjects(26).badtrials          = [1, 399];
-subjects(26).gammaband          = [42 54]; %TFR [42 52];powspec
+subjects(26).gammaband          = [42 54];
 subjects(26).gammapeak          = 48;
 subjects(26).erflatency         = [0.058 0.087];
 
@@ -414,7 +414,7 @@ subjects(27).mridir             = [project_dir, 'processed/sub-027/ses-mri01/'];
 subjects(27).ecgcomp            = [1, 22];
 subjects(27).eyecomp            = [5];
 subjects(27).badtrials          = [];
-subjects(27).gammaband          = [58 70];%TFR [50 78];powspec
+subjects(27).gammaband          = [58 70];
 subjects(27).gammapeak          = 66;
 subjects(27).erflatency         = [0.058 0.075];
 
@@ -427,8 +427,8 @@ subjects(28).mridir             = [project_dir, 'processed/sub-028/ses-mri01/'];
 subjects(28).ecgcomp            = [5, 21];
 subjects(28).eyecomp            = [1];
 subjects(28).badtrials          = [190, 453];
-subjects(28).gammaband          = [34 46];%TFR[30 44; 68 86]; %powspec
-subjects(28).gammapeak          = [34; 76]; % 34 strongest. 
+subjects(28).gammaband          = [34 46];
+subjects(28).gammapeak          = [34]; 
 subjects(28).erflatency         = [0.083 0.1];
 
 subjects(29).channels           = {'MEG', '-MRT32', 'HLC*'};
@@ -440,7 +440,7 @@ subjects(29).mridir             = [project_dir, 'processed/sub-029/ses-mri01/'];
 subjects(29).ecgcomp            = [3, 15];
 subjects(29).eyecomp            = [1, 2];
 subjects(29).badtrials          = [];
-subjects(29).gammaband          = [50 66];%TFR [40 72];%powspec
+subjects(29).gammaband          = [50 66];
 subjects(29).gammapeak          = 58; 
 subjects(29).erflatency         = [0.057 0.077];
 
@@ -453,7 +453,7 @@ subjects(30).mridir             = [project_dir, 'processed/sub-030/ses-mri01/'];
 subjects(30).ecgcomp            = [3, 9, 14];
 subjects(30).eyecomp            = [1, 2];
 subjects(30).badtrials          = []; 
-subjects(30).gammaband          = [50 68];%TFR [48 88];powspec %absent? also looks like it in TFR
+subjects(30).gammaband          = [50 68];
 subjects(30).gammapeak          = 74;
 subjects(30).erflatency         = [0.058 0.075];
 
@@ -466,7 +466,7 @@ subjects(31).mridir             = [project_dir, 'processed/sub-031/ses-mri01/'];
 subjects(31).ecgcomp            = [3, 7];
 subjects(31).eyecomp            = [2, 10];
 subjects(31).badtrials          = [];
-subjects(31).gammaband          = [50 66];%[46 70];
+subjects(31).gammaband          = [50 66];
 subjects(31).gammapeak          = 58;
 subjects(31).erflatency         = [0.055 0.07];
 
@@ -479,7 +479,7 @@ subjects(32).mridir             = [project_dir, 'processed/sub-032/ses-mri02/'];
 subjects(32).ecgcomp            = [3, 20, 24];
 subjects(32).eyecomp            = [1, 13];
 subjects(32).badtrials          = [];
-subjects(32).gammaband          = [46 58];%TFR %[34 64];powspec
+subjects(32).gammaband          = [46 58];
 subjects(32).gammapeak          = 52;
 subjects(32).erflatency         = [0.058 0.092];
 
@@ -492,6 +492,6 @@ subjects(33).mridir             = [project_dir, 'processed/sub-033/ses-mri01/'];
 subjects(33).ecgcomp            = [2, 6];
 subjects(33).eyecomp            = [1];
 subjects(33).badtrials          = [12, 27, 181, 207];
-subjects(33).gammaband          = [54 68];%powspec + TFR
+subjects(33).gammaband          = [54 68];
 subjects(33).gammapeak          = 60;
 subjects(33).erflatency         = [0.053 0.09];
