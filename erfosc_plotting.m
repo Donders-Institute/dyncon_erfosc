@@ -182,9 +182,30 @@ end
 % FIGURE 4 %
 %%%%%%%%%%%%
 %% Single trial ERF (SNR)
+      % channel level   
       cfg=[];
       cfg.keeptrials = 'yes';
       chanerf = ft_timelockanalysis(cfg, data_shift);
+      
+      % topo
+      cfgp=[];
+      cfgp.layout = 'CTF275_helmet.mat';
+      cfgp.xlim = [0.07 0.08];
+      cfgp.highlight = 'on';
+      cfgp.highlightchannel = 'MRP52';
+      cfgp.highlightsymbol = 'O';
+      cfgp.highlightsize = 8;
+      cfgp.highlightcolor = [1 1 1];
+      cfgp.marker = 'off';
+      cfgp.colorbar = 'yes';
+      cfgp.contournum = 0;
+      cfgp.gridscale = 250;
+      cfgp.zlim = [-1e-13 1e-13];
+      cfgp.colormap = flipud(brewermap(64, 'RdBu'));
+      cfgp.title = 'Figure 4C';
+      figure; ft_topoplotER(cfgp, chanerf);
+      
+      % time course
       cfg=[];
       cfg.channel = 'MRP52';
       chanerf = ft_selectdata(cfg, chanerf);
@@ -207,16 +228,56 @@ end
       cfg.parameter = 'trial';
       ft_singleplotTFR(cfg, chanerf);
       
+      % source level
       sourceerf = data_shift;
-      sourceerf.trial = source_parc.F(360,:)*data_shift.trial;
-      sourceerf.label = [];
-      sourceerf.label{1} = 'R_18_B05_04';
+      exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'});
+      idx = setdiff(1:374, exclude_label);
+      sourceerf.trial = zeros(numel(data_shift.trial), numel(atlas.parcellationlabel), length(data_shift.trial{1}));
+      tmpdata = source_parc.F*data_shift.trial;
+      sourceerf.trial(:, idx, :) = permute(cat(3, tmpdata{:}), [3,1,2]);
+      sourceerf.label = atlas.parcellationlabel;
+      sourceerf.time = sourceerf.time{1};
+      sourceerf.dimord = 'rpt_chan_time';
+      
       cfg=[];
-      cfg.comment = 'multiply spatial filter belonging to parcel R_18_B05_04 with the data';
+      cfg.comment = 'multiply LCMV spatial filters with the data.';
       sourceerf = ft_annotate(cfg, sourceerf);
+      
+      % topo
+      sourcetopo = ft_timelockanalysis([], sourceerf);
       cfg=[];
-      cfg.keeptrials = 'yes';
-      sourceerf = ft_timelockanalysis(cfg, sourceerf);
+      cfg.latency = [0.07 0.08];
+      cfg.avgovertime = 'yes';
+      sourcetopo = ft_selectdata(cfg, sourcetopo);
+      
+      sourcetopo.avg = abs(sourcetopo.avg);
+      cfg=[];
+      cfg.comment = 'ERF polarities are ambiguous. Take absolute values.';
+      sourcetopo = ft_annotate(cfg, sourcetopo);
+      
+      sourcetopo.brainordinate = atlas;
+      sourcetopo.brainordinate.pos = ctx.pos;
+      cfg=[];
+      cfg.comment = 'Add atlas to brainordinate field.';
+      sourcetopo = ft_annotate(cfg, sourcetopo);
+      
+      cfgp = [];
+      cfgp.method = 'surface';
+      cfgp.funparameter = 'avg';
+      cfgp.funcolormap = flipud(brewermap(64, 'RdBu'));
+      cfgp.camlight = 'no';
+      cfgp.colorbar = 'no';
+      cfgp.funcolorlim = [-12e-13 12e-13];
+      cfgp.maskstyle = 'colormix';
+      cfgp.maskparameter = cfgp.funparameter;
+      cfgp.title = 'Figure 4D';
+      cfgp.comment = 'use view [64 16], [116 16], [-53 2], and [-120 2]';
+      ft_sourceplot(cfgp, sourcetopo);
+
+      % time course
+      cfg=[];
+      cfg.channel = 'R_18_B05_04';
+      sourceerf = ft_selectdata(cfg, sourceerf);
       cfg=[];
       cfg.lpfilter = 'yes';
       cfg.lpfreq = 40;
@@ -235,95 +296,6 @@ end
       cfg.colormap = colormap(flipud(brewermap(64, 'RdBu')));
       cfg.parameter = 'trial';
       ft_singleplotTFR(cfg, sourceerf);
-% FIXME continue here
-
-%% ERF topographies
-
-subj = 13;
-
-erf_osc_datainfo;
-subject = subjects(subj);
-
-filename_data = sprintf('/project/3011085.03/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj);
-load(filename_data);
-
-[data_onset, data_shift] = erfosc_getdata(dataClean, []);
-clear dataClean;
-
-% identify channel-of-interest
-cfg = [];
-cfg.preproc.demean='yes';
-cfg.preproc.baselinewindow = [-.1 0];
-cfg.vartrllength = 2;
-tlck = ft_timelockanalysis(cfg, data_shift);
-
-% channel
-cfgp=[];
-cfgp.layout = 'CTF275_helmet.mat';
-cfgp.xlim=[0.07 0.08];
-cfgp.highlight = 'on';
-cfgp.highlightchannel = 'MRP52';
-cfgp.highlightsymbol = 'O';
-cfgp.highlightsize = 8;
-cfgp.marker = 'off';
-cfgp.colorbar='yes';
-cfgp.contournum = 0;
-cfgp.gridscale = 250;
-cfgp.zlim=[-1e-13 1e-13];
-cfgp.colormap = flipud(brewermap(64, 'RdBu'));
-figure; ft_topoplotER(cfgp, tlck);
-
-
-% source
-loaddir = '/home/language/jansch/erfosc';
-load(fullfile(loaddir, sprintf('sub-%03d_lcmv', subj)), 'source_parc', 'noise');
-load('atlas_subparc374_8k.mat')
-load cortex_inflated_shifted.mat; atlas.pos=ctx.pos;
-exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'});
-idx = 1:374;
-idx(exclude_label) = [];
-
-  for k = 1:numel(source_parc.label)
-    F(k,:) = source_parc.F{k}(1,:);
-  end
-  dat = F*data_shift.trial;
-  
-  source=[];
-  tim = data_shift.time{1};
-  source.avg = zeros(374,1);
-  tmp = mean(cat(3,dat{:}),3);
-  t1 = nearest(tim, 0.07);
-  t2 = nearest(tim, 0.08);
-source.avg(idx) = mean(tmp(:,t1:t2),2);
-source.avg(exclude_label) = nan;
-source.time = 0.075;
-source.dimord = 'chan_time';
-source.label = atlas.parcellationlabel;
-source.brainordinate = atlas;
-
-% show absolute values of ERF (polarities are ambiguous)
-source.avg = abs(source.avg);
-
-
-cfgp = [];
-cfgp.method='surface';
-cfgp.funparameter='avg';
-cfgp.funcolormap = flipud(brewermap(64, 'RdBu'));
-cfgp.camlight = 'no';
-cfgp.colorbar = 'no';
-cfgp.funcolorlim = [-12e-13 12e-13];
-cfgp.maskstyle = 'colormix';
-cfgp.maskparameter = cfgp.funparameter;
-ft_sourceplot(cfgp,source)
-h = light('position', [-1 0 -0.1]);
-h2=light; set(h2, 'position', [1 0 -0.1]);
-material dull;
-
-view([64 16])
-view([116 16])
-view([-53 2])
-view([-120 2])
-
 
 
 %%%%%%%%%%%%
