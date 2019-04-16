@@ -68,14 +68,16 @@ cfg=[];
 cfg.trials = megdata.trialinfo(:,1);
 data_onset = ft_selectdata(cfg, data_onset);
 
+% get the shift aligned data
+cfg        = [];
+cfg.offset = -(data_onset.trialinfo(:,5)-data_onset.trialinfo(:,4));
+data_shift = ft_redefinetrial(cfg, data_onset);
+
 cfg=[];
 cfg.resamplefs = 600;
 data_onset = ft_resampledata(cfg, data_onset);
+data_shift = ft_resampledata(cfg, data_shift);
 
-% get the shift aligned data
-cfg        = [];
-cfg.offset = -((data_onset.trialinfo(:,5)-data_onset.trialinfo(:,4)))/2;
-data_shift = ft_redefinetrial(cfg, data_onset);
 
 if dosave
     save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_eyedata.mat', subj, subj),'data', 'data_shift');
