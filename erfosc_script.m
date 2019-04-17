@@ -50,7 +50,7 @@ cfg=[];
 cfg.comment = 'load subject`s headmodel';
 headmodel = ft_annotate(cfg, headmodel);
 load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
-cfg.comment = 'load subject`s 2D headmodel';
+cfg.comment = 'load subject`s 2D sourcemodel';
 sourcemodel = ft_annotate(cfg, sourcemodel);
 load('atlas_subparc374_8k.mat');
 cfg.comment = 'load 2D atlas with 374 parcels, based on the Conte 69 atlas';
@@ -62,7 +62,7 @@ ctx = ft_annotate(cfg, ctx);
 if ~dogroupanalysis
   % this chunk creates 2 data structures [-0.75 0.5]
   if getdata
-    basedir       = [project_dir, sprintf('processed/sub-%03d/ses-meg01', subj))];
+    basedir       = [project_dir, sprintf('processed/sub-%03d/ses-meg01', subj)];
     filename_data = fullfile(basedir, sprintf('sub-%03d_cleandata.mat', subj));
     load(filename_data);
     
@@ -214,13 +214,7 @@ if ~dogroupanalysis
     source_parc = ft_annotate(cfg, source_parc);
     
     if doplot && subj==13
-      cfg = [];
-      cfg.preproc.demean='yes';
-      cfg.preproc.baselinewindow = [-.1 0];
-      cfg.vartrllength = 2;
-      tmptlck = ft_timelockanalysis(cfg, data_shift);
-      cfg=[];
-      cfg.channel = '';
+      plotfigure=4; erfosc_plotting;
     end
     
     if dosave
@@ -277,19 +271,22 @@ if ~dogroupanalysis
     
     % let the amplitude be on average positive
     % FIXME when issue 1068 has been resolved, replace this:
+    %{
     datapeak.trial = datapeak.trial.*signswap;
     cfg=[];
     cfg.comment = 'multiply the peak data by a matrix which lets the trial-average be positive at every parcel.';
     datapeak = ft_annotate(cfg, datapeak);
     % by this:
-    %{
-  
-  cfg=[];
-  cfg.operation = 'multiply';
-  cfg.matrix = signswap;
-  cfg.parameter = 'trial';
-  datapeak = ft_math(cfg, datapeak);
     %}
+  
+    cfg=[];
+    cfg.operation = 'multiply';
+    cfg.matrix = signswap;
+    cfg.parameter = 'trial';
+    datapeak = ft_math(cfg, datapeak);
+  
+  %
+
     datapeak.trial = standardise(datapeak.trial,1);
     cfg=[];
     cfg.comment = 'Standardise peak data over trials';
@@ -357,7 +354,7 @@ if ~dogroupanalysis
       pupil_diameter.trial = standardise(pupil_diameter.trial);
       cfg=[];
       cfg.comment = 'standardise pupil diameter w.r.t. trials';
-      pupild = ft_annotate(cfg, pupild);
+      pupil_diameter = ft_annotate(cfg, pupil_diameter);
       
       idx = match_str(eyedata_shift.label, {'visAngleX', 'visAngleY'});
       eyedata_shift.trial(:,end+1,:) = (eyedata_shift.trial(:,idx(1),:).^2 + eyedata_shift.trial(:,idx(2),:).^2).^0.5;
@@ -452,8 +449,10 @@ else
       datadir = [results_dir sprintf('%03d', subj)];
       if dolowfreq
         tmpstr = 'low';
+        plotfigure=3;
       elseif dohighfreq
         tmpstr = 'high';
+        plotfigure=2;
       end
       filename1 = fullfile(datadir, sprintf('tfa_%s_onset', tmpstr));
       filename2 = fullfile(datadir, sprintf('%spow_tval', tmpstr));
@@ -488,20 +487,32 @@ else
     
     
     if doplot
-      virtualchanpos=[];
-      virtualchanpos.chanpos = ctx.pos(idx,:);
-      virtualchanpos.elecpos = ctx.pos(idx,:);
-      for k=1:numel(allsubs)
-        virtualchanpos.label{k}   = sprintf('%d', k);
+      erfosc_plotting;
+    end
+  end
+  
+  if dostat_pow_corr
+    k=1;
+    for subj = allsubs
+      datadir = [results_dir sprintf('%03d', subj)];
+      if dolowfreq
+        tmpstr = 'low';
+      elseif dohighfreq
+        tmpstr = 'high';
       end
-      pow_tval_allsubs.pos = ctx.pos;
-      pow_tval_allsubs.virtualchanpos = virtualchanpos;
-      cfg=[];
-      cfg.comment = 'replace the .pos info by the shifted version. add virtualchanpos info.';
-      pow_tval_allsubs = ft_annotate(cfg, pow_tval_allsubs);
-      plotpart = 1; erfosc_plotting;
-      
-      
+      filename = fullfile(datadir, sprintf('source_%spow', tmpstr));
+      fprintf('loading data for subject %s\n', subj);
+      load(filename);
+      S{k} = sourcepow;
+      k=k+1;
+    end
+    
+    cfg=[];
+    cfg.parameter = 'rho_pow_rt';
+    sourcepow_GA = ft_sourcegrandaverage(cfg, S{:});
+    
+    if doplot
+      plotfigure=5; erfosc_plotting;
     end
   end
   
@@ -565,9 +576,16 @@ else
     cfgs.parameter = 'rho_pow_erf';
     stat_pow_erf = ft_freqstatistics(cfgs,S{:},S0{:});
     
+    if doplot
+      plotfigure=6; erfosc_plotting;
+    end
+    
     cfgs.parameter = 'rho_erf_rt';
     stat_erf_rt = ft_freqstatistics(cfgs,S{:},S0{:});
 
+    if doplot
+      plotfigure=7; erfosc_plotting;
+    end    
     
     if dopartialcorr
       cfgs.parameter = 'partialrho_pupild';
