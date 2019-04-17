@@ -1,64 +1,70 @@
-%%%%%%%%%%%%%%%%%%%%
-% plotting figures %
-%%%%%%%%%%%%%%%%%%%%
-
 %%%%%%%%%%%%
 % FIGURE 2 %
 %%%%%%%%%%%%
-%% Gamma Time-Frequency plot + Topography (Channel level)
-if plotfigure==2
-% Subject grand average
-% TFR
-cfgp=[];
-cfgp.layout='CTF275_helmet.mat';
-cfgp.xlim = [0 1.5];
-cfgp.zlim=[-1 1];
-n=11;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgp.colormap=(cmap([2:n n:end-1],:));
-cfgp.channel = {'MLO21', 'MLO22', 'MLO31', 'MRO21', 'MRO22', 'MRO31', 'MZO02'};
-cfgp.title = 'figure 2A';
-ft_singleplotTFR(cfgp, freq_allsubs);
-
-% Topography
-cfgp=[];
-cfgp.layout='CTF275_helmet.mat';
-cfgp.xlim = [0.15 1.05];
-cfgp.ylim=[48 64];
-cfgp.zlim=[-0.8 0.8];
-cfgp.marker = 'off';
-cfgp.highlight = 'on';
-cfgp.highlightchannel = {'MLO21', 'MLO22', 'MLO31', 'MRO21', 'MRO22', 'MRO31', 'MZO02'};
-cfgp.highlightsymbol = 'O';
-cfgp.highlightsize = 8;
-n=9;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgp.colormap=(cmap([2:n n:end-1],:));
-cfgp.colorbar='yes';
-cfgp.numcontour = 0;
-cfgp.gridscale = 250;
-cfgp.title = 'Figure 2B';
-ft_topoplotTFR(cfgp, freq_allsubs);
-
-%% Gamma power on 2D sourcemodel (which is used in correlation with ERF)
-
-cfgx = [];
-cfgx.method='surface';
-cfgx.funparameter='stat';
-cfgx.funcolorlim = 'maxabs';%[-25 25];
-cfgx.maskstyle='colormix';
-cfgx.maskparameter = cfgx.funparameter;
-cfgx.camlight = 'no';
-cfgx.colorbar = 'no';
-cfgx.opacitylim = 'zeromax';
-n=11;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgx.funcolormap=(cmap([2:n n:end-1],:));
-cfgx.title = 'Figure 2E';
-cfgx.comment = 'use view [64 16], [124 14], [-48 5], and [-120 9]. Add virtual channel locations by executing ft_plot_sens(grad,`elecshape`,`sphere`, `elecsize`, 8, `facecolor`, `black`).';
-ft_sourceplot(cfgx,pow_tval_allsubs)
-
-%{
+if plotfigure==2 % induced high frequency power
+  % Channel level TFR
+  cfg=[];
+  cfg.layout='CTF275_helmet.mat';
+  cfg.xlim = [0 1.5];
+  cfg.zlim=[-1 1];
+  n=11;
+  cmap = flipud(brewermap(2*n-1,'RdBu'));
+  cfg.colormap=(cmap([2:n n:end-1],:));
+  cfg.channel = {'MLO21', 'MLO22', 'MLO31', 'MRO21', 'MRO22', 'MRO31', 'MZO02'};
+  cfg.title = 'figure 2A';
+  ft_singleplotTFR(cfg, freq_allsubs);
+  
+  % Channel level topography
+  cfg=[];
+  cfg.layout='CTF275_helmet.mat';
+  cfg.xlim = [0.15 1.05];
+  cfg.ylim=[48 64];
+  cfg.zlim=[-0.8 0.8];
+  cfg.marker = 'off';
+  cfg.highlight = 'on';
+  cfg.highlightchannel = {'MLO21', 'MLO22', 'MLO31', 'MRO21', 'MRO22', 'MRO31', 'MZO02'};
+  cfg.highlightsymbol = 'O';
+  cfg.highlightsize = 8;
+  cfg.highlightcolor = [1 1 1];
+  n=9;
+  cmap = flipud(brewermap(2*n-1,'RdBu'));
+  cfg.colormap=(cmap([2:n n:end-1],:));
+  cfg.colorbar='yes';
+  cfg.numcontour = 0;
+  cfg.gridscale = 250;
+  cfg.title = 'Figure 2B';
+  ft_topoplotTFR(cfg, freq_allsubs);
+  
+  % source level topography
+  virtualchanpos=[];
+  virtualchanpos.chanpos = ctx.pos(idx,:);
+  virtualchanpos.elecpos = ctx.pos(idx,:);
+  for k=1:numel(allsubs)
+    virtualchanpos.label{k}   = sprintf('%d', k);
+  end
+  pow_tval_allsubs.pos = ctx.pos;
+  pow_tval_allsubs.virtualchanpos = virtualchanpos;
+  cfg=[];
+  cfg.comment = 'replace the .pos info by the shifted version. add virtualchanpos info.';
+  pow_tval_allsubs = ft_annotate(cfg, pow_tval_allsubs);
+  
+  cfg = [];
+  cfg.method='surface';
+  cfg.funparameter='stat';
+  cfg.funcolorlim = [-25 25];
+  cfg.maskstyle='colormix';
+  cfg.maskparameter = cfg.funparameter;
+  cfg.camlight = 'no';
+  cfg.colorbar = 'no';
+  cfg.opacitylim = 'zeromax';
+  n=11;
+  cmap = flipud(brewermap(2*n-1,'RdBu'));
+  cfg.funcolormap=(cmap([2:n n:end-1],:));
+  cfg.title = 'Figure 2E';
+  cfg.comment = 'use view [64 16], [124 14], [-48 5], and [-120 9]. Add virtual channel locations by executing ft_plot_sens(virtualchanpos,`elecshape`,`sphere`, `elecsize`, 8, `facecolor`, `black`), where virtualchanpos is a field of the previous data structure.';
+  ft_sourceplot(cfg,pow_tval_allsubs)
+  
+  %{
 
 %% Gamma-power boxplots + power spectra
 erf_osc_datainfo;
@@ -93,65 +99,68 @@ ratio_maxchan_SD = std(ratio_maxchan);
 addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
 figure; iosr.statistics.boxPlot(ratio_maxchan'-1, 'showScatter', true, 'scatterMarker', '.')
 figure; iosr.statistics.boxPlot(peakFreq', 'showScatter', true, 'scatterMarker', '.')
-%}
+  %}
 end
 
 %%%%%%%%%%%%
 % FIGURE 3 %
 %%%%%%%%%%%%
-if plotfigure==3
-%% low frequency TFR + topo
-% Subject grand average
-% TFR
-cfgp=[];
-cfgp.layout='CTF275_helmet.mat';
-cfgp.xlim = [0 1.5];
-cfgp.zlim=[-0.3 0.3];
-n=7;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgp.colormap=(cmap([2:n n:end-1],:));
-cfgp.channel = {'MLO23', 'MLO32', 'MLO33', 'MRO23', 'MRO24', 'MRO32', 'MRO33', 'MRO34', 'MRO43', 'MRO44', 'MRO53', 'MRT57'};
-cfgp.title = 'figure 3A';
-ft_singleplotTFR(cfgp, freq_allsubs);
-
-% Topography
-cfgp=[];
-cfgp.layout='CTF275_helmet.mat';
-cfgp.xlim = [0.5 1.5];
-cfgp.ylim=[8 20];
-cfgp.zlim=[-0.3 0.3];
-cfgp.marker = 'off';
-cfgp.highlight = 'on';
-cfgp.highlightchannel = {'MLO23', 'MLO32', 'MLO33', 'MRO23', 'MRO24', 'MRO32', 'MRO33', 'MRO34', 'MRO43', 'MRO44', 'MRO53', 'MRT57'};
-cfgp.highlightsymbol = 'O';
-cfgp.highlightsize = 8;
-n=7;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgp.colormap=(cmap([2:n n:end-1],:));
-cfgp.colorbar='yes';
-cfgp.numcontour = 0;
-cfgp.gridscale = 250;
-cfgp.title = 'figure 3B';
-ft_topoplotTFR(cfgp, freq_allsubs);
-
-
-%% low frequency power on 2D sourcemodel
-cfgx = [];
-cfgx.method='surface';
-cfgx.funparameter='Tval';
-cfgx.funcolorlim = [-8 8];
-cfgx.maskstyle='colormix';
-cfgx.maskparameter = cfgx.funparameter;
-cfgx.camlight = 'no';
-cfgx.colorbar = 'no';
-cfgx.opacitylim = 'minzero';
-n=9;
-cmap = flipud(brewermap(2*n-1,'RdBu'));
-cfgx.funcolormap=(cmap([2:n n:end-1],:));
-cfgx.title = 'figure 3E';
-cfgx.comment = 'use view [64 16], [124 14], [-48 5], and [-120 9]';
-ft_sourceplot(cfgx,pow_tval_allsubs)
-%{
+if plotfigure==3 % induced low frequency power
+  % Channel level TFR
+  cfg=[];
+  cfg.layout='CTF275_helmet.mat';
+  cfg.xlim = [0 1.5];
+  cfg.zlim=[-0.3 0.3];
+  n=7;
+  cmap = flipud(brewermap(2*n-1,'RdBu'));
+  cfg.colormap=(cmap([2:n n:end-1],:));
+  cfg.channel = {'MLO23', 'MLO32', 'MLO33', 'MRO23', 'MRO24', 'MRO32', 'MRO33', 'MRO34', 'MRO43', 'MRO44', 'MRO53', 'MRT57'};
+  cfg.title = 'figure 3A';
+  ft_singleplotTFR(cfg, freq_allsubs);
+  
+  % Channel level topography
+  cfg=[];
+  cfg.layout='CTF275_helmet.mat';
+  cfg.xlim = [0.5 1.5];
+  cfg.ylim=[8 20];
+  cfg.zlim=[-0.3 0.3];
+  cfg.marker = 'off';
+  cfg.highlight = 'on';
+  cfg.highlightchannel = {'MLO23', 'MLO32', 'MLO33', 'MRO23', 'MRO24', 'MRO32', 'MRO33', 'MRO34', 'MRO43', 'MRO44', 'MRO53', 'MRT57'};
+  cfg.highlightsymbol = 'O';
+  cfg.highlightsize = 8;
+  n=7;
+  cmap = flipud(brewermap(2*n-1,'RdBu'));
+  cfg.colormap=(cmap([2:n n:end-1],:));
+  cfg.colorbar='yes';
+  cfg.numcontour = 0;
+  cfg.gridscale = 250;
+  cfg.title = 'figure 3B';
+  ft_topoplotTFR(cfg, freq_allsubs);
+  
+  
+  % Source level topography
+  pow_tval_allsubs.pos = ctx.pos;
+  cfg=[];
+  cfg.comment = 'replace the .pos info by the shifted version';
+  pow_tval_allsubs = ft_annotate(cfg, pow_tval_allsubs);
+  
+  cfg = [];
+  cfg.method='surface';
+  cfg.funparameter='Tval';
+  cfg.funcolorlim = [-8 8];
+  cfg.maskstyle='colormix';
+  cfg.maskparameter = cfg.funparameter;
+  cfg.camlight = 'no';
+  cfg.colorbar = 'no';
+  cfg.opacitylim = 'minzero';
+  n=9;
+  cmap = flipud(brewermap(2*n-1,'RdBu'));
+  cfg.funcolormap=(cmap([2:n n:end-1],:));
+  cfg.title = 'figure 3E';
+  cfg.comment = 'use view [64 16], [124 14], [-48 5], and [-120 9]';
+  ft_sourceplot(cfg,pow_tval_allsubs)
+  %{
 %% low frequency power boxplots and powerspectra
 erf_osc_datainfo;
 
@@ -175,159 +184,179 @@ end
 addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
 figure; iosr.statistics.boxPlot(ratio', 'showScatter', true, 'scatterMarker', '.'); ylim([-0.6 0]);
 figure; iosr.statistics.boxPlot(peakfreq', 'showScatter', true, 'scatterMarker', '.')
-%}
+  %}
 end
 
 %%%%%%%%%%%%
 % FIGURE 4 %
 %%%%%%%%%%%%
-%% Single trial ERF (SNR)
-      % channel level   
-      cfg=[];
-      cfg.keeptrials = 'yes';
-      chanerf = ft_timelockanalysis(cfg, data_shift);
-      
-      % topo
-      cfgp=[];
-      cfgp.layout = 'CTF275_helmet.mat';
-      cfgp.xlim = [0.07 0.08];
-      cfgp.highlight = 'on';
-      cfgp.highlightchannel = 'MRP52';
-      cfgp.highlightsymbol = 'O';
-      cfgp.highlightsize = 8;
-      cfgp.highlightcolor = [1 1 1];
-      cfgp.marker = 'off';
-      cfgp.colorbar = 'yes';
-      cfgp.contournum = 0;
-      cfgp.gridscale = 250;
-      cfgp.zlim = [-1e-13 1e-13];
-      cfgp.colormap = flipud(brewermap(64, 'RdBu'));
-      cfgp.title = 'Figure 4C';
-      figure; ft_topoplotER(cfgp, chanerf);
-      
-      % time course
-      cfg=[];
-      cfg.channel = 'MRP52';
-      chanerf = ft_selectdata(cfg, chanerf);
-      cfg=[];
-      cfg.lpfilter = 'yes';
-      cfg.lpfreq = 40;
-      cfg.lpfilttype = 'firws';
-      chanerf = ft_preprocessing(cfg, chanerf);
-      chanerf.freq = 1:size(chanerf.trial,1);
-      chanerf.dimord = 'freq_chan_time';
-      cfg=[];
-      cfg.comment = 'add freq info (1:numel(#trials)) and change dimord';
-      chanerf = ft_annotate(cfg, chanerf);
-      
-      cfg=[];
-      cfg.xlim = [0 0.3];
-      cfg.zlim = [-0.8e-12 0.8e-12];
-      cfg.title = 'Figure 4A';
-      cfg.colormap = colormap(flipud(brewermap(64, 'RdBu')));
-      cfg.parameter = 'trial';
-      ft_singleplotTFR(cfg, chanerf);
-      
-      % source level
-      sourceerf = data_shift;
-      exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'});
-      idx = setdiff(1:374, exclude_label);
-      sourceerf.trial = zeros(numel(data_shift.trial), numel(atlas.parcellationlabel), length(data_shift.trial{1}));
-      tmpdata = source_parc.F*data_shift.trial;
-      sourceerf.trial(:, idx, :) = permute(cat(3, tmpdata{:}), [3,1,2]);
-      sourceerf.label = atlas.parcellationlabel;
-      sourceerf.time = sourceerf.time{1};
-      sourceerf.dimord = 'rpt_chan_time';
-      
-      cfg=[];
-      cfg.comment = 'multiply LCMV spatial filters with the data.';
-      sourceerf = ft_annotate(cfg, sourceerf);
-      
-      % topo
-      sourcetopo = ft_timelockanalysis([], sourceerf);
-      cfg=[];
-      cfg.latency = [0.07 0.08];
-      cfg.avgovertime = 'yes';
-      sourcetopo = ft_selectdata(cfg, sourcetopo);
-      
-      sourcetopo.avg = abs(sourcetopo.avg);
-      cfg=[];
-      cfg.comment = 'ERF polarities are ambiguous. Take absolute values.';
-      sourcetopo = ft_annotate(cfg, sourcetopo);
-      
-      sourcetopo.brainordinate = atlas;
-      sourcetopo.brainordinate.pos = ctx.pos;
-      cfg=[];
-      cfg.comment = 'Add atlas to brainordinate field.';
-      sourcetopo = ft_annotate(cfg, sourcetopo);
-      
-      cfgp = [];
-      cfgp.method = 'surface';
-      cfgp.funparameter = 'avg';
-      cfgp.funcolormap = flipud(brewermap(64, 'RdBu'));
-      cfgp.camlight = 'no';
-      cfgp.colorbar = 'no';
-      cfgp.funcolorlim = [-12e-13 12e-13];
-      cfgp.maskstyle = 'colormix';
-      cfgp.maskparameter = cfgp.funparameter;
-      cfgp.title = 'Figure 4D';
-      cfgp.comment = 'use view [64 16], [116 16], [-53 2], and [-120 2]';
-      ft_sourceplot(cfgp, sourcetopo);
-
-      % time course
-      cfg=[];
-      cfg.channel = 'R_18_B05_04';
-      sourceerf = ft_selectdata(cfg, sourceerf);
-      cfg=[];
-      cfg.lpfilter = 'yes';
-      cfg.lpfreq = 40;
-      cfg.lpfilttype = 'firws';
-      sourceerf = ft_preprocessing(cfg, sourceerf);
-      sourceerf.freq = 1:size(sourceerf.trial,1);
-      sourceerf.dimord = 'freq_chan_time';
-      cfg=[];
-      cfg.comment = 'add freq info (1:numel(#trials)) and change dimord';
-      sourceerf = ft_annotate(cfg, sourceerf);
-      
-      cfg=[];
-      cfg.xlim = [0 0.3];
-      cfg.zlim = [-3e-12 3e-12];
-      cfg.title = 'Figure 4B';
-      cfg.colormap = colormap(flipud(brewermap(64, 'RdBu')));
-      cfg.parameter = 'trial';
-      ft_singleplotTFR(cfg, sourceerf);
-
+if plotfigure==4 % SNR channel/source level ERF
+  % channel level
+  cfg=[];
+  cfg.keeptrials = 'yes';
+  chanerf = ft_timelockanalysis(cfg, data_shift);
+  
+  % topo
+  cfg=[];
+  cfg.layout = 'CTF275_helmet.mat';
+  cfg.xlim = [0.07 0.08];
+  cfg.highlight = 'on';
+  cfg.highlightchannel = 'MRP52';
+  cfg.highlightsymbol = 'O';
+  cfg.highlightsize = 8;
+  cfg.highlightcolor = [1 1 1];
+  cfg.marker = 'off';
+  cfg.colorbar = 'yes';
+  cfg.contournum = 0;
+  cfg.gridscale = 250;
+  cfg.zlim = [-1e-13 1e-13];
+  cfg.colormap = flipud(brewermap(64, 'RdBu'));
+  cfg.title = 'Figure 4C';
+  figure; ft_topoplotER(cfg, chanerf);
+  
+  % time course
+  cfg=[];
+  cfg.channel = 'MRP52';
+  chanerf = ft_selectdata(cfg, chanerf);
+  cfg=[];
+  cfg.lpfilter = 'yes';
+  cfg.lpfreq = 40;
+  cfg.lpfilttype = 'firws';
+  chanerf = ft_preprocessing(cfg, chanerf);
+  chanerf.freq = 1:size(chanerf.trial,1);
+  chanerf.dimord = 'freq_chan_time';
+  cfg=[];
+  cfg.comment = 'add freq info (1:numel(#trials)) and change dimord';
+  chanerf = ft_annotate(cfg, chanerf);
+  
+  cfg=[];
+  cfg.xlim = [0 0.3];
+  cfg.zlim = [-0.8e-12 0.8e-12];
+  cfg.title = 'Figure 4A';
+  cfg.colormap = colormap(flipud(brewermap(64, 'RdBu')));
+  cfg.parameter = 'trial';
+  ft_singleplotTFR(cfg, chanerf);
+  
+  % source level
+  sourceerf = data_shift;
+  exclude_label = match_str(atlas.parcellationlabel, {'L_???_01', 'L_MEDIAL.WALL_01', 'R_???_01', 'R_MEDIAL.WALL_01'});
+  idx = setdiff(1:374, exclude_label);
+  sourceerf.trial = zeros(numel(data_shift.trial), numel(atlas.parcellationlabel), length(data_shift.trial{1}));
+  tmpdata = source_parc.F*data_shift.trial;
+  sourceerf.trial(:, idx, :) = permute(cat(3, tmpdata{:}), [3,1,2]);
+  sourceerf.label = atlas.parcellationlabel;
+  sourceerf.time = sourceerf.time{1};
+  sourceerf.dimord = 'rpt_chan_time';
+  
+  cfg=[];
+  cfg.comment = 'multiply LCMV spatial filters with the data.';
+  sourceerf = ft_annotate(cfg, sourceerf);
+  
+  % topo
+  sourcetopo = ft_timelockanalysis([], sourceerf);
+  cfg=[];
+  cfg.latency = [0.07 0.08];
+  cfg.avgovertime = 'yes';
+  sourcetopo = ft_selectdata(cfg, sourcetopo);
+  
+  sourcetopo.avg = abs(sourcetopo.avg);
+  cfg=[];
+  cfg.comment = 'ERF polarities are ambiguous. Take absolute values.';
+  sourcetopo = ft_annotate(cfg, sourcetopo);
+  
+  sourcetopo.brainordinate = atlas;
+  sourcetopo.brainordinate.pos = ctx.pos;
+  cfg=[];
+  cfg.comment = 'Add atlas to brainordinate field.';
+  sourcetopo = ft_annotate(cfg, sourcetopo);
+  
+  cfg = [];
+  cfg.method = 'surface';
+  cfg.funparameter = 'avg';
+  cfg.funcolormap = flipud(brewermap(64, 'RdBu'));
+  cfg.camlight = 'no';
+  cfg.colorbar = 'no';
+  cfg.funcolorlim = [-12e-13 12e-13];
+  cfg.maskstyle = 'colormix';
+  cfg.maskparameter = cfg.funparameter;
+  cfg.title = 'Figure 4D';
+  cfg.comment = 'use view [64 16], [116 16], [-53 2], and [-120 2]';
+  ft_sourceplot(cfg, sourcetopo);
+  
+  % time course
+  cfg=[];
+  cfg.channel = 'R_18_B05_04';
+  sourceerf = ft_selectdata(cfg, sourceerf);
+  cfg=[];
+  cfg.lpfilter = 'yes';
+  cfg.lpfreq = 40;
+  cfg.lpfilttype = 'firws';
+  sourceerf = ft_preprocessing(cfg, sourceerf);
+  sourceerf.freq = 1:size(sourceerf.trial,1);
+  sourceerf.dimord = 'freq_chan_time';
+  cfg=[];
+  cfg.comment = 'add freq info (1:numel(#trials)) and change dimord';
+  sourceerf = ft_annotate(cfg, sourceerf);
+  
+  cfg=[];
+  cfg.xlim = [0 0.3];
+  cfg.zlim = [-3e-12 3e-12];
+  cfg.title = 'Figure 4B';
+  cfg.colormap = colormap(flipud(brewermap(64, 'RdBu')));
+  cfg.parameter = 'trial';
+  ft_singleplotTFR(cfg, sourceerf);
+end
 
 %%%%%%%%%%%%
 % Figure 5 %
 %%%%%%%%%%%%
-%% Correlation Gamma ERF
-load('/project/3011085.02/analysis/stat_peakpicking_gamma.mat', 'stat','S');
-load atlas_subparc374_8k.mat
-load cortex_inflated_shifted; atlas.pos=ctx.pos;
-stat.brainordinate=atlas;
+if plotfigure==5 % Correlation Gamma-RT
+  atlas.pos = ctx.pos;
+  sourcepow_GA.brainordinate = atlas;
+  cfg=[];
+  cfg.comment = 'add atlas to brainordinate field';
+  sourcepow_GA = ft_annotate(cfg, sourcepow_GA);
+  
+  cfg=[];
+  cfg.funparameter = 'rho_pow_rt';
+  cfg.funcolormap = flipud(brewermap(64, 'RdBu'));
+  cfg.funcolorlim = [-0.07 0.07];
+  cfg.method = 'surface';
+  cfg.maskparameter = cfg.funparameter;
+  cfg.maskstyle = 'colormix';
+  cfg.camlight = 'no';
+  cfg.title = 'Figure 5';
+  cfg.comment = 'use view [64 16], [116 16], [-53 2], and [-120 2]';
+  ft_sourceplot(cfg, sourcepow_GA)
+end
 
-cfgx = [];
-cfgx.method='surface';
-cfgx.funparameter='stat';
-cfgx.funcolormap = flipud(brewermap(64, 'RdBu'));
 
-cfgx.funcolorlim = [-3 3];
-cfgx.maskstyle='colormix';
-cfgx.maskparameter = cfgx.funparameter;
-cfgx.camlight = 'no';
-cfgx.colorbar = 'no';
-cfgx.opacitylim = 'zeromax';
-ft_sourceplot(cfgx,stat)
+%%%%%%%%%%%%
+% Figure 6 %
+%%%%%%%%%%%%
+if plotfigure==6 % Correlation Gamma-ERF
+  atlas.pos=ctx.pos;
+  stat.brainordinate=atlas;
+  cfg=[];
+  cfg.comment = 'add atlas to brainordinate field';
+  stat_pow_erf = ft_annotate(cfg, stat_pow_erf);
+  
+  
+  cfg = [];
+  cfg.method='surface';
+  cfg.funparameter='stat';
+  cfg.funcolormap = flipud(brewermap(64, 'RdBu'));
+  cfg.funcolorlim = [-3 3];
+  cfg.maskstyle='colormix';
+  cfg.maskparameter = cfg.funparameter;
+  cfg.camlight = 'no';
+  cfg.colorbar = 'no';
+  cfg.opacitylim = 'zeromax';
+  cfg.comment = 'use view [64 16], [116 16], [-53 2], and [-120 2]';
+  cfg.title = 'Figure 6';
+  ft_sourceplot(cfg, stat_pow_erf)
 
-h = light('position', [-1 0 -0.1]);
-h2=light; set(h2, 'position', [1 0 -0.1]);
-material dull;
-view([64 16])
-view([116 16])
-view([-53 2])
-view([-120 2])
-
+  %{
 % scatter plot correlations per subject. (average correlation over parcels
 % that contribute to cluster)
 x=find(stat.mask==1);
@@ -343,46 +372,47 @@ figure; scatter(1:32, val,'.'); hold on; scatter(1:32, y2(idx), '.');
 addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
 figure; iosr.statistics.boxPlot(y,'showScatter',false,'scatterMarker', '.'); 
 figure; iosr.statistics.boxPlot(y2,'showScatter',false,'scatterMarker', '.')
+  %}
+end
+
 %%%%%%%%%%%%
-% Figure 6 %
+% Figure 7 %
 %%%%%%%%%%%%
-%% Correlation ERF-rt
-
-load('/project/3011085.02/analysis/stat_corr_peakpicking_rt.mat');
-load atlas_subparc374_8k.mat
-load cortex_inflated_shifted; atlas.pos=ctx.pos;
-
-stat.brainordinate = atlas;
-cfgx = [];
-cfgx.method='surface';
-cfgx.funparameter='stat';
-cfgx.funcolormap = flipud(brewermap(64, 'RdBu'));
-cfgx.funcolorlim = [-3 3];
-cfgx.maskstyle='colormix';
-cfgx.maskparameter = cfgx.funparameter;
-cfgx.camlight = 'no';
-cfgx.colorbar = 'no';
-cfgx.opacitylim = 'minzero';
-ft_sourceplot(cfgx,stat)
-h = light('position', [-1 0 -0.1]);
-h2=light; set(h2, 'position', [1 0 -0.1]);
-material dull;
-view([64 16])
-view([123 16])
-view([-53 2])
-view([-130 2])
-
+if plotfigure==7 % Correlation ERF-RT
+  atlas.pos=ctx.pos;
+  stat.brainordinate=atlas;
+  cfg=[];
+  cfg.comment = 'add atlas to brainordinate field';
+  stat_erf_rt = ft_annotate(cfg, stat_erf_rt);
+  
+  
+  cfg = [];
+  cfg.method='surface';
+  cfg.funparameter='stat';
+  cfg.funcolormap = flipud(brewermap(64, 'RdBu'));
+  cfg.funcolorlim = [-3 3];
+  cfg.maskstyle='colormix';
+  cfg.maskparameter = cfg.funparameter;
+  cfg.camlight = 'no';
+  cfg.colorbar = 'no';
+  cfg.opacitylim = 'zeromax';
+  cfg.comment = 'use view [64 16], [116 16], [-53 2], and [-120 2]';
+  cfg.title = 'Figure 7';
+  ft_sourceplot(cfg, stat_erf_rt)
+  
+  
+  %{
 R = source.rho;
 x=find(stat.negclusterslabelmat==1);
 y = mean(R(:,x),2);
 scatter(1:32, sort(y),'.');
 addpath /project/3011085.02/scripts/IoSR-Surrey-MatlabToolbox-4bff1bb/
 figure; iosr.statistics.boxPlot(y,'showScatter',true,'scatterMarker','.')
+  %}
+end
 
 
-
-
-
+%{
 %%%%%%%%%%%%%%%%%%%%%%
 % Reviewer questions
 %%%%%%%%%%%%%%%%%%%%%%
@@ -672,5 +702,5 @@ view([116 16])
 view([-53 2])
 view([-120 2])
 
-
+%}
 
