@@ -85,9 +85,11 @@ cfg=[];
 cfg.comment = 'create empty timelock structure with parcel`s as channels';
 source_parc = ft_annotate(cfg, source_parc);
 
-global ft_default
-tmpdir = ft_default.reproducescript;
-ft_default.reproducescript = []; % temporarily disable reproducescript. 
+try
+  global ft_default
+  tmpdir = ft_default.reproducescript;
+  ft_default.reproducescript = []; % temporarily disable reproducescript. 
+end
 % Componentanalysis will create too much intermediate data
 for k = 1:numel(selparc)
     tmpF = F(atlas.parcellation==selparc(k),:);
@@ -108,7 +110,9 @@ for k = 1:numel(selparc)
     
     source_parc.F{k} = source_parc.F{k}(1,:);
 end
-ft_default.reproducescript = tmpdir; % enable reproducescript again.
+try
+  ft_default.reproducescript = tmpdir; % enable reproducescript again.
+end
 
 source_parc.F = cat(1, source_parc.F{:});
 cfg=[];
