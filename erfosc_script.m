@@ -6,15 +6,9 @@ if ~dogroupanalysis
   if ~exist('subj', 'var')
     error('a subject needs to be specified');
   end
-  if ~exist('isPilot', 'var')
-    fprintf('assuming that a regular subject is requested\n');
-    isPilot = false;
-  end
-  if isnumeric(subj) && ~isPilot
+  if isnumeric(subj)
     erfosc_datainfo;
     subject = subjects(subj);
-  elseif isnumeric(subj) && isPilot
-    subject = pilotsubjects(subj);
   elseif ~isnumeric(subj)
     error('a subject should be identified by means of a scalar number, otherwise the data handling won''t work');
   end

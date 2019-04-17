@@ -1,65 +1,9 @@
 %% datainfo ERF Oscillation
 % subject specific information for analysis
-pilotsubjects = [];
 subjects=[];
 project_dir = '/project/3011085.02/';
 results_dir = '/project_ext/3010029/reproducescript/result_';
-%% pilot
 
-pilotsubjects(1).channels         = [];
-pilotsubjects(1).dataset       = [project_dir, 'raw/pilot-001/ses-meg01/pilot1_1200hz_20160812_01.ds'];
-pilotsubjects(1).logfile       = [project_dir, 'raw/pilot-001/ses-beh01/pilot_01.mat'];
-pilotsubjects(1).headshape     = [project_dir, 'raw/pilot-001/polhemus_erfosc_pilot-001.pos'];
-pilotsubjects(1).mri           = [project_dir, 'raw/pilot-001/ses-mri01/002-t1_mpr_ns_PH8/ELESTJ_20141107_S32.MR.DCCN_SEQUENCES_STANDARD_SEQUENCES.0002.0001.2014.11.07.16.51.27.247752.49776744.IMA'];
-pilotsubjects(1).mridir        = [project_dir, 'processed/pilot-001/ses-mri01/'];
-pilotsubjects(1).ecgcomp       = [2, 12];
-pilotsubjects(1).eyecomp       = [1, 9];
-pilotsubjects(1).aseo          = [];
-
-pilotsubjects(2).channels         = [];
-pilotsubjects(2).dataset       = [project_dir, 'raw/pilot-002/ses-meg01/pilot2_1200hz_20160815_01.ds'];
-pilotsubjects(2).logfile       = [project_dir, 'raw/pilot-002/ses-beh01/pilot_02.mat'];
-pilotsubjects(2).headshape     = [project_dir, 'raw/pilot-002/polhemus_erfosc_pilot-002.pos'];
-pilotsubjects(2).mri           = [project_dir, 'raw/pilot-002/ses-mri01/002-t1_mprage_sag_p2_iso_1.0/LIEVLIE_20150616_S92.MR.LIEVLIE_FEATURE_EXP.0002.0001.2015.06.16.16.13.03.531642.240004270.IMA'];
-pilotsubjects(2).mridir        = [project_dir, 'processed/pilot-002/ses-mri01/'];
-pilotsubjects(2).ecgcomp       = [7, 16, 33];
-pilotsubjects(2).eyecomp       = [4, 25];
-pilotsubjects(2).aseo          = [149];
-
-pilotsubjects(3).channels         = [];
-pilotsubjects(3).dataset       = [project_dir, 'raw/pilot-003/ses-meg01/pilot3_1200hz_20160920_02.ds'];
-pilotsubjects(3).logfile       = [project_dir, 'raw/pilot-003/ses-beh01/pilot_03.mat'];
-pilotsubjects(3).headshape     = [project_dir, 'raw/pilot-003/polhemus_erfosc_pilot-003.pos'];
-pilotsubjects(3).mri           = [project_dir, 'raw/pilot-003/ses-mri01/011-t1_mprage_sag_p2_iso_1.0/SARFAB_07042016_KD_SUB5.MR.SARFAB_SKYRA.0011.0001.2016.04.07.18.27.54.54019.1168606464.IMA'];
-pilotsubjects(3).mridir        = [project_dir, 'processed/pilot-003/ses-mri01/'];
-pilotsubjects(3).ecgcomp       = [3, 13];
-pilotsubjects(3).eyecomp       = [1];
-pilotsubjects(3).aseo          = [128 157;158 216];
-
-%gamma experiment Stan van Pelt
-pilotsubjects(103).channels       = [];
-pilotsubjects(103).dataset     = [project_dir, 'raw/pilot-003/ses-meg02/pilot3_1200hz_20160920_01.ds'];
-pilotsubjects(103).logfile     = [project_dir, 'raw/pilot-003/ses-beh01/pilot_03.mat'];
-pilotsubjects(103).headshape   = [project_dir, 'raw/pilot-003/polhemus_erfosc_pilot-003.mat'];
-pilotsubjects(103).mri         = [project_dir, 'raw/pilot-003/ses-mri01/011-t1_mprage_sag_p2_iso_1.0/SARFAB_07042016_KD_SUB5.MR.SARFAB_SKYRA.0011.0001.2016.04.07.18.27.54.54019.1168606464.IMA'];
-pilotsubjects(103).segmentedmri= [project_dir, 'processed/pilot-003/ses-mri01/'];
-pilotsubjects(103).ecgcomp     = [3, 26];
-pilotsubjects(103).eyecomp     = [1];
-pilotsubjects(103).aseo        = [119 160;161 226;230 459];
-
-pilotsubjects(4).channels         = [];
-pilotsubjects(4).dataset       = [project_dir, 'raw/pilot-004/ses-meg01/pilot4_1200hz_20161014_01.ds'];
-pilotsubjects(4).logfile       = [project_dir, 'raw/pilot-004/ses-beh01/pilot_04.mat'];
-pilotsubjects(4).headshape     = [project_dir, 'raw/pilot-004/polhemus_erfosc_pilot-004.pos'];
-pilotsubjects(4).mri           = [project_dir, 'raw/pilot-004/ses-mri01/002-t1_mprage_sag_p2_iso_1.0_20ch_head/JESASK_20161014_PILOT4.MR.DCCN_SKYRA.0002.0001.2016.10.14.11.32.58.155107.1286489168.IMA'];
-pilotsubjects(4).mridir        = [project_dir, 'processed/pilot-004/ses-mri01/'];
-pilotsubjects(4).ecgcomp       = [3,4];
-pilotsubjects(4).eyecomp       = [1];
-% pilotsubjects(4).aseo          = [119 161; 162 226; 230 459];
-pilotsubjects(4).aseo          = [0.048 0.083; 0.083 0.1375; 0.1375 0.4];
-
-
-%% Experiment
 badsubjects = [10]; %5 (dental fillings left temporal),  8 eyesaccades, 10 (corrupt logfile, only 9 blocks completed, many eye blinks)
 allsubs = 1:33;
 allsubs(badsubjects) = [];
