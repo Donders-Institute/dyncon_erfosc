@@ -148,20 +148,21 @@ end
   if dofreq
     if dolowfreq
       if ~exist('peakfreq', 'var')
+        % Fixme
         load([project_dir, sprintf('analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj)]);
       end
       foi = [peakfreq peakfreq]; smo = 2;
       latency = [-0.75+1./data_onset.fsample 0-1./data_onset.fsample];
-      [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
+      [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
     elseif dohighfreq
       if ~exist('latency', 'var')
         latency = [-inf 0-1./data_onset.fsample];
       end
-      [freq_onset, freq_shift, P, pow_onset, pow_shift] = erfosc_freq(data_onset, data_shift, latency, subject);
+      [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, subject);
     end
     if dosave
       fileanme = [project_dir sprintf('analysis/freq/sub-%03d/sub-%03d_freq', subj,subj)];
-      save(filename, 'freq_shift', 'P', 'latency');
+      save(filename, 'freq_shift', 'latency');
     end
   end
   
@@ -169,7 +170,7 @@ end
   if dodics
     if doload
       fileanme = [project_dir sprintf('analysis/freq/sub-%03d/sub-%03d_freq', subj,subj)];
-      load(filename, 'freq_shift', 'P', 'latency');
+      load(filename, 'freq_shift', 'latency');
     end
     [sourcefreq_onset, sourcefreq_shift, sourcefreq_shift_Tval] = erfosc_dics(freq_onset, freq_shift, headmodel, sourcemodel);
       if dolowfreq
@@ -183,7 +184,7 @@ end
   end
   
   % this chunk does spectral decomposition - used for estimating
-  % gamma/lowfreq power before ERF peak
+  % power before ERF peak
   if dofreq_short
     if dohighfreq
       latency = subject.erflatency(1).*[1 1] - 0.02 - [0.20 1./600];%MvE
@@ -196,7 +197,7 @@ end
       smo     = 2.5;
     end
     foi = foi.*[1 1];
-    [freq_onset, freq_shift, P] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
+    [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
     if ~exist('savefreq', 'var')
       savefreq = false;
     end
@@ -208,12 +209,12 @@ end
       end
       savedir = [project_dir 'analysis/freq/'];
       filename = fullfile(savedir, sprintf('sub-%03d/sub-%03d_%sfreqshort', subj,subj, tmpstr));
-      save(filename, 'freq_shift', 'P', 'latency');
+      save(filename, 'freq_shift', 'latency');
     end
   end
   
   if dodics && dofreq_short
-    sourcefreq_shift.pow = transpose((abs(sourcefreq_shift.F*transpose(freq_shift.fourierspctrm)).^2)*P);
+    sourcefreq_shift.pow = transpose((abs(sourcefreq_shift.F*transpose(freq_shift.fourierspctrm)).^2)*freq_shift.fourier2pow);
     cfg=[];
     cfg.comment = 'for pow take the power in the pre-ERF window by combining the spatial filter with the fourierspectrum of this window';
     sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
