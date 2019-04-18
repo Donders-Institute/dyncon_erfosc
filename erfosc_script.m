@@ -92,7 +92,7 @@ if ~dogroupanalysis
       save([project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj)], 'comp');
     end
   end
-  
+ 
   if getdata
     if doload
       filename = [results_dir, sprintf('%03d/sub-%03d_cleandata.mat', subj, subj)];
@@ -103,8 +103,58 @@ if ~dogroupanalysis
     end
     
     [data_onset, data_shift, data_resp] = erfosc_getdata(dataClean);
-    clear dataClean;
   end
+  
+    
+  if getpeakfreq
+    cfg=[];
+    for k=1:size(data_onset.trialinfo,1)
+      cfg.trials(1,k) = find(dataClean.trialinfo(:,1)==data_onset.trialinfo(k,1));
+    end
+    data = ft_selectdata(cfg, dataClean);
+    cfg=[];
+    cfg.toilim = [-inf 0];
+    dataBl = ft_redefinetrial(cfg, data);
+    cfg=[];
+    cfg.toilim = [0.4*ones(numel(data.trial),1) (data.trialinfo(:,5)-data.trialinfo(:,4))./1200];
+    dataAct = ft_redefinetrial(cfg, data);
+
+    cfg         = [];
+    cfg.length  = 0.5; % 0.5 second windows
+    cfg.overlap = 0.5; % half overlap
+    bl = ft_redefinetrial(cfg, dataBl);
+    act = ft_redefinetrial(cfg, dataAct);
+    
+    cfg             = [];
+    cfg.method      = 'mtmfft';
+    cfg.output      = 'pow';
+    cfg.taper       = 'hanning';
+    if dolowfreq
+      cfg.foilim    = [2 30];
+    elseif dohighfreq
+      cfg.foilim    = [30 90];
+    end
+    cfg.keeptrials  = 'no'; % average baseline over trials
+    cfg.channel     = {'MLO', 'MZO', 'MRO'};
+    powBl           = ft_freqanalysis(cfg, bl);
+    powAct          = ft_freqanalysis(cfg, act);
+    
+    cfg=[];
+    cfg.parameter = 'powspctrm';
+    cfg.operation = 'x1./x2-1';
+    pow_relchange      = ft_math(cfg, powAct, powBl);
+    cfg=[];
+    cfg.avgoverchan = 'yes';
+    pow_relchange = ft_selectdata(cfg, pow_relchange);
+    if dolowfreq
+      [powRatio, peakFreqidx] = min(pow_relchange.powspctrm);
+    elseif dohighfreq
+      [powRatio, peakFreqidx] = max(pow_relchange.powspctrm);
+    end
+    peakFreq = pow_relchange.freq(peakFreqidx); % FIxme check for other subjects if thise works
+    ft_singleplotER([], pow_relchange);
+  end
+  clear dataClean
   
   if dotfa
     cfg                 = [];
@@ -149,7 +199,7 @@ if ~dogroupanalysis
   % filters
   if dofreq
     if dolowfreq
-      foi = [1 1].*subject.lowfreqpeak(end);
+      foi = [1 1].*subject.lowfreqpeak(end); % fixme check if this can be replaced by peakFreq
       smo = 2;
       latency = [-0.75+1./data_onset.fsample 0-1./data_onset.fsample];
     elseif dohighfreq
@@ -184,16 +234,14 @@ if ~dogroupanalysis
   if dofreq_short
     if dohighfreq
       latency = subject.erflatency(1).*[1 1] - 0.02 - [0.20 1./600];%MvE
-      foi     = subject.gammapeak(end).*[1 1];
+      foi     = subject.gammapeak.*[1 1];
       smo     = max(10, diff(subject.gammaband(end,:))./2);
     elseif dolowfreq
-      load([project_dir, sprintf('analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj)]); %FIXME
-      latency = subject.erflatency(1).*[1 1] - 0.02 - [0.4 1./600];%MvE
-      foi = peakFreq;
+      latency = subject.erflatency(1).*[1 1] - 0.02 - [0.4 1./600];
+      foi     = subject.lowfreqpeak.*[1 1];
       smo     = 2.5;
     end
-    foi = foi.*[1 1];
-    [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
+    [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, foi, smo);
     
     if dosave
       filename = [results_dir, sprintf('%03d/sub-%03d_%sfreqshort', subj,subj, tmpstr)];
@@ -245,7 +293,7 @@ if ~dogroupanalysis
     
     source_parc.noise = diag(sqrt(source_parc.F*tmp.cov*source_parc.F'));
     cfg=[];
-    cfg.comment = 'compute the noise by calculating "noise = diag(sqrt(lcmv_spatial_filters*noise_covariance*transpose(lcmv_spatial_filters)))"'; %FIXME
+    cfg.comment = 'compute the noise by calculating "noise = diag(sqrt(lcmv_spatial_filters*noise_covariance*transpose(lcmv_spatial_filters)))"';
     source_parc = ft_annotate(cfg, source_parc);
     
     if doplot && subj==13
