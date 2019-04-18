@@ -149,19 +149,16 @@ if ~dogroupanalysis
   % filters
   if dofreq
     if dolowfreq
-      if ~exist('peakfreq', 'var')
-        % Fixme
-        load([project_dir, sprintf('analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj)]);
-      end
-      foi = [peakfreq peakfreq]; smo = 2;
+      foi = [1 1].*subject.lowfreqpeak(end);
+      smo = 2;
       latency = [-0.75+1./data_onset.fsample 0-1./data_onset.fsample];
-      [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
     elseif dohighfreq
-      if ~exist('latency', 'var')
-        latency = [-inf 0-1./data_onset.fsample];
-      end
-      [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, subject);
+      foi = [1 1].*subject.gammapeak(end);
+      smo = diff(subject.gammaband(end,:))./2;
+      latency = [-inf 0-1./data_onset.fsample];
     end
+      [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, foi, smo);
+      
     if dosave
       fileanme = [results_dir sprintf('%03d/sub-%03d_freq', subj,subj)];
       save(filename, 'freq_shift', 'latency');

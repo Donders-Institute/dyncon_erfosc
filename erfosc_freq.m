@@ -1,4 +1,4 @@
-function [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo)
+function [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency,foi, smo)
 % Frequency analysis using fieldtrip mtmfft
 %
 % INPUT
@@ -8,25 +8,15 @@ function [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency,
 %       change.
 %   latency: scalar or string, can be 'all', 'prestim', 'poststim', or 
 %       [beg end], specify time range in seconds.
-%   subject (int): subject ID, ranging from 1 to 33, excluding 10.
-%   foi: vector 1 x numfoi, frequencies of interest (default: subject-
-%       specific gamma peak frequency)
+%   foi: vector 1 x numfoi, frequencies of interest 
 %   smo: number, the amount of spectral smoothing through multi-tapering. 
 %       Note that 4 Hz smoothing means plus-minus 4 Hz, i.e. a 8 Hz 
-%       smoothing box. (default: subject specific gamma bandwidth)
-% 
+%       smoothing box. 
+
 % OUTPUT
 %   freq_onset: frequency estimate, timing relative to stimulus onset
 %   freq_shift: frequency estimate, timing relative to stimulus change
 %   P: projection matrix to go from fourier to power
-
-
-if nargin<5 || isempty(foi)
-  foi = [1 1].*subject.gammapeak(end);
-end
-if nargin<6 || isempty(smo)
-  smo = diff(subject.gammaband(end,:))./2;
-end
 
 cfg         = [];
 cfg.latency = latency;
