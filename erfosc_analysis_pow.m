@@ -25,18 +25,37 @@ end
 %% load data
 erfosc_datainfo;
 if isPilot
-  load([project_dir, sprintf('processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj)], 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/pilot-%03d/ses-meg01/sub-%03d_cleandata.mat', subj,subj), 'dataClean');
 else
-  load([project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj)], 'dataClean');
+    data = load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj), 'dataClean');
 end
-[data_onset, data_shift] = erfosc_getdata(dataClean);
-if strcmp(zeropoint, 'reversal')
-  data = data_shift;
-  clear data_shift
-else
-  data = data_onset;
-  clear data_onset
-end
+data=data.dataClean;
+fs = data.fsample;
+
+    idxM = find(data.trialinfo(:,5)>0 & data.trialinfo(:,6)>0 & data.trialinfo(:,6)>data.trialinfo(:,5));
+    nTrials = length(idxM);
+    
+    cfg=[];
+    cfg.trials = idxM;
+    cfg.channel = 'MEG';
+    data = ft_selectdata(cfg, data);
+    
+    % find out which trials have response after end of trial, so you can
+    % exclude them
+    cfg=[];
+    cfg.offset = -(data.trialinfo(:,5)-data.trialinfo(:,4));
+    data_reversal_tmp = ft_redefinetrial(cfg, data);
+    
+    for iTrial=1:nTrials
+        trlLatency(iTrial) = data_reversal_tmp.time{iTrial}(end);
+    end
+    idx_trials = find(trlLatency'>((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    idx_trials_invalid = find(trlLatency'<((data.trialinfo(:,6)-data.trialinfo(:,5))/1200));
+    
+    cfg=[];
+    cfg.trials = idx_trials;
+    cfg.channel = 'MEG';
+    data = ft_selectdata(cfg, data);
 
 for iTrl=1:size(data.trial,2)
     blonset(iTrl,1) = data.time{iTrl}(1);
@@ -46,8 +65,8 @@ cfg=[];
 % cfg.trl = [data.trialinfo(:,3), data.trialinfo(:,4) data.trialinfo(:,3)-data.trialinfo(:,4)];
 % the first column represents the start of the baseline period. Its sample
 % number is inaccurate w.r.t. the time axis in the data (possibly because
-% of previous use of ft_selectdata?). This analysis in NaNs in the data.
-% Thus, don't use the samplenumber provided by trialinfo, but calculate on
+% of previous use of ft_selectdata?). This analysis in NaNs in the data. 
+% Thus, don't use the samplenumber provided by trialinfo, but calculate on 
 % the spot based on time axis.
 cfg.trl = [data.trialinfo(:,4)+blonset*fs, data.trialinfo(:,4)];
 cfg.trl = [cfg.trl, cfg.trl(:,1)-cfg.trl(:,2)];
@@ -58,13 +77,20 @@ cfg=[];
 cfg.trl = [data.trialinfo(:,4)+0.4*fs data.trialinfo(:,5) 0.4*fs*ones(nTrials,1)];
 dataAct = ft_redefinetrial(cfg, data);
 
+cfg=[];
+cfg.toilim = [-inf 0];
+dataBl = ft_redefinetrial(cfg, data);
+
+nTrials = numel(data.trial);
+% stimduration = ;
+cfg=[];
+cfg.toilim = [0.4*ones(numel(data.trial),1) (data.trialinfo(:,5)-data.trialinfo(:,4))./1200];
+dataAct = ft_redefinetrial(cfg, data);
+
 cfg         = [];
 cfg.length  = 0.5; % 0.5 second windows
 cfg.overlap = 0.5; % half overlap
-bl = ft_redefinetrial(cfg, dataBl); % PROBLEM!!
-% bl.trial contains NaNs. in ft_freqanalysis, this analysis in the whole
-% array becoming NaN. specifically in ft_preproc_polyremoval of
-% ft_specest_mtmfft
+bl = ft_redefinetrial(cfg, dataBl); 
 act = ft_redefinetrial(cfg, dataAct);
 
 
