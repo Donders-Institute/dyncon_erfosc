@@ -36,6 +36,8 @@ if dofreq_short, getdata = true; end
 if dolcmv_parc,  getdata = true; end
 if dolcmv_parc,  dolcmv_norm = true; end
 if ~dolowfreq && ~dohighfreq, dohighfreq = 1; end
+if docorrpow_lcmv && dohighfreq, dopartialcorr = true; end
+if dostat_pow_erf && dohighfreq, dopartialcorr = true; end
 
 
 % load some things for source analysis
@@ -55,14 +57,45 @@ ctx = ft_annotate(cfg, ctx);
 
 if ~dogroupanalysis
   % this chunk creates 2 data structures [-0.75 0.5]
-  if getdata
-    basedir       = [project_dir, sprintf('processed/sub-%03d/ses-meg01', subj)];
-    filename_data = fullfile(basedir, sprintf('sub-%03d_cleandata.mat', subj));
-    load(filename_data);
+  if dopreprocessing
+    % try to load artifact and ICA data
+    try
+      load([project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj)], 'artfctdef');
+      saveartfct = false;
+    catch
+      artfctdef = [];
+      saveartfct = true;
+    end
+    try 
+      load([project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj)], 'comp');
+      saveartfct = saveartfct + false;
+    catch
+      comp = [];
+      saveartfct = saveartfct + true;
+    end
     
-    cfg=[];
-    cfg.comment = 'load preprocessed MEG data';
-    dataClean = ft_annotate(cfg, dataClean);
+    [dataClean, artfctdef, comp] = erfosc_preprocessing_artifact(subject, artfctdef, comp, 5);
+    
+    if dosave
+      filename = [project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj)];
+      save(filename, 'dataClean');
+    end
+    if saveartfct
+      save([project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj)], 'artfctdef');
+      save([project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj)], 'comp');
+    end
+  end
+end
+  
+  if getdata
+    if doload
+      filename = [project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj)];
+      load(filename)
+      cfg=[];
+      cfg.comment = 'load preprocessed MEG data';
+      dataClean = ft_annotate(cfg, dataClean);
+    end
+    
     [data_onset, data_shift, data_resp] = erfosc_getdata(dataClean);
     clear dataClean;
   end
@@ -127,13 +160,17 @@ if ~dogroupanalysis
       [freq_onset, freq_shift, P, pow_onset, pow_shift] = erfosc_freq(data_onset, data_shift, latency, subject);
     end
     if dosave
-      savedir = [project_dir 'analysis/freq'];
-      save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_freq', subj,subj)), 'freq_shift', 'P', 'latency');
+      fileanme = [project_dir sprintf('analysis/freq/sub-%03d/sub-%03d_freq', subj,subj)];
+      save(filename, 'freq_shift', 'P', 'latency');
     end
   end
   
   % this chunk does source reconstruction
   if dodics
+    if doload
+      fileanme = [project_dir sprintf('analysis/freq/sub-%03d/sub-%03d_freq', subj,subj)];
+      load(filename, 'freq_shift', 'P', 'latency');
+    end
     [sourcefreq_onset, sourcefreq_shift, sourcefreq_shift_Tval] = erfosc_dics(freq_onset, freq_shift, headmodel, sourcemodel);
       if dolowfreq
         tmpstr = 'low';

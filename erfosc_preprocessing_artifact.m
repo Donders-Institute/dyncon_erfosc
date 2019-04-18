@@ -1,4 +1,4 @@
-function erfosc_preprocessing_artifact(subj, existArtifact, visDegOffFixation, dosave)
+function [dataClean, artfctdef, comp, headmotion, nTrials] = erfosc_preprocessing_artifact(subject, artfctdef, comp, visDegOffFixation)
 % This function is interactive and can not be automated and/or
 % paralellized.
 % This function loads data from the ERF-oscillation experiment, segments
@@ -19,25 +19,22 @@ function erfosc_preprocessing_artifact(subj, existArtifact, visDegOffFixation, d
 % ft_default = [];
 % ft_default.reproducescript = datestr(now, 30);
 
-if nargin<1 || isempty(subj)
-  subj = 1;
+if nargin<1 || isempty(subject)
+  error('please specify subject as subject=subjects(x);')
 end
-if nargin<2 || isempty(existArtifact)
-  existArtifact = false;
-end
-if nargin<3 || isempty(visDegOffFixation)
+if nargin<2 || isempty(artfctdef) || ~isstruct(artfctdef)
+  existArtifact = false; else  existArtifact = true; end
+if nargin<3 || isempty(comp) || ~isstruct(comp)
+  doica = true; else doica=false; end
+if nargin<4 || isempty(visDegOffFixation)
   visDegOffFixation = 5;
 end
-if nargin<4 || isempty(dosave)
-  dosave = true;
-end
+
 
 %% Load data and define trials
-erfosc_datainfo; % load subject specific info.
-
 cfg=[];
-cfg.dataset = subjects(subj).dataset;
-cfg.logfile = subjects(subj).logfile;
+cfg.dataset = subject.dataset;
+cfg.logfile = subject.logfile;
 cfg.datafile = cfg.dataset;
 cfg.headerfile = cfg.dataset;
 cfg.trialfun = 'erfosc_trialfun';
@@ -48,7 +45,7 @@ cfg.catchtrial = log.trlNoShift;
 cfg.continuous = 'yes';
 cfg = ft_definetrial(cfg);
 cfg2=cfg; % use this for finding EOG artifacts.
-nTrialsPreClean = size(cfg.trl,1);
+nTrials.preClean = size(cfg.trl,1);
 
 % preprocess data
 cfg.continuous = 'yes';
@@ -81,7 +78,7 @@ if ~existArtifact
   for i=1:size(dataRejVis.cfg.artfctdef.summary.artifact,1)
     artfctdef.badtrial(i)=find(data.sampleinfo(:,1)==dataRejVis.cfg.artfctdef.summary.artifact(i,1));
   end;
-  artfctdef.badtrial = [artfctdef.badtrial, subjects(subj).badtrials];
+  artfctdef.badtrial = [artfctdef.badtrial, subject.badtrials];
   if artfctdef.badtrial
     disp(artfctdef.badtrial);
     data.badtrials = artfctdef.badtrial;
@@ -150,89 +147,57 @@ if ~existArtifact
   
   %% Find EOG saccade artifacts
   % this algorithm marks events as artifacts if eye movements are made
-  % with more than 1 visual degree off the central fixation point.
+  % with more than 5 visual degree off the central fixation point.
   [artfctdef.eyepos.visAngleX, artfctdef.eyepos.visAngleY, visAngPerPixX, visAngPerPixY] = transform_eyedata(data);
   dotSize = 20; % fixation dot is 20 pixels wide (see concentric_grating_experiment)
   visDegFixDot = visAngPerPixX * dotSize;
   % NOTE: the rest of the eye movement artifact detection is done after
   % ICA based on visAngleX and Y.
-  
-  %% Save artifacts
-  artfctdef.eyepos.visDegFixDot = visDegFixDot; % save eye position in artifact definition in order to find artifacts in it later.
-  %     artfctdef.eyesaccade.artifact = artifact_EOG_saccade; % save
-  %     saccade artifacts later
-  cfg=[];
-  cfg.comment = 'artfctdef.eyepos is created by running "[artfctdef.eyepos.visAngleX, artfctdef.eyepos.visAngleY, visAngPerPixX, visAngPerPixY] = transform_eyedata(data)".';
-  artfctdef = ft_annotate(cfg, artfctdef);
-  if ~exist(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/', subj), 'dir');
-    mkdir(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/', subj));
-  end
-  if dosave
-    save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
-  end
-  
-  %% Load artifacts (only if specified)
-  % if artifacts were selected before, load them.
-else
-  load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
-  if ~exist('artfctdef.eyesaccade')
-    sprintf('WARNING: possibly eye saccade artifacts have not yet been marked. These do not appear in artfctdef.')
-  end
 end
 
 %% Reject artifacts from complete data
 cfg = [];
-cfg.artfctdef = removefields(artfctdef, 'eyeblink2');
+cfg.artfctdef = removefields(artfctdef, 'eyeblink2', 'eyesaccade'); % remove these after ICA
 cfg.artfctdef.reject = 'complete'; % remove complete trials
 cfg.artfctdef.crittoilim = [-1 3.75];
 dataNoArtfct = ft_rejectartifact(cfg, data);
 
 % reject extra channels if needed
-if ~isempty(subjects(subj).channels)
+if ~isempty(subject.channels)
   cfg=[];
-  cfg.channel = subjects(subj).channels;
+  cfg.channel = subject.channels;
   dataNoArtfct = ft_selectdata(cfg, dataNoArtfct);
 end
 
 
-
-%% Compute ICA
-% if ~existArtifact
-% resample
-cfg=[];
-cfg.resamplefs = 150;
-cfg.detrend = 'no';
-dataResample = ft_resampledata(cfg, dataNoArtfct);
-
-% ICA
-cfg=[];
-cfg.method          = 'fastica';
-cfg.channel         = 'MEG';
-cfg.fastica.numOfIC = 50;
-cfg.randomseed      = subjects(subj).randomseed;
-comp = ft_componentanalysis(cfg, dataResample);
-
-% save
-filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj);
-if dosave
-  save(filename, 'comp')
+%% Do ICA
+if doica
+  % resample
+  cfg=[];
+  cfg.resamplefs = 150;
+  cfg.detrend = 'no';
+  dataResample = ft_resampledata(cfg, dataNoArtfct);
+  
+  % ICA
+  cfg=[];
+  cfg.method          = 'fastica';
+  cfg.channel         = 'MEG';
+  cfg.fastica.numOfIC = 50;
+  cfg.randomseed      = subjects.randomseed;
+  comp = ft_componentanalysis(cfg, dataResample);
+  
+  % Inspect ICA components
+  cfg = [];
+  cfg.channel = {comp.label{1:10}}; % components to be plotted
+  cfg.layout = 'CTF275_helmet.mat'; % specify the layout file that should be used for plotting
+  cfg.compscale = 'local';
+  ft_databrowser(cfg, comp);
+  
+  input('Please enter the ICA components in datainfo_erfosc. press any key to continue');
+  subs_comp = input('Please also enter the to be rejected components here:');
+else
+  subs_comp = [subject.ecgcomp, subject.eyecomp];
 end
-
-%% Inspect ICA components
-% load the ica components computed with erfosc_preprocessing_ica
-
-cfg = [];
-cfg.channel = {comp.label{1:10}}; % components to be plotted
-cfg.layout = 'CTF275_helmet.mat'; % specify the layout file that should be used for plotting
-cfg.compscale = 'local';
-ft_databrowser(cfg, comp);
-
-input('Please enter the ICA components in datainfo_erfosc. press any key to continue');
-
-% else
-%         filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj);
-%     load(filename, 'comp')
-% end
 
 %% Reject ICA components and artifacts
 % decompose the original data as it was prior to downsampling to 150Hz
@@ -242,47 +207,34 @@ cfg.topolabel = comp.topolabel;
 comp_orig     = ft_componentanalysis(cfg, dataNoArtfct);
 comp_orig.topo = comp.topo; % topographies should be the same for full rank (comp_orig) and rank deficient (comp, because only 50 components and 275 channels)
 
-% JM: voor de zekerheid kijken hoe comp_orig.topo eruitziet
-% vergelijken met comp.topo;
-% als niet hetzelfde, comp_orig.topo = comp.topo;
-
-
-erfosc_datainfo; % load subject specific data for the latest version.
-subs_comp = [subjects(subj).ecgcomp, subjects(subj).eyecomp];
-
 cfg=[];
 cfg.component = subs_comp;
 dataNoIca = ft_rejectcomponent(cfg, comp_orig, dataNoArtfct);
 
 %% remove saccade artifacts
-artifact_EOG_saccade = [];
-if ~exist('visAngleX') || ~exist('visAngleY')
-  visAngleX = artfctdef.eyepos.visAngleX;
-  visAngleY = artfctdef.eyepos.visAngleY;
+if ~existArtifact
+  artifact_EOG_saccade = [];
+  if ~exist('visAngleX') || ~exist('visAngleY')
+    visAngleX = artfctdef.eyepos.visAngleX;
+    visAngleY = artfctdef.eyepos.visAngleY;
+  end
+  % trials are marked as artifact if fixation is broken with more than
+  % amount of visual degrees specified in visDegOffFixation (function
+  % input argument)
+  if ~exist('visDegFixDot')
+    visDegFixDot =  artfctdef.eyepos.visDegFixDot;
+  end
+  % visDegOffFixation = visDegOffFixation + visDegFixDot; % relative to border of fixation dot
+  % mark event as artifact if fixation from fixation point is broken with
+  % more than x visual degree.
+  artifact_EOG_saccade = break_fixation(data, visDegOffFixation);
+  
+  artfctdef.eyesaccade.artifact = artifact_EOG_saccade;
 end
-% trials are marked as artifact if fixation is broken with more than
-% amount of visual degrees specified in visDegOffFixation (function
-% input argument)
-if ~exist('visDegFixDot')
-  visDegFixDot =  artfctdef.eyepos.visDegFixDot;
-end
-% visDegOffFixation = visDegOffFixation + visDegFixDot; % relative to border of fixation dot
-% mark event as artifact if fixation from fixation point is broken with
-% more than x visual degree.
-artifact_EOG_saccade = break_fixation(data, visDegOffFixation);
 
-% save artifacts in existing artifact definition.
-load(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
-artfctdef.eyesaccade.artifact = artifact_EOG_saccade;
-cfg=[];
-cfg.comment = 'artfctdef.eyesaccade.artifact is created by running "artfctdef.eyesaccade.artifact = break_fixation(data, 5)".';
-artfctdef = ft_annotate(cfg, artfctdef);
-if dosave
-  save(sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_artifact.mat', subj, subj), 'artfctdef');
-end
 % reject eye movements from data
 cfg = [];
-cfg.artfctdef.eyesaccade.artifact = artifact_EOG_saccade;
+cfg.artfctdef.eyesaccade.artifact = artfctdef.eyesaccade.artifact;
 cfg.artfctdef.reject = 'complete'; % remove complete trials
 cfg.artfctdef.crittoilim = [-1 3.75];
 dataClean = ft_rejectartifact(cfg, dataNoIca);
@@ -295,15 +247,8 @@ cfg=[];
 cfg.channel = 'MEG';
 dataClean = ft_selectdata(cfg, dataClean);
 
-nTrialsPostClean = length(dataClean.trial);
+nTrials.postClean = length(dataClean.trial);
 idxM = find(dataClean.trialinfo(:,5)>0 & dataClean.trialinfo(:,6)>0 & dataClean.trialinfo(:,2)==0);
-nTrialsValid = length(idxM);
-
-%% save
-if dosave
-  filename = sprintf('/project/3011085.02/processed/sub-%03d/ses-meg01/sub-%03d_cleandata', subj, subj);
-  save(fullfile([filename '.mat']), 'dataClean','nTrialsPreClean','nTrialsPostClean','nTrialsValid', '-v7.3');
-  save(fullfile([filename(1:end-9), 'headmotion', '.mat']), 'headmotion');
-end
+nTrials.valid = length(idxM);
 
 
