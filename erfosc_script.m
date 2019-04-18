@@ -26,6 +26,9 @@ if ~exist('dopartialcorr', 'var'), dopartialcorr = false; end
 if ~exist('dolowfreq', 'var'), dolowfreq = false; end
 if ~exist('dohighfreq', 'var'), dohighfreq = false; end
 if ~exist('dotfa', 'var'), dotfa = false; end
+if ~exist('dosourcefreq_short', 'var', dosourcefreq_short = false; end
+if ~exist('doload', 'var'); doload = false; end
+if ~exist('dosave', 'var'); dosave = false; end
 
 if docorrpow_lcmv, dodics = true; dolcmv_parc = true; dofreq_short = true; end
 if docorr_gamma_rt, dofreq_short = true; end
@@ -33,25 +36,26 @@ if dodics,       dofreq = true; end
 if dofreq,       getdata = true; end
 if docomp,       getdata = true; end
 if dofreq_short, getdata = true; end
+if dodics && dofreq_short, dosourcefreq_short = true; end
 if dolcmv_parc,  getdata = true; end
 if dolcmv_parc,  dolcmv_norm = true; end
 if ~dolowfreq && ~dohighfreq, dohighfreq = 1; end
 if docorrpow_lcmv && dohighfreq, dopartialcorr = true; end
 if dostat_pow_erf && dohighfreq, dopartialcorr = true; end
-
+if dolowfreq, tmpstr = 'low'; elseif dohighfreq, tmpstr = 'high'; end
 
 % load some things for source analysis
-load(fullfile(subject.mridir,'preproc','headmodel.mat'));
+load([project_dir, sprintf('processed/sub-%03d/ses-mri01/sub-%03d_headmodel.mat', subj, subj)]);
 cfg=[];
 cfg.comment = 'load subject`s headmodel';
 headmodel = ft_annotate(cfg, headmodel);
-load(fullfile(subject.mridir,'preproc','sourcemodel2d.mat'));
+load([project_dir, sprintf('processed/sub-%03d/ses-mri01/sub-%03d_sourcemodel2d.mat', subj, subj)]);
 cfg.comment = 'load subject`s 2D sourcemodel';
 sourcemodel = ft_annotate(cfg, sourcemodel);
-load('atlas_subparc374_8k.mat');
+load([project_dir, 'template/', 'atlas_subparc374_8k.mat']);
 cfg.comment = 'load 2D atlas with 374 parcels, based on the Conte 69 atlas';
 atlas = ft_annotate(cfg, atlas);
-load('cortex_inflated_shifted');
+load([project_dir, 'template/', 'cortex_inflated_shifted']);
 cfg.comment = 'load cortex template';
 ctx = ft_annotate(cfg, ctx);
 
@@ -68,6 +72,9 @@ if ~dogroupanalysis
     end
     try 
       load([project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj)], 'comp');
+      cfg=[];
+      cfg.comment = 'load ICA component data.';
+      comp = ft_annotate(cfg, comp);
       saveartfct = saveartfct + false;
     catch
       comp = [];
@@ -77,7 +84,7 @@ if ~dogroupanalysis
     [dataClean, artfctdef, comp] = erfosc_preprocessing_artifact(subject, artfctdef, comp, 5);
     
     if dosave
-      filename = [project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj)];
+      filename = [results_dir, sprintf('%03d/sub-%03d_cleandata.mat', subj, subj)];
       save(filename, 'dataClean');
     end
     if saveartfct
@@ -85,11 +92,10 @@ if ~dogroupanalysis
       save([project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_icaComp.mat', subj, subj)], 'comp');
     end
   end
-end
   
   if getdata
     if doload
-      filename = [project_dir, sprintf('processed/sub-%03d/ses-meg01/sub-%03d_cleandata.mat', subj, subj)];
+      filename = [results_dir, sprintf('%03d/sub-%03d_cleandata.mat', subj, subj)];
       load(filename)
       cfg=[];
       cfg.comment = 'load preprocessed MEG data';
@@ -133,13 +139,9 @@ end
     cfg=[];
     cfg.latency = [-1 -0.25];
     tfa_baseline = ft_selectdata(cfg, tfa_high);
-    if dolowfreq
-        tmpstr = 'low';
-    elseif dohighfreq
-        tmpstr = 'high';
-    end
-    datadir = [results_dir sprintf('%03d', subj)];
-    save([datadir, sprintf('tfa_%s_onset', subj, tmpstr)], 'tfa', 'tfa_baseline')
+
+    filename = [results_dir sprintf('%03d/sub-%03d_tfa_%s_onset', subj, subj, tmpstr)];
+    save(filename, 'tfa', 'tfa_baseline')
     clear tfa_planar data_planar
   end
   
@@ -161,7 +163,7 @@ end
       [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, subject);
     end
     if dosave
-      fileanme = [project_dir sprintf('analysis/freq/sub-%03d/sub-%03d_freq', subj,subj)];
+      fileanme = [results_dir sprintf('%03d/sub-%03d_freq', subj,subj)];
       save(filename, 'freq_shift', 'latency');
     end
   end
@@ -169,18 +171,15 @@ end
   % this chunk does source reconstruction
   if dodics
     if doload
-      fileanme = [project_dir sprintf('analysis/freq/sub-%03d/sub-%03d_freq', subj,subj)];
+      fileanme = [results_dir sprintf('%03d/sub-%03d_freq', subj,subj)];
       load(filename, 'freq_shift', 'latency');
     end
     [sourcefreq_onset, sourcefreq_shift, sourcefreq_shift_Tval] = erfosc_dics(freq_onset, freq_shift, headmodel, sourcemodel);
-      if dolowfreq
-        tmpstr = 'low';
-      elseif dohighfreq
-        tmpstr = 'high';
-      end
-      savedir = [results_dir, sprintf('%03d', subj)];
-      filename = fullfile(savedir, sprintf('%spow_tval.mat', tmpstr));
-      save(filename, 'sourcefreq_shift_Tval');
+        
+    if dosave  
+      filename = [results_dir, sprintf('%03d/sub-%03d_source_%spow', subj, subj, tmpstr)];
+      save(filename, 'sourcefreq_shift_Tval', 'sourcefreq_shift');
+    end
   end
   
   % this chunk does spectral decomposition - used for estimating
@@ -191,29 +190,27 @@ end
       foi     = subject.gammapeak(end).*[1 1];
       smo     = max(10, diff(subject.gammaband(end,:))./2);
     elseif dolowfreq
-      load([project_dir, sprintf('analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj)]);
+      load([project_dir, sprintf('analysis/freq/sub-%03d/sub-%03d_pow_low.mat',subj,subj)]); %FIXME
       latency = subject.erflatency(1).*[1 1] - 0.02 - [0.4 1./600];%MvE
       foi = peakFreq;
       smo     = 2.5;
     end
     foi = foi.*[1 1];
     [freq_onset, freq_shift] = erfosc_freq(data_onset, data_shift, latency, subject, foi, smo);
-    if ~exist('savefreq', 'var')
-      savefreq = false;
-    end
-    if savefreq
-      if dolowfreq
-        tmpstr = 'low';
-      elseif dohighfreq
-        tmpstr = 'high';
-      end
-      savedir = [project_dir 'analysis/freq/'];
-      filename = fullfile(savedir, sprintf('sub-%03d/sub-%03d_%sfreqshort', subj,subj, tmpstr));
+    
+    if dosave
+      filename = [results_dir, sprintf('%03d/sub-%03d_%sfreqshort', subj,subj, tmpstr)];
       save(filename, 'freq_shift', 'latency');
     end
   end
   
-  if dodics && dofreq_short
+  if dosourcefreq_short
+    if doload
+      filename = [results_dir, sprintf('%03d/sub-%03d_source_%spow', subj, subj, tmpstr)];
+      load(filename, 'sourcefreq_shift_Tval', 'sourcefreq_shift');
+      filename = [results_dir, sprintf('%03d/sub-%03d_%sfreqshort', subj,subj, tmpstr)];
+      load(filename, 'freq_shift');
+    end
     sourcefreq_shift.pow = transpose((abs(sourcefreq_shift.F*transpose(freq_shift.fourierspctrm)).^2)*freq_shift.fourier2pow);
     cfg=[];
     cfg.comment = 'for pow take the power in the pre-ERF window by combining the spatial filter with the fourierspectrum of this window';
@@ -221,19 +218,28 @@ end
     sourcefreq_shift.pow = standardise(log10(sourcefreq_shift.pow), 1);
     cfg.comment = 'log10 avg.pow and standardise w.r.t. trials';
     sourcefreq_shift = ft_annotate(cfg, sourcefreq_shift);
+    
+    if dosave
+      filename = [results_dir, sprintf('%03d/sub-%03d_source_%spow', subj, subj, tmpstr)];
+      save(filename, 'sourcefreq_shift_Tval', 'sourcefreq_shift');
+    end
   end
   
   if dolcmv_parc
-    [source_parc] = erfosc_lcmv_parc(data_resp, headmodel, sourcemodel, atlas);
+    [source_parc] = erfosc_lcmv_parc(data_shift, headmodel, sourcemodel, atlas);
     if dosave
-      savedir = [project_dir 'analysis/source/'];
-      save(fullfile(savedir, sprintf('sub-%03d/sub-%03d_lcmv',subj, subj)), 'source_parc');
+      filename = [results_dir, sprintf('%03d/sub-%03d_lcmv',subj, subj)];
+      save(filename, 'source_parc');
     end
   end
   
   if dolcmv_norm
+    if doload 
+      filename = [results_dir, sprintf('%03d/sub-%03d_lcmv',subj, subj)];
+      load(filename, 'source_parc');
+    end
     tmpcfg = [];
-    tmpcfg.latency = [-0.2 -1./600];
+    tmpcfg.latency = [-0.2 -1./data_shift.fsample];
     data_shift_baseline = ft_selectdata(tmpcfg, data_shift);
     
     tmpcfg = [];
@@ -250,11 +256,19 @@ end
     end
     
     if dosave
-      save(filename, 'noise', '-append');
+      filename = [results_dir, sprintf('%03d/sub-%03d_lcmv',subj, subj)];
+      save(filename, 'source_parc');
     end
   end
   
   if docorrpow_lcmv
+    if doload
+      filename = [results_dir, sprintf('%03d/sub-%03d_lcmv',subj, subj)];
+      load(filename, 'source_parc');
+      filename = [results_dir, sprintf('%03d/sub-%03d_source_%spow', subj, subj, tmpstr)];
+      load(filename, 'sourcefreq_shift_Tval', 'sourcefreq_shift');
+    end
+    
     cfg=[];
     cfg.matrix = repmat(1./source_parc.noise, [1 size(source_parc.avg,2)]);
     cfg.parameter = 'avg';
@@ -301,23 +315,12 @@ end
     Xpow = abs(mean(X,1));
     signswap = repmat(sign(mean(X,1)), [size(datapeak.trial,1), 1]);
     
-    % let the amplitude be on average positive
-    % FIXME when issue 1068 has been resolved, replace this:
-    %{
-    datapeak.trial = datapeak.trial.*signswap;
-    cfg=[];
-    cfg.comment = 'multiply the peak data by a matrix which lets the trial-average be positive at every parcel.';
-    datapeak = ft_annotate(cfg, datapeak);
-    % by this:
-    %}
-  
+    % let the amplitude be on average positive  
     cfg=[];
     cfg.operation = 'multiply';
     cfg.matrix = signswap;
     cfg.parameter = 'trial';
     datapeak = ft_math(cfg, datapeak);
-  
-  %
 
     datapeak.trial = standardise(datapeak.trial,1);
     cfg=[];
@@ -332,10 +335,10 @@ end
     cfg.comment = sprintf('align the parcels such that the trial-average of the [%d %d]s window is positive.', subject.erflatency);
     cfg.parameter = 'avg';
     datapst = ft_math(cfg, datapst);
-    % do the correlations
     
+    % do the correlations
     if dolowfreq
-      [m, idx] = max(sourcefreq_shift_Tval.stat);
+      [m, idx] = min(sourcefreq_shift_Tval.stat);
       cfg=[];
       cfg.comment = 'Create field roipow: from avg.pow, select only single-trial power values at the source location of maximal NEGATIVE induced power change';
     elseif dohighfreq
@@ -368,7 +371,7 @@ end
     cfg.comment = 'calculate Spearman rank correlation between roipow and peak ERF amplitude.';
     datapeak = ft_annotate(cfg, datapeak);
     
-    if dopartialcorr % FIXME errors in ft_timelockanalysis and ft_regressconfound in new fieldtrip version.
+    if dopartialcorr
       % prepare eye data
       [~, eyedata_shift] = erfosc_preprocessing_eyedata(subj, data_onset);
       % get gamma-ERF correlation, accounting for pupil diameter, without confounding eye position.
@@ -378,7 +381,7 @@ end
       eyedata_shift = ft_timelockanalysis(cfg,eyedata_shift);
       cfg=[];
       cfg.comment = 'get pupil diameter data without contribution of eye position';
-      cfg.toilim = [-0.2 -1./600] + subject.erflatency(1) - 0.02;
+      cfg.toilim = [-0.2 -1./data_shift.fsample] + subject.erflatency(1) - 0.02;
       pupil_diameter = erfosc_regress_eye(ft_redefinetrial(cfg, eyedata_shift), {'UADC007'}, {'visAngleX', 'visAngleY'});
       cfg=[];
       cfg.avgovertime = 'yes';
@@ -396,7 +399,7 @@ end
       eyedata_shift = ft_annotate(cfg, eyedata_shift);
       cfg=[];
       cfg.comment = 'get eye position data without contribution of pupil diameter';
-      cfg.toilim = [-0.2 -1./600] + subject.erflatency(1) - 0.02;
+      cfg.toilim = [-0.2 -1./data_shift.fsample] + subject.erflatency(1) - 0.02;
       eyepos = erfosc_regress_eye(ft_redefinetrial(cfg, eyedata_shift), {'distance'}, {'UADC007'});
       cfg=[];
       cfg.avgovertime = 'yes';
@@ -425,7 +428,7 @@ end
       datapeak = ft_annotate(cfg, datapeak);
     end
         
-    datapeak.rho_erf_rt = corr(datapeak.trial, datapeak.trialinfo(:,7), 'type', 'spearman'); %MvE
+    datapeak.rho_erf_rt = corr(datapeak.trial, datapeak.trialinfo(:,7), 'type', 'spearman'); 
     cfg=[]
     cfg.comment = 'calculate Spearman rank correlation between ERF amplitude and reaction times (7th column trialinfo).';
     datapeak = ft_annotate(cfg, datapeak);
@@ -450,12 +453,6 @@ end
     indx(exclude_label) = [];
     source.rho_pow_erf(indx)    = datapeak.rho_pow_erf;
     source.rho_erf_rt(indx)     = datapeak.rho_erf_rt;
-    cfg=[];
-    if dolowfreq
-      tmpstr = 'low';
-    elseif dohighfreq
-      tmpstr = 'high';
-    end
     if dopartialcorr
       source.partialrho_pupild = datapeak.partialrho_pupild;
       source.partialrho_distancefixation = datapeak.partialrho_distancefixation;
@@ -471,23 +468,16 @@ end
     
     % save the results to disk.
     datadir = [results_dir sprintf('%03d', subj)];
-    save(fullfile(datadir, sprintf('source_erf_%spow', tmpstr)), 'source');
-    save(fullfile(datadir, sprintf('source_%spow', tmpstr)), 'sourcepow');
+    save(fullfile(datadir, sprintf('sub-%03d_source_erf_%spow', subj,  tmpstr)), 'source');
+    save(fullfile(datadir, sprintf('sub-%03d_source_%spow', subj, tmpstr)), 'sourcepow');
   end
 else
   if dotfa
     k=1;
     for subj = allsubs
       datadir = [results_dir sprintf('%03d', subj)];
-      if dolowfreq
-        tmpstr = 'low';
-        plotfigure=3;
-      elseif dohighfreq
-        tmpstr = 'high';
-        plotfigure=2;
-      end
-      filename1 = fullfile(datadir, sprintf('tfa_%s_onset', tmpstr));
-      filename2 = fullfile(datadir, sprintf('%spow_tval', tmpstr));
+      filename1 = fullfile(datadir, sprintf('sub-%03d_tfa_%s_onset', subj, tmpstr));
+      filename2 = fullfile(datadir, sprintf('sub_%03d_%spow_tval', subj, tmpstr));
       fprintf('loading data for subject %s\n', subj);
       load(filename1, filename2);
       freq{k} = tfa;
@@ -501,7 +491,7 @@ else
     for k=1:numel(freq)  
       baseline{k}.powspctrm = repmat(mean(baseline{k}.powspctrm,3),[1 1 numel(freq{k}.time)]);
       freq{k}.powspctrm = freq{k}.powspctrm./baseline{k}.powspctrm-1;
-      freq{k} = ft_annote(cfg, freq{k});
+      freq{k} = ft_annotate(cfg, freq{k});
     end
     
     cfg=[];
@@ -509,7 +499,7 @@ else
     freq_allsubs = ft_appendfreq(cfg, freq{:});
     pow_tval_allsubs = ft_appendfreq(cfg, pow_tval{:});
     if dolowfreq
-      [~, idx] = min(pow_tval_allsubs.stat,[], 2); % maximum tvalues
+      [~, idx] = min(pow_tval_allsubs.stat,[], 2); % minimum tvalues
     elseif dohighfreq
       [~, idx] = max(pow_tval_allsubs.stat,[], 2); % maximum tvalues
     end
@@ -519,6 +509,7 @@ else
     
     
     if doplot
+      if dolowfreq, plotfigure=3; elseif dohighfreq, plotfigure=2; end
       erfosc_plotting;
     end
   end
@@ -527,12 +518,7 @@ else
     k=1;
     for subj = allsubs
       datadir = [results_dir sprintf('%03d', subj)];
-      if dolowfreq
-        tmpstr = 'low';
-      elseif dohighfreq
-        tmpstr = 'high';
-      end
-      filename = fullfile(datadir, sprintf('source_%spow', tmpstr));
+      filename = fullfile(datadir, sprintf('sub-%03d_source_%spow', subj, tmpstr));
       fprintf('loading data for subject %s\n', subj);
       load(filename);
       S{k} = sourcepow;
@@ -546,18 +532,15 @@ else
     if doplot
       plotfigure=5; erfosc_plotting;
     end
+    
+    save([results_dir, 'group/', 'correlation_pow_rt'], 'sourcepow_GA'); 
   end
   
   if dostat_pow_erf
     k=1;
     for subj = allsubs
       datadir = [results_dir sprintf('%03d', subj)];
-      if dolowfreq
-        tmpstr = 'low';
-      elseif dohighfreq
-        tmpstr = 'high';
-      end
-      filename = fullfile(datadir, sprintf('source_erf_%spow', tmpstr));
+      filename = fullfile(datadir, sprintf('sub-%03d_source_erf_%spow', subj, tmpstr));
       fprintf('loading data for subject %s\n', subj);
       load(filename);
       S{k} = source;
@@ -574,9 +557,6 @@ else
       S0{1}.partialrho_distancefixation = 0*S0{1}.partialrho_distancefixation;
       S0{1}.partialrho_pupild_distancefixation = 0*S0{1}.partialrho_pupild_distancefixation;
     end
-    cfg=[];
-    cfg.comment = 'multiply rho with zero to create a zero-distribution.';
-    S0{1} = ft_annotate(cfg, S0{1});
     for k=2:n
       S0{k} = S0{1};
     end
@@ -628,11 +608,13 @@ else
       stat_eye=ft_freqstatistics(cfgs,S{:},S0{:});
     end
     datadir = [results_dir 'group/'];
-    filename = [project_dir, sprintf('stat_erf_%spow.mat', tmpstr)];
+    filename = [datadir, sprintf('correlation_erf_%spow.mat', tmpstr)];
     if dopartialcorr
-      save(filename, 'S', 'stat_pow_erf', 'stat_erf_rt', 'stat_eye', 'stat_pupild', 'stat_xy');
+      save(filename, 'S', 'stat_pow_erf', 'stat_eye', 'stat_pupild', 'stat_xy');
     else
-      save(filename, 'S', 'stat_pow_erf', 'stat_erf_rt');
+      save(filename, 'S', 'stat_pow_erf');
     end
+    filename = [datadir, 'correlation_erf_rt.mat'];
+    save(filename, 'S', 'stat_erf_rt')
   end
 end
